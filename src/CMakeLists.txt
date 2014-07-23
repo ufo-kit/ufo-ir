@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 2.6)
 
 set(PROJECT_SRCS
     main.c
+    ufo-metadata.c
+    ufo-scalar.c
+
+    ufo-method.c
+    ufo-ir-method.c
+    ufo-ir-sart.c
 )
 
 set(PROJECT_LIBS
