@@ -4,9 +4,9 @@
 #include <glib-object.h>
 
 typedef gfloat UfoScalar;
-#define UFO_IR_TYPE_SCALAR G_TYPE_FLOAT
-#define UFO_IR_MIN_SCALAR  (-G_MAXFLOAT)
-#define UFO_IR_MAX_SCALAR  (G_MAXFLOAT)
+#define UFO_TYPE_SCALAR G_TYPE_FLOAT
+#define UFO_MIN_SCALAR  (-G_MAXFLOAT)
+#define UFO_MAX_SCALAR  (G_MAXFLOAT)
 
 UfoScalar
 g_value_get_scalar (const GValue *value);
