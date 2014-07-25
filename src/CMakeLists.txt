@@ -6,6 +6,9 @@ set(PROJECT_SRCS
     ufo-ir-task.c
 
     ufo-geometry.c
+    ufo-parallel-geometry.c
+
+    ufo-projector.c
 
 #    ufo-metadata.c
 #    ufo-scalar.c

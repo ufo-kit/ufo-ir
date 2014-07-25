@@ -5,6 +5,8 @@
 #endif
 
 #include "ufo-ir-task.h"
+#include "ufo-geometry.h"
+#include "ufo-projector.h"
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
 G_DEFINE_TYPE_WITH_CODE (UfoIrTask, ufo_ir_task, UFO_TYPE_TASK_NODE,
@@ -120,7 +122,7 @@ ufo_ir_task_set_property (GObject      *object,
       case PROP_PROJECTOR:
           priv->projector = g_object_ref (g_value_get_pointer(value));
           break;
-      case PROP_PRIOR:
+      case PROP_PRIOR_KNOWLEDGE:
           priv->prior = g_object_ref (g_value_get_pointer(value));
           break;
       default:
@@ -147,7 +149,7 @@ ufo_ir_task_get_property (GObject    *object,
       case PROP_PROJECTOR:
           g_value_set_pointer (value, priv->projector);
           break;
-      case PROP_PRIOR:
+      case PROP_PRIOR_KNOWLEDGE:
           g_value_set_pointer (value, priv->prior);
           break;
       default:
@@ -203,6 +205,7 @@ ufo_task_interface_init (UfoTaskIface *iface)
     iface->get_num_dimensions = ufo_ir_task_get_num_dimensions;
     iface->get_mode = ufo_ir_task_get_mode;
     iface->get_requisition = ufo_ir_task_get_requisition;
+    iface->process = ufo_ir_task_process;
     iface->set_json_object_property = ufo_task_set_json_object_property_real;
 }
 
@@ -210,6 +213,10 @@ static void
 ufo_ir_task_class_init (UfoIrTaskClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    gobject_class->set_property = ufo_ir_task_set_property;
+    gobject_class->get_property = ufo_ir_task_get_property;
+    gobject_class->finalize = ufo_ir_task_finalize;
+    gobject_class->dispose = ufo_ir_task_dispose;
 
     properties[PROP_METHOD] =
         g_param_spec_pointer("method",
@@ -234,11 +241,6 @@ ufo_ir_task_class_init (UfoIrTaskClass *klass)
                              "Pointer to the instance of UfoPriorKnowledge.",
                              "Pointer to the instance of UfoPriorKnowledge.",
                              G_PARAM_READWRITE);
-
-    gobject_class->set_property = ufo_ir_task_set_property;
-    gobject_class->get_property = ufo_ir_task_get_property;
-    gobject_class->finalize = ufo_ir_task_finalize;
-    gobject_class->dispose = ufo_ir_task_dispose;
 
       guint i;
       for (i = PROP_0 + 1; i < N_PROPERTIES; i++)

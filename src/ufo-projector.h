@@ -30,30 +30,28 @@ typedef enum {
     UFO_PROJECTOR_ERROR_SETUP
 } UfoProjectorError;
 
-
 struct _UfoProjector {
-    UfoObject parent_instance;
+    GObject parent_instance;
     UfoProjectorPrivate *priv;
 };
 
 struct _UfoProjectorClass {
-    UfoObjectClass parent_class;
-    void (*FP) (UfoProjector       *projector,
-                UfoBuffer          *volume,
-                UfoRegion          *volume_region,
-                UfoBuffer          *sinogram,
-                UfoProjAccessPart  *part,
-                gfloat             output_scale,
-                cl_event           *finish_event);
+    GObjectClass parent_class;
 
-    void (*BP) (UfoProjector       *projector,
-                UfoBuffer          *volume,
-                UfoRegion          *volume_region,
-                UfoBuffer          *sinogram,
-                gfloat             relaxation_param,
-                UfoProjAccessPart  *part,
-                cl_event           *finish_event);
+    void (*FP_ROI) (UfoProjector  *projector,
+                    UfoBuffer     *volume,
+                    UfoRegion     *volume_roi,
+                    UfoBuffer     *measurements,
+                    UfoProjSubset subset,
+                    gfloat        scale,
+                    cl_event      *finish_event);
 
+    void (*BP_ROI) (UfoProjector  *projector,
+                    UfoBuffer     *volume,
+                    UfoRegion     *volume_roi,
+                    UfoBuffer     *measurements,
+                    UfoProjSubset subset,
+                    cl_event      *finish_event);
 
     void (*setup) (UfoProjector  *projector,
                    UfoResources  *resources,
@@ -64,20 +62,36 @@ UfoProjector *
 ufo_projector_new ();
 
 void
-ufo_projector_FP (UfoProjector       *projector,
-                  UfoBuffer          *volume,
-                  UfoBuffer          *sinogram,
-                  UfoProjAccessPart  *part,
-                  gfloat             output_scale,
-                  cl_event           *finish_event);
+ufo_projector_FP_ROI (UfoProjector  *projector,
+                      UfoBuffer     *volume,
+                      UfoRegion     *volume_roi,
+                      UfoBuffer     *measurements,
+                      UfoProjSubset subset,
+                      gfloat        scale,
+                      cl_event      *finish_event);
 
 void
-ufo_projector_BP (UfoProjector         *projector,
-                     UfoBuffer         *volume,
-                     UfoBuffer         *sinogram,
-                     gfloat            relaxation_param,
-                     UfoProjAccessPart *part,
-                     cl_event          *finish_event);
+ufo_projector_BP_ROI (UfoProjector  *projector,
+                      UfoBuffer     *volume,
+                      UfoRegion     *volume_roi,
+                      UfoBuffer     *measurements,
+                      UfoProjSubset subset,
+                      cl_event      *finish_event);
+
+void
+ufo_projector_FP (UfoProjector  *projector,
+                  UfoBuffer     *volume,
+                  UfoBuffer     *measurements,
+                  UfoProjSubset subset,
+                  gfloat        scale,
+                  cl_event      *finish_event);
+
+void
+ufo_projector_BP (UfoProjector  *projector,
+                  UfoBuffer     *volume,
+                  UfoBuffer     *measurements,
+                  UfoProjSubset subset,
+                  cl_event      *finish_event);
 
 void
 ufo_projector_setup (UfoProjector *projector,

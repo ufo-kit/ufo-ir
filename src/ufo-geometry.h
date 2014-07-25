@@ -38,6 +38,9 @@ struct _UfoGeometry {
 
 struct _UfoGeometryClass {
     GObjectClass parent_class;
+
+    void (*get_volume_requisitions) (UfoGeometry     *geometry,
+                                     UfoRequisition  *requisition);
 };
 
 UfoGeometry *

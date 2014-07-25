@@ -14,8 +14,6 @@ ufo_geometry_error_quark (void)
 struct _UfoGeometryPrivate {
     cl_context context;
 
-    gfloat detector_scale;
-    gfloat detector_offset;
     guint  n_angles;
     gfloat angle_step;
     gfloat angle_offset;
@@ -28,8 +26,6 @@ struct _UfoGeometryPrivate {
 
 enum {
     PROP_0,
-    PROP_DETECTOR_SCALE,
-    PROP_DETECTOR_OFFSET,
     PROP_NUMBER_OF_ANGLES,
     PROP_ANGLE_STEP,
     PROP_ANGLE_OFFSET,
@@ -93,12 +89,6 @@ ufo_geometry_set_property (GObject      *object,
     UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_DETECTOR_SCALE:
-            priv->detector_scale = g_value_get_double(value);
-            break;
-        case PROP_DETECTOR_OFFSET:
-            priv->detector_offset = g_value_get_double(value);
-            break;
         case PROP_NUMBER_OF_ANGLES:
             priv->n_angles = g_value_get_uint(value);
             break;
@@ -123,12 +113,6 @@ ufo_geometry_get_property (GObject    *object,
     UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_DETECTOR_SCALE:
-            g_value_set_double (value, priv->detector_scale);
-            break;
-        case PROP_DETECTOR_OFFSET:
-            g_value_set_double (value, priv->detector_offset);
-            break;
         case PROP_NUMBER_OF_ANGLES:
             g_value_set_uint (value, priv->n_angles);
             break;
@@ -169,6 +153,13 @@ ufo_geometry_finalize (GObject *object)
 }
 
 static void
+_ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
+                                       UfoRequisition  *requisition)
+{
+  g_warning ("%s: `%s' not implemented", G_OBJECT_TYPE_NAME (geometry), "get_volume_requisitions");
+}
+
+static void
 ufo_geometry_class_init (UfoGeometryClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
@@ -177,20 +168,6 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
     gobject_class->get_property = ufo_geometry_get_property;
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
-
-    properties[PROP_DETECTOR_SCALE] =
-        g_param_spec_double ("detector-scale",
-                             "Aspect ratio of pixel size and detector size.",
-                             "Aspect ratio of pixel size and detector size.",
-                             0.1, 4, 0.0,
-                             G_PARAM_READWRITE);
-
-    properties[PROP_DETECTOR_OFFSET] =
-        g_param_spec_double ("detector-offset",
-                             "Shift of the detectors respect to the center of the volume.",
-                             "Shift of the detectors respect to the center of the volume.",
-                             -limit, +limit, 0.0,
-                             G_PARAM_READWRITE);
 
     properties[PROP_NUMBER_OF_ANGLES] =
         g_param_spec_uint("number-of-angles",
@@ -218,6 +195,8 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
 
 
     g_type_class_add_private (gobject_class, sizeof(UfoGeometryPrivate));
+
+    UFO_GEOMETRY_CLASS(klass)->get_volume_requisitions = _ufo_geometry_get_volume_requisitions;
 }
 
 static void
@@ -227,8 +206,6 @@ ufo_geometry_init(UfoGeometry *self)
     self->priv = priv = UFO_GEOMETRY_GET_PRIVATE(self);
 
     priv->context = NULL;
-    priv->detector_scale = 1.0f;
-    priv->detector_offset = 0.0f;
     priv->n_angles = 0;
     priv->angle_step = G_PI;
     priv->angle_offset = 0.0f;
@@ -238,7 +215,6 @@ ufo_geometry_init(UfoGeometry *self)
     priv->scan_host_sin_lut = NULL;
     priv->scan_host_cos_lut = NULL;
 }
-
 
 cl_mem
 ufo_geometry_scan_angles_host (UfoGeometry *geometry,
@@ -272,5 +248,6 @@ void
 ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
                                       UfoRequisition  *requisition)
 {
-
+  g_return_if_fail (UFO_IS_GEOMETRY (geometry));
+  UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry, requisition);
 }
