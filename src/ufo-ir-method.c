@@ -1,6 +1,10 @@
 #include <ufo-ir-method.h>
 
-G_DEFINE_TYPE (UfoIrMethod, ufo_ir_method, UFO_TYPE_METHOD)
+static void ufo_method_interface_init (UfoMethodIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (UfoIrMethod, ufo_ir_method, UFO_TYPE_PROCESSOR,
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
+                                                ufo_method_interface_init))
 
 #define UFO_IR_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_IR_METHOD, UfoIrMethodPrivate))
 
@@ -11,7 +15,7 @@ ufo_ir_method_error_quark (void)
 }
 
 struct _UfoIrMethodPrivate {
-    //UfoProjector *projector;
+    UfoProjector *projector;
     gfloat  relaxation_factor;
     guint   max_iterations;
 };
@@ -25,18 +29,11 @@ enum {
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-UfoIrMethod *
+UfoMethod *
 ufo_ir_method_new ()
 {
-    return (UfoIrMethod *) g_object_new (UFO_TYPE_IR_METHOD,
-                                         NULL);
-}
-
-static void
-ufo_ir_method_init (UfoIrMethod *self)
-{
-    UfoIrMethodPrivate *priv = NULL;
-    self->priv = priv = UFO_IR_METHOD_GET_PRIVATE (self);
+    return (UfoMethod *) g_object_new (UFO_TYPE_IR_METHOD,
+                                       NULL);
 }
 
 static void
@@ -49,7 +46,7 @@ ufo_ir_method_set_property (GObject *object,
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
-            //priv->projector = g_object_ref (g_value_get_pointer (value));
+            priv->projector = g_object_ref (g_value_get_pointer (value));
             break;
         case PROP_RELAXATION_FACTOR:
             priv->relaxation_factor = g_value_get_float (value);
@@ -73,7 +70,7 @@ ufo_ir_method_get_property (GObject *object,
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
-            //g_value_set_pointer (value, priv->projector);
+            g_value_set_pointer (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:
             g_value_set_float (value, priv->relaxation_factor);
@@ -91,7 +88,7 @@ static void
 ufo_ir_method_dispose (GObject *object)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
-    //g_object_unref(priv->projector);
+    g_object_unref(priv->projector);
     G_OBJECT_CLASS (ufo_ir_method_parent_class)->dispose (object);
 }
 
@@ -102,11 +99,33 @@ ufo_ir_method_finalize (GObject *object)
 }
 
 static void
-_ufo_ir_method_setup (UfoIrMethod  *method,
-                      UfoResources *resources,
-                      GError       **error)
+ufo_ir_method_setup_real (UfoProcessor *processor,
+                          UfoResources *resources,
+                          GError       **error)
 {
-    UFO_METHOD_CLASS (ufo_ir_method_parent_class)->setup (method, resources, error);
+    UFO_PROCESSOR_CLASS (ufo_ir_method_parent_class)->setup (processor, resources, error);
+}
+
+static void
+ufo_ir_method_set_prior_knowledge_real (UfoIrMethod *method,
+                                        GHashTable  *prior)
+{
+    g_warning ("Selected method does not work with any prior knowledge.");
+}
+
+static gboolean
+ufo_ir_method_process_real (UfoMethod *method,
+                            UfoBuffer *input,
+                            UfoBuffer *output)
+{
+    warn_unimplemented (method, "process");
+    return FALSE;
+}
+
+static void
+ufo_method_interface_init (UfoMethodIface *iface)
+{
+    iface->process = ufo_ir_method_process_real;
 }
 
 static void
@@ -144,5 +163,24 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof (UfoIrMethodPrivate));
 
-    UFO_METHOD_CLASS (klass)->setup = _ufo_ir_method_setup;
+    UFO_IR_METHOD_CLASS (klass)->set_prior_knowledge = ufo_ir_method_set_prior_knowledge_real;
+    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_method_setup_real;
+}
+
+
+void
+ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
+                                   GHashTable  *prior)
+{
+    g_return_if_fail (UFO_IS_IR_METHOD (method) && prior);
+
+    UfoIrMethodClass *klass = UFO_IR_METHOD_GET_CLASS (method);
+    klass->set_prior_knowledge(method, prior);
+}
+
+static void
+ufo_ir_method_init (UfoIrMethod *self)
+{
+    UfoIrMethodPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_METHOD_GET_PRIVATE (self);
 }

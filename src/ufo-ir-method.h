@@ -2,7 +2,10 @@
 #define __UFO_IR_METHOD_H
 
 #include <glib-object.h>
-#include <ufo-method.h>
+#include <ufo-processor.h>
+#include <ufo-method-iface.h>
+#include <ufo-projector.h>
+#include <ufo-geometry.h>
 
 G_BEGIN_DECLS
 
@@ -22,16 +25,23 @@ typedef struct _UfoIrMethodPrivate  UfoIrMethodPrivate;
 
 
 struct _UfoIrMethod {
-    UfoMethod parent_instance;
+    UfoProcessor parent_instance;
     UfoIrMethodPrivate *priv;
 };
 
 struct _UfoIrMethodClass {
-    UfoMethodClass parent_class;
+    UfoProcessorClass parent_class;
+
+    void (*set_prior_knowledge) (UfoIrMethod *method,
+                                 GHashTable  *prior);
 };
 
-UfoIrMethod*
+UfoMethod*
 ufo_ir_method_new ();
+
+void
+ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
+                                   GHashTable  *prior);
 
 GType ufo_ir_method_get_type (void);
 

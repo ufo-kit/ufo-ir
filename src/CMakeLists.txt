@@ -9,6 +9,20 @@ set(PROJECT_SRCS
     ufo-parallel-geometry.c
 
     ufo-projector.c
+    ufo-cl-projector.c
+
+    ufo-processor.c
+    ufo-method-iface.c
+    ufo-ir-method.c
+    ufo-ir-sart.c
+
+    ufo-sparsity-iface.c
+    ufo-custom-sparsity.c
+    ufo-gradient-sparsity.c
+
+    ufo-transform-iface.c
+
+    ufo-common-routines.c
 
 #    ufo-metadata.c
 #    ufo-scalar.c

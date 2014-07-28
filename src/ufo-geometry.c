@@ -15,8 +15,8 @@ struct _UfoGeometryPrivate {
     cl_context context;
 
     guint  n_angles;
-    gfloat angle_step;
-    gfloat angle_offset;
+    gdouble angle_step;
+    gdouble angle_offset;
 
     cl_mem scan_sin_lut;
     cl_mem scan_cos_lut;
@@ -26,7 +26,7 @@ struct _UfoGeometryPrivate {
 
 enum {
     PROP_0,
-    PROP_NUMBER_OF_ANGLES,
+    PROP_NUM_ANGLES,
     PROP_ANGLE_STEP,
     PROP_ANGLE_OFFSET,
     N_PROPERTIES
@@ -64,9 +64,9 @@ ufo_geometry_new ()
 }
 
 static void
-ufo_geometry_setup (UfoGeometry  *geometry,
-                    UfoResources *resources,
-                    GError       **error)
+ufo_geometry_setup_real (UfoGeometry  *geometry,
+                         UfoResources *resources,
+                         GError       **error)
 {
     g_return_if_fail (UFO_IS_GEOMETRY (geometry) &&
                       UFO_IS_RESOURCES (resources));
@@ -89,7 +89,7 @@ ufo_geometry_set_property (GObject      *object,
     UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_NUMBER_OF_ANGLES:
+        case PROP_NUM_ANGLES:
             priv->n_angles = g_value_get_uint(value);
             break;
         case PROP_ANGLE_STEP:
@@ -113,7 +113,7 @@ ufo_geometry_get_property (GObject    *object,
     UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_NUMBER_OF_ANGLES:
+        case PROP_NUM_ANGLES:
             g_value_set_uint (value, priv->n_angles);
             break;
         case PROP_ANGLE_STEP:
@@ -153,8 +153,8 @@ ufo_geometry_finalize (GObject *object)
 }
 
 static void
-_ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
-                                       UfoRequisition  *requisition)
+ufo_geometry_get_volume_requisitions_real (UfoGeometry     *geometry,
+                                           UfoRequisition  *requisition)
 {
   g_warning ("%s: `%s' not implemented", G_OBJECT_TYPE_NAME (geometry), "get_volume_requisitions");
 }
@@ -169,8 +169,8 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
 
-    properties[PROP_NUMBER_OF_ANGLES] =
-        g_param_spec_uint("number-of-angles",
+    properties[PROP_NUM_ANGLES] =
+        g_param_spec_uint("num-angles",
                           "Number of angles",
                           "Number of angles",
                           0, G_MAXUINT, 0,
@@ -196,7 +196,8 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof(UfoGeometryPrivate));
 
-    UFO_GEOMETRY_CLASS(klass)->get_volume_requisitions = _ufo_geometry_get_volume_requisitions;
+    UFO_GEOMETRY_CLASS (klass)->get_volume_requisitions = ufo_geometry_get_volume_requisitions_real;
+    UFO_GEOMETRY_CLASS (klass)->setup = ufo_geometry_setup_real;
 }
 
 static void
@@ -216,7 +217,7 @@ ufo_geometry_init(UfoGeometry *self)
     priv->scan_host_cos_lut = NULL;
 }
 
-cl_mem
+gfloat *
 ufo_geometry_scan_angles_host (UfoGeometry *geometry,
                                UfoAnglesType type)
 {
@@ -230,7 +231,7 @@ ufo_geometry_scan_angles_host (UfoGeometry *geometry,
         return NULL;
 }
 
-gfloat *
+gpointer
 ufo_geometry_scan_angles_device (UfoGeometry *geometry,
                                  UfoAnglesType type)
 {
@@ -248,6 +249,16 @@ void
 ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
                                       UfoRequisition  *requisition)
 {
-  g_return_if_fail (UFO_IS_GEOMETRY (geometry));
-  UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry, requisition);
+    g_return_if_fail (UFO_IS_GEOMETRY (geometry));
+    UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry, requisition);
+}
+
+void
+ufo_geometry_setup (UfoGeometry  *geometry,
+                    UfoResources *resources,
+                    GError       **error)
+{
+    g_return_if_fail (UFO_IS_GEOMETRY (geometry) &&
+                      UFO_IS_RESOURCES (resources));
+    UFO_GEOMETRY_GET_CLASS (geometry)->setup(geometry, resources, error);
 }

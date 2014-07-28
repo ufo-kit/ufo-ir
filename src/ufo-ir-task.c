@@ -5,8 +5,11 @@
 #endif
 
 #include "ufo-ir-task.h"
+#include "ufo-ir-method.h"
 #include "ufo-geometry.h"
 #include "ufo-projector.h"
+
+#include "ufo-ir-sart.h"
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
 G_DEFINE_TYPE_WITH_CODE (UfoIrTask, ufo_ir_task, UFO_TYPE_TASK_NODE,
@@ -23,7 +26,7 @@ struct _UfoIrTaskPrivate {
     UfoIrMethod       *method;
     UfoGeometry       *geometry;
     UfoProjector      *projector;
-    UfoPriorKnowledge *prior;
+    GHashTable        *prior;
 };
 
 enum {
@@ -98,9 +101,8 @@ ufo_ir_task_process (UfoTask        *task,
                      UfoBuffer      *output,
                      UfoRequisition *requisition)
 {
-    //UfoIrMethod *method;
-
-    //ufo_ir_method_process (inputs, output);
+    UfoIrMethod *method = ufo_ir_sart_new ();
+    ufo_method_process (UFO_METHOD(method), inputs[0], output);
     return TRUE;
 }
 
@@ -186,6 +188,7 @@ ufo_task_set_json_object_property_real (UfoTask *task,
                                         const gchar *prop_name,
                                         JsonObject *object)
 {
+    g_print ("\nufo_task_set_json_object_property_real\n");
     if (g_strcmp0 (prop_name, "geometry") == 0) {
 
     }

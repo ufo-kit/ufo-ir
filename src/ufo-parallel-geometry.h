@@ -28,7 +28,6 @@ typedef struct _UfoParallelGeometry         UfoParallelGeometry;
 typedef struct _UfoParallelGeometryClass    UfoParallelGeometryClass;
 typedef struct _UfoParallelGeometryPrivate  UfoParallelGeometryPrivate;
 
-
 struct _UfoParallelGeometry {
     UfoGeometry parent_instance;
     UfoParallelGeometryPrivate *priv;

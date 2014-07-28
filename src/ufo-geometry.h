@@ -3,6 +3,7 @@
 
 #include <glib.h>
 #include <ufo/ufo.h>
+#include <ufo-cl-geometry.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -41,22 +42,31 @@ struct _UfoGeometryClass {
 
     void (*get_volume_requisitions) (UfoGeometry     *geometry,
                                      UfoRequisition  *requisition);
+
+    void (*setup) (UfoGeometry  *geometry,
+                   UfoResources *resources,
+                   GError       **error);
 };
 
 UfoGeometry *
 ufo_geometry_new ();
 
-cl_mem
+gfloat *
 ufo_geometry_scan_angles_host (UfoGeometry *geometry,
                                UfoAnglesType type);
 
-gfloat *
+gpointer
 ufo_geometry_scan_angles_device (UfoGeometry *geometry,
                                  UfoAnglesType type);
 
 void
 ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
                                       UfoRequisition  *requisition);
+
+void
+ufo_geometry_setup (UfoGeometry  *geometry,
+                    UfoResources *resources,
+                    GError       **error);
 
 
 GType ufo_geometry_get_type (void);

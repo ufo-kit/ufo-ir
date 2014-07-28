@@ -3,15 +3,35 @@
 #include <ufo/ufo.h>
 #include <math.h>
 
+#include <ufo-ir-method.h>
+#include <ufo-ir-sart.h>
+
+#include <ufo-sparsity-iface.h>
+#include <ufo-custom-sparsity.h>
+
 void
 test_task ();
 int main(int n_args, char *argv[])
 {
-    g_object_unref (NULL);
+    /*UfoRequisition req;
+    req.n_dims = 2;
+    req.dims[0] = 10;
+    req.dims[1] = 20;
+
+    UfoBuffer *buffer1 = ufo_buffer_new (&req, NULL);
+    UfoBuffer *buffer2 = ufo_buffer_new (&req, NULL);
+    UfoIrMethod *m = ufo_ir_sart_new ();
+    ufo_method_process (UFO_METHOD(m), buffer1, buffer2);
+
+    UfoSparsity *cs = ufo_custom_sparsity_new ();
+    ufo_sparsity_minimize (cs, buffer1, buffer2);
+*/
+    //g_object_unref (NULL);
     test_task ();
     return 0;
 }
 
+#if 1
 void
 test_task ()
 {
@@ -82,3 +102,4 @@ test_task ()
     g_object_unref (reader);
     g_object_unref (ir_filter);*/
 }
+#endif

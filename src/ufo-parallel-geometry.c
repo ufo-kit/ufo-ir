@@ -12,8 +12,7 @@ ufo_parallel_geometry_error_quark (void)
 }
 
 struct _UfoParallelGeometryPrivate {
-    gfloat detector_scale;
-    gfloat detector_offset;
+    UfoParallelGeometryMeta meta;
 };
 
 enum {
@@ -40,10 +39,10 @@ ufo_parallel_geometry_set_property (GObject      *object,
 
     switch (property_id) {
         case PROP_DETECTOR_SCALE:
-            priv->detector_scale = g_value_get_float(value);
+            priv->meta.detector_scale = g_value_get_float(value);
             break;
         case PROP_DETECTOR_OFFSET:
-            priv->detector_offset = g_value_get_float(value);
+            priv->meta.detector_offset = g_value_get_float(value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -61,10 +60,10 @@ ufo_parallel_geometry_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_DETECTOR_SCALE:
-            g_value_set_float (value, priv->detector_scale);
+            g_value_set_float (value, priv->meta.detector_scale);
             break;
         case PROP_DETECTOR_OFFSET:
-            g_value_set_float (value, priv->detector_offset);
+            g_value_set_float (value, priv->meta.detector_offset);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -116,6 +115,6 @@ ufo_parallel_geometry_init(UfoParallelGeometry *self)
     UfoParallelGeometryPrivate *priv = NULL;
     self->priv = priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE(self);
 
-    priv->detector_scale = 1.0f;
-    priv->detector_offset = 0.0f;
+    priv->meta.detector_scale = 1.0f;
+    priv->meta.detector_offset = 0.0f;
 }

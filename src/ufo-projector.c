@@ -1,5 +1,5 @@
 #include <ufo-projector.h>
-
+#include <ufo-geometry.h>
 
 G_DEFINE_TYPE (UfoProjector, ufo_projector, G_TYPE_OBJECT)
 
@@ -41,18 +41,17 @@ _ufo_projector_setup (UfoProjector *projector,
     }
 }
 
-
 static void
-ufo_projector_set_property (GObject *object,
-                            guint property_id,
+ufo_projector_set_property (GObject      *object,
+                            guint        property_id,
                             const GValue *value,
-                            GParamSpec *pspec)
+                            GParamSpec   *pspec)
 {
     UfoProjectorPrivate *priv = UFO_PROJECTOR_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_GEOMETRY:
-            priv->geometry = g_value_get_pointer(value);
+            priv->geometry = g_object_ref (g_value_get_pointer(value));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -61,10 +60,10 @@ ufo_projector_set_property (GObject *object,
 }
 
 static void
-ufo_projector_get_property (GObject *object,
-                               guint property_id,
-                               GValue *value,
-                               GParamSpec *pspec)
+ufo_projector_get_property (GObject    *object,
+                            guint      property_id,
+                            GValue     *value,
+                            GParamSpec *pspec)
 {
     UfoProjectorPrivate *priv = UFO_PROJECTOR_GET_PRIVATE (object);
 
@@ -88,26 +87,26 @@ ufo_projector_dispose (GObject *object)
 }
 
 static void
-_ufo_projector_FP_ROI (UfoProjector  *projector,
-                       UfoBuffer     *volume,
-                       UfoRegion     *volume_roi,
-                       UfoBuffer     *measurements,
-                       UfoProjSubset subset,
-                       gfloat        scale,
-                       cl_event      *finish_event)
+_ufo_projector_FP_ROI (UfoProjector         *projector,
+                       UfoBuffer            *volume,
+                       UfoRegion            *volume_roi,
+                       UfoBuffer            *measurements,
+                       UfoProjectionsSubset subset,
+                       gfloat               scale,
+                       cl_event             *finish_event)
 {
-    g_error ("Method FP_ROI is not implemented.");
+    g_warning ("Method FP_ROI is not implemented.");
 }
 
 static void
-_ufo_projector_BP_ROI (UfoProjector  *projector,
-                       UfoBuffer     *volume,
-                       UfoRegion     *volume_roi,
-                       UfoBuffer     *measurements,
-                       UfoProjSubset subset,
-                       cl_event      *finish_event)
+_ufo_projector_BP_ROI (UfoProjector         *projector,
+                       UfoBuffer            *volume,
+                       UfoRegion            *volume_roi,
+                       UfoBuffer            *measurements,
+                       UfoProjectionsSubset subset,
+                       cl_event             *finish_event)
 {
-    g_error ("Method BP_ROI is not implemented.");
+    g_warning ("Method BP_ROI is not implemented.");
 }
 
 
@@ -125,12 +124,6 @@ ufo_projector_class_init (UfoProjectorClass *klass)
                              "Pointer to the instance of UfoGeometry structure",
                              G_PARAM_READWRITE);
 
-    properties[PROP_ANGLES] =
-        g_param_spec_pointer("angles",
-                             "Pointer to the instance of UfoAngles class",
-                             "Pointer to the instance of UfoAngles class",
-                             G_PARAM_READWRITE);
-
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
@@ -143,15 +136,18 @@ ufo_projector_class_init (UfoProjectorClass *klass)
 }
 
 void
-ufo_projector_FP_ROI (UfoProjector  *projector,
-                      UfoBuffer     *volume,
-                      UfoRegion     *volume_roi,
-                      UfoBuffer     *measurements,
-                      UfoProjSubset subset,
-                      gfloat        scale,
-                      cl_event      *finish_event)
+ufo_projector_FP_ROI (UfoProjector         *projector,
+                      UfoBuffer            *volume,
+                      UfoRegion            *volume_roi,
+                      UfoBuffer            *measurements,
+                      UfoProjectionsSubset subset,
+                      gfloat               scale,
+                      cl_event             *finish_event)
 {
-    g_return_if_fail(projector && volume && sinogram);
+    g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
+                      UFO_IS_BUFFER (volume) &&
+                      volume_roi &&
+                      UFO_IS_BUFFER (measurements));
 
     UfoProjectorClass *klass = UFO_PROJECTOR_GET_CLASS (projector);
     klass->FP_ROI(projector,
@@ -161,14 +157,17 @@ ufo_projector_FP_ROI (UfoProjector  *projector,
 }
 
 void
-ufo_projector_BP_ROI (UfoProjector  *projector,
-                      UfoBuffer     *volume,
-                      UfoRegion     *volume_roi,
-                      UfoBuffer     *measurements,
-                      UfoProjSubset subset,
-                      cl_event      *finish_event)
+ufo_projector_BP_ROI (UfoProjector         *projector,
+                      UfoBuffer            *volume,
+                      UfoRegion            *volume_roi,
+                      UfoBuffer            *measurements,
+                      UfoProjectionsSubset subset,
+                      cl_event             *finish_event)
 {
-    g_return_if_fail(projector && volume && sinogram);
+    g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
+                      UFO_IS_BUFFER (volume) &&
+                      volume_roi &&
+                      UFO_IS_BUFFER (measurements));
 
     UfoProjectorClass *klass = UFO_PROJECTOR_GET_CLASS (projector);
     klass->BP_ROI(projector,
@@ -178,28 +177,66 @@ ufo_projector_BP_ROI (UfoProjector  *projector,
 }
 
 void
-ufo_projector_setup (UfoProjector *projector,
-                        UfoResources   *resources,
-                        GError        **error)
+ufo_projector_FP (UfoProjector         *projector,
+                  UfoBuffer            *volume,
+                  UfoBuffer            *measurements,
+                  UfoProjectionsSubset subset,
+                  gfloat               scale,
+                  cl_event             *finish_event)
 {
-    if (projector == NULL && resources == NULL) {
-        g_set_error (error, UFO_PROJECTOR_ERROR, UFO_PROJECTOR_ERROR_SETUP,
-                     "Neither argument @projector nor argument @resources are specified");
-        return;
-    } else if (projector == NULL) {
-        g_set_error (error, UFO_PROJECTOR_ERROR, UFO_PROJECTOR_ERROR_SETUP,
-                     "Argument @projector is not specified");
-        return;
-    } else if (resources == NULL) {
-        g_set_error (error, UFO_PROJECTOR_ERROR, UFO_PROJECTOR_ERROR_SETUP,
-                     "Argument @resources is not specified");
-        return;
+    UfoRequisition volume_req;
+    ufo_buffer_get_requisition (volume, &volume_req);
+
+    UfoRegion region;
+    for (int i = 0; i < UFO_BUFFER_MAX_NDIMS; ++i) {
+      region.origin[i] = 0;
+      region.size[i] = volume_req.dims[i];
     }
+
+    ufo_projector_FP_ROI (projector,
+                          volume,
+                          &region,
+                          measurements,
+                          subset,
+                          scale,
+                          finish_event);
+}
+
+void
+ufo_projector_BP (UfoProjector         *projector,
+                  UfoBuffer            *volume,
+                  UfoBuffer            *measurements,
+                  UfoProjectionsSubset subset,
+                  cl_event             *finish_event)
+{
+    UfoRequisition volume_req;
+    ufo_buffer_get_requisition (volume, &volume_req);
+
+    UfoRegion region;
+    for (int i = 0; i < UFO_BUFFER_MAX_NDIMS; ++i) {
+      region.origin[i] = 0;
+      region.size[i] = volume_req.dims[i];
+    }
+
+    ufo_projector_BP_ROI (projector,
+                          volume,
+                          &region,
+                          measurements,
+                          subset,
+                          finish_event);
+}
+
+void
+ufo_projector_setup (UfoProjector  *projector,
+                     UfoResources  *resources,
+                     GError        **error)
+{
+    g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
+                      UFO_IS_RESOURCES (resources));
 
     UfoProjectorClass *klass = UFO_PROJECTOR_GET_CLASS (projector);
     klass->setup(projector, resources, error);
 }
-
 
 static void
 ufo_projector_init (UfoProjector *self)
