@@ -136,6 +136,11 @@ ufo_projector_setup (UfoProjector *projector,
                      UfoResources *resources,
                      GError       **error);
 
+gpointer
+ufo_projector_from_json (JsonObject       *object,
+                         UfoPluginManager *manager,
+                         GError           **error);
+
 GType ufo_projector_get_type (void);
 G_END_DECLS
 #endif

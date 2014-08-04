@@ -1,4 +1,5 @@
 #include <ufo-parallel-geometry.h>
+#include <ufo-cl-parallel-geometry.h>
 #include <math.h>
 
 G_DEFINE_TYPE (UfoParallelGeometry, ufo_parallel_geometry, UFO_TYPE_GEOMETRY)
@@ -72,10 +73,48 @@ ufo_parallel_geometry_get_property (GObject    *object,
 }
 
 static void
-_ufo_parallel_geometry_get_volume_requisitions (UfoGeometry     *geometry,
-                                                UfoRequisition  *requisition)
+ufo_parallel_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
+                                                    UfoBuffer      *measurements,
+                                                    UfoRequisition *requisition,
+                                                    GError         **error)
 {
-    g_print ("\n _ufo_parallel_geometry_get_volume_requisitions \n");
+    g_print ("\nufo_parallel_geometry_get_volume_requisitions_real \n");
+    UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
+
+    UfoRequisition req;
+    ufo_buffer_get_requisition (measurements, &req);
+    requisition->n_dims = req.n_dims;
+    requisition->dims[0] = req.dims[0] * (gsize) ceil (priv->meta.detector_scale);
+    requisition->dims[1] = req.dims[0] * (gsize) ceil (priv->meta.detector_scale);
+    requisition->dims[2] = req.dims[0] * (gsize) ceil (priv->meta.detector_scale);
+
+    guint n_angles;
+    g_object_get (geometry, "num-angles", &n_angles, NULL);
+    if (req.dims[1] > n_angles) {
+        g_message ("Actual number of directions is bigger than it was stated.");
+    }
+    else if (req.dims[1] < n_angles) {
+        g_set_error (error, UFO_GEOMETRY_ERROR, UFO_GEOMETRY_ERROR_INPUT_DATA,
+                     "Actual number of directions is less than it was stated.");
+    }
+}
+
+static const gchar*
+ufo_parallel_geometry_beam_geometry_real (UfoGeometry *geometry)
+{
+    return "parallel";
+}
+
+static gsize
+ufo_parallel_geometry_get_meta_real (UfoGeometry *geometry,
+                                     gpointer    *meta,
+                                     GError      **error)
+{
+    UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
+    *meta = g_malloc (sizeof (UfoParallelGeometryMeta));
+    //**meta = priv->meta;
+    // memcopy instead
+    return sizeof (UfoParallelGeometryMeta);
 }
 
 static void
@@ -91,7 +130,7 @@ ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
         g_param_spec_float ("detector-scale",
                             "Aspect ratio of pixel size and detector size.",
                             "Aspect ratio of pixel size and detector size.",
-                            0.1f, 4.0f, 0.0f,
+                            0.1f, 4.0f, 1.0f,
                             G_PARAM_READWRITE);
 
     properties[PROP_DETECTOR_OFFSET] =
@@ -106,7 +145,9 @@ ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof(UfoParallelGeometryPrivate));
 
-    UFO_GEOMETRY_CLASS(klass)->get_volume_requisitions = _ufo_parallel_geometry_get_volume_requisitions;
+    UFO_GEOMETRY_CLASS(klass)->get_volume_requisitions = ufo_parallel_geometry_get_volume_requisitions_real;
+    UFO_GEOMETRY_CLASS(klass)->beam_geometry = ufo_parallel_geometry_beam_geometry_real;
+    UFO_GEOMETRY_CLASS(klass)->get_meta = ufo_parallel_geometry_get_meta_real;
 }
 
 static void

@@ -29,6 +29,7 @@ enum {
     PROP_NUM_ANGLES,
     PROP_ANGLE_STEP,
     PROP_ANGLE_OFFSET,
+    PROP_BEAM_GEOMETRY,
     N_PROPERTIES
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
@@ -72,7 +73,6 @@ ufo_geometry_setup_real (UfoGeometry  *geometry,
                       UFO_IS_RESOURCES (resources));
 
     UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (geometry);
-
     priv->context = ufo_resources_get_context (resources);
     UFO_RESOURCES_CHECK_CLERR (clRetainContext (priv->context));
 
@@ -122,6 +122,12 @@ ufo_geometry_get_property (GObject    *object,
         case PROP_ANGLE_OFFSET:
             g_value_set_double (value, priv->angle_offset);
             break;
+        case PROP_BEAM_GEOMETRY: {
+            gchar* geom = UFO_GEOMETRY_GET_CLASS(object)->beam_geometry(UFO_GEOMETRY(object));
+            geom = geom ? geom : "unknown";
+            g_value_set_string (value, geom);
+          }
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -156,7 +162,22 @@ static void
 ufo_geometry_get_volume_requisitions_real (UfoGeometry     *geometry,
                                            UfoRequisition  *requisition)
 {
-  g_warning ("%s: `%s' not implemented", G_OBJECT_TYPE_NAME (geometry), "get_volume_requisitions");
+  warn_unimplemented (geometry, "get_volume_requisitions");
+}
+
+static gchar*
+ufo_geometry_beam_geometry_real (UfoGeometry *geometry)
+{
+  warn_unimplemented (geometry, "beam_geometry");
+}
+
+gsize
+ufo_geometry_get_meta_real (UfoGeometry *geometry,
+                            gpointer    *meta)
+{
+  warn_unimplemented (geometry, "get_meta");
+  *meta = NULL;
+  return 0;
 }
 
 static void
@@ -190,6 +211,13 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
                              0.0, +limit, 0.0,
                              G_PARAM_READWRITE);
 
+    properties[PROP_BEAM_GEOMETRY] =
+        g_param_spec_string ("beam-geometry",
+                             "Geometry of the beam.",
+                             "Geometry of the beam.",
+                             "unknown",
+                             G_PARAM_READABLE);
+
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
@@ -197,6 +225,8 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
     g_type_class_add_private (gobject_class, sizeof(UfoGeometryPrivate));
 
     UFO_GEOMETRY_CLASS (klass)->get_volume_requisitions = ufo_geometry_get_volume_requisitions_real;
+    UFO_GEOMETRY_CLASS (klass)->beam_geometry = ufo_geometry_beam_geometry_real;
+    UFO_GEOMETRY_CLASS (klass)->get_meta = ufo_geometry_get_meta_real;
     UFO_GEOMETRY_CLASS (klass)->setup = ufo_geometry_setup_real;
 }
 
@@ -246,11 +276,16 @@ ufo_geometry_scan_angles_device (UfoGeometry *geometry,
 }
 
 void
-ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
-                                      UfoRequisition  *requisition)
+ufo_geometry_get_volume_requisitions (UfoGeometry    *geometry,
+                                      UfoBuffer      *measurements,
+                                      UfoRequisition *requisition,
+                                      GError         **error)
 {
     g_return_if_fail (UFO_IS_GEOMETRY (geometry));
-    UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry, requisition);
+    UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry,
+                                                               measurements,
+                                                               requisition,
+                                                               error);
 }
 
 void
@@ -261,4 +296,51 @@ ufo_geometry_setup (UfoGeometry  *geometry,
     g_return_if_fail (UFO_IS_GEOMETRY (geometry) &&
                       UFO_IS_RESOURCES (resources));
     UFO_GEOMETRY_GET_CLASS (geometry)->setup(geometry, resources, error);
+}
+
+gsize
+ufo_geometry_get_meta (UfoGeometry *geometry,
+                       gpointer    *meta)
+{
+    g_return_val_if_fail (UFO_IS_GEOMETRY (geometry) && meta, 0);
+    return UFO_GEOMETRY_GET_CLASS (geometry)->get_meta(geometry, meta);
+}
+
+gpointer
+ufo_geometry_from_json (JsonObject       *object,
+                        UfoPluginManager *manager,
+                        GError           **error)
+{
+    gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
+    /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
+                                            METHOD_FUNC_NAME, // depends on method categeory
+                                            plugin_name,
+                                            error);*/
+    gpointer plugin = ufo_parallel_geometry_new ();
+
+    GList *members = json_object_get_members (object);
+    GList *member = NULL;
+    gchar *name = NULL;
+    for (member = g_list_first (members);
+         member != NULL && !error;
+         member = g_list_next (member))
+    {
+        name = member->data;
+        if (g_strcmp0 (name, "beam-geometry") == 0) {;
+          continue;
+        }
+
+        JsonNode *node = json_object_get_member(object, name);
+        if (JSON_NODE_HOLDS_VALUE (node)) {
+            GValue val = {0,};
+            json_node_get_value (node, &val);
+            g_object_set_property (G_OBJECT(plugin), name, &val);
+            g_value_unset (&val);
+        }
+        else {
+            g_warning ("`%s' is not a primitive value!", name);
+        }
+    }
+
+    return plugin;
 }

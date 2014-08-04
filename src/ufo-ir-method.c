@@ -167,7 +167,6 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
     UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_method_setup_real;
 }
 
-
 void
 ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
                                    GHashTable  *prior)

@@ -24,6 +24,9 @@ set(PROJECT_SRCS
 
     ufo-common-routines.c
 
+#    ufo-geom.c
+#    ufo-par-geom.c
+
 #    ufo-metadata.c
 #    ufo-scalar.c
 

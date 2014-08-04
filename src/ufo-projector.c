@@ -1,6 +1,8 @@
 #include <ufo-projector.h>
 #include <ufo-geometry.h>
 
+#include <ufo-cl-projector.h>
+
 G_DEFINE_TYPE (UfoProjector, ufo_projector, G_TYPE_OBJECT)
 
 #define UFO_PROJECTOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_PROJECTOR, UfoProjectorPrivate))
@@ -231,6 +233,7 @@ ufo_projector_setup (UfoProjector  *projector,
                      UfoResources  *resources,
                      GError        **error)
 {
+    g_print ("\nufo_projector_setup\n");
     g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
                       UFO_IS_RESOURCES (resources));
 
@@ -244,4 +247,31 @@ ufo_projector_init (UfoProjector *self)
     UfoProjectorPrivate *priv = NULL;
     self->priv = priv = UFO_PROJECTOR_GET_PRIVATE (self);
     priv->geometry = NULL;
+}
+
+gpointer
+ufo_projector_from_json (JsonObject       *object,
+                         UfoPluginManager *manager,
+                         GError           **error)
+{
+    g_print ("\nufo_projector_from_json\n");
+    gboolean gpu = json_object_get_boolean_member (object, "on-gpu");
+    gchar *model = json_object_get_string_member (object, "model");
+    gpointer plugin = NULL;
+
+    if (gpu) {
+        /*
+        plugin = ufo_plugin_manager_get_plugin (manager,
+                                                METHOD_FUNC_NAME, // depends on method categeory
+                                                plugin_name,
+                                                error);*/
+        plugin = ufo_cl_projector_new ();
+        g_object_set (plugin, "model", model, NULL);
+        g_print ("\nProjector: %p", plugin);
+    }
+    else {
+      // plugin-name = model+geometry.type = joseph-parallel
+    }
+
+    return plugin;
 }

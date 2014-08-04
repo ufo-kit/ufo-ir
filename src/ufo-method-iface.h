@@ -17,6 +17,10 @@ G_BEGIN_DECLS
 typedef struct _UfoMethod UfoMethod;
 typedef struct _UfoMethodIface UfoMethodIface;
 
+typedef enum {
+    UFO_METHOD_ERROR_JSON_KEY
+} UfoMethodError;
+
 struct _UfoMethodIface {
     /*< private >*/
     GTypeInterface parent_iface;
@@ -30,6 +34,11 @@ gboolean
 ufo_method_process (UfoMethod *method,
                     UfoBuffer *input,
                     UfoBuffer *output);
+
+gpointer
+ufo_method_from_json (JsonObject       *object,
+                      UfoPluginManager *manager,
+                      GError           **error);
 
 GQuark ufo_method_error_quark (void);
 GType ufo_method_get_type (void);

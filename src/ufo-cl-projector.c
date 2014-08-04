@@ -14,14 +14,14 @@ ufo_cl_projector_error_quark (void)
 struct _UfoClProjectorPrivate {
   gpointer cmd_queue;
 
-  gchar    *model_name;
+  gchar    *model;
   gpointer fp_kernel[2];
   gpointer bp_kernel;
 };
 
 enum {
     PROP_0,
-    PROP_MODEL_NAME,
+    PROP_MODEL,
     PROP_CL_COMMAND_QUEUE,
     N_PROPERTIES
 };
@@ -38,17 +38,19 @@ ufo_cl_projector_setup_real (UfoProjector *projector,
                              UfoResources *resources,
                              GError       **error)
 {
+    g_print ("\nufo_cl_projector_setup_real\n");
     //UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
     // get kernels
-    gchar *model = NULL;
     UfoGeometry *geometry = NULL;
+    gchar *model = NULL;
+    gchar *beam_geometry = NULL;
     g_object_get (projector, "geometry", &geometry,
                              "model", &model, NULL);
 
-    gchar *beam_geometry = NULL;
     g_object_get (geometry, "beam-geometry", &beam_geometry, NULL);
 
-    gchar *cl_filename = g_strconcat("projector", beam_geometry, model, NULL);
+    #warning "Problem is here `beam-geometry' is not stored in geometry"
+    gchar *cl_filename = g_strconcat("projector-", beam_geometry, "-", model, NULL);
 
     g_print ("\nCL Filename: %s", cl_filename);
 
@@ -70,9 +72,9 @@ ufo_cl_projector_set_property (GObject      *object,
             priv->cmd_queue = g_value_get_pointer(value);
             UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
             break;
-        case PROP_MODEL_NAME:
-            g_free (priv->model_name);
-            priv->model_name = g_value_dup_string (value);
+        case PROP_MODEL:
+            g_free (priv->model);
+            priv->model = g_value_dup_string (value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -92,8 +94,8 @@ ufo_cl_projector_get_property (GObject    *object,
         case PROP_CL_COMMAND_QUEUE:
             g_value_set_pointer (value, priv->cmd_queue);
             break;
-        case PROP_MODEL_NAME:
-            g_value_set_string (value, priv->model_name);
+        case PROP_MODEL:
+            g_value_set_string (value, priv->model);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -169,8 +171,8 @@ ufo_cl_projector_class_init (UfoClProjectorClass *klass)
     gobject_class->get_property = ufo_cl_projector_get_property;
 
 
-    properties[PROP_MODEL_NAME] =
-        g_param_spec_string ("model-name",
+    properties[PROP_MODEL] =
+        g_param_spec_string ("model",
                              "The name of the projection model.",
                              "The name of the projection model.",
                              "joseph",
@@ -198,6 +200,6 @@ ufo_cl_projector_init (UfoClProjector *self)
 {
     UfoClProjectorPrivate *priv = NULL;
     self->priv = priv = UFO_CL_PROJECTOR_GET_PRIVATE (self);
-    priv->model_name = g_strdup ("joseph");
+    priv->model = g_strdup ("joseph");
     priv->cmd_queue = NULL;
 }

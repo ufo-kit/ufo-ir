@@ -8,6 +8,7 @@
 
 #include <ufo-sparsity-iface.h>
 #include <ufo-custom-sparsity.h>
+//#include <ufo-geom.h>
 
 void
 test_task ();
@@ -28,6 +29,22 @@ int main(int n_args, char *argv[])
 */
     //g_object_unref (NULL);
     test_task ();
+/*
+    UfoGeom *geom = ufo_geom_new();
+    gchar *g1 = NULL;
+    g_object_get (geom, "beam-geometry", &g1, NULL);
+    g_print ("\nGEOM1: %s", g1);
+
+    g_object_set (geom, "beam-geometry", "CONE", NULL);
+    g_object_get (geom, "beam-geometry", &g1, NULL);
+    g_print ("\nGEOM2: %s\n", g1);
+
+    UfoGeom *geom1 = ufo_par_geom_new();
+    g_object_get (geom1, "beam-geometry", &g1, NULL);
+    g_print ("\nGEOM3: %s", g1);
+*/
+
+
     return 0;
 }
 
@@ -39,15 +56,19 @@ test_task ()
 
     JsonObject *jgeometry = json_object_new ();
     json_object_set_string_member (jgeometry, "beam-geometry", "parallel");
-    json_object_set_string_member (jgeometry, "model", "joseph");
-    json_object_set_double_member (jgeometry, "pixel-scale", 1.0);
-    json_object_set_int_member (jgeometry, "offset", 0);
-    json_object_set_double_member (jgeometry, "angle-offset", 0);
+    json_object_set_double_member (jgeometry, "num-angles", 10);
+    json_object_set_double_member (jgeometry, "angle-offset", 0.0);
     json_object_set_double_member (jgeometry, "angle-step", 0.025);
+    json_object_set_double_member (jgeometry, "detector-scale", 1.0);
+    json_object_set_int_member (jgeometry, "detector-offset", 0);
+
+    JsonObject *jproj_model = json_object_new ();
+    json_object_set_string_member (jproj_model, "model", "joseph");
+    json_object_set_boolean_member (jproj_model, "on-gpu", TRUE);
 
     JsonObject *jmethod = json_object_new ();
-    json_object_set_string_member (jmethod, "name", "sart");
-    json_object_set_double_member (jmethod, "lambda", 0.25);
+    json_object_set_string_member (jmethod, "plugin", "sart");
+    json_object_set_double_member (jmethod, "relaxation-factor", 0.25);
     json_object_set_int_member (jmethod, "max-iterations", 2);
 
     JsonObject *jprior = json_object_new ();
@@ -82,7 +103,8 @@ test_task ()
                   NULL);
 */
     ufo_task_set_json_object_property (ir_filter, "geometry", jgeometry);
-    ufo_task_set_json_object_property (ir_filter, "prior-knowledge", jprior);
+    ufo_task_set_json_object_property (ir_filter, "projector", jproj_model);
+    //ufo_task_set_json_object_property (ir_filter, "prior-knowledge", jprior);
     ufo_task_set_json_object_property (ir_filter, "method", jmethod);
 
 

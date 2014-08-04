@@ -3,7 +3,7 @@
 
 #include <glib.h>
 #include <ufo/ufo.h>
-#include <ufo-cl-geometry.h>
+#include <ufo-common-routines.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -28,6 +28,10 @@ typedef struct _UfoGeometryClass    UfoGeometryClass;
 typedef struct _UfoGeometryPrivate  UfoGeometryPrivate;
 
 typedef enum {
+    UFO_GEOMETRY_ERROR_INPUT_DATA
+} UfoGeometryError;
+
+typedef enum {
     SIN_VALUES,
     COS_VALUES
 } UfoAnglesType;
@@ -40,8 +44,15 @@ struct _UfoGeometry {
 struct _UfoGeometryClass {
     GObjectClass parent_class;
 
-    void (*get_volume_requisitions) (UfoGeometry     *geometry,
-                                     UfoRequisition  *requisition);
+    void (*get_volume_requisitions) (UfoGeometry    *geometry,
+                                     UfoBuffer      *measurements,
+                                     UfoRequisition *requisition,
+                                     GError         **error);
+
+    const gchar* (*beam_geometry) (UfoGeometry *geometry);
+
+    gsize (*get_meta) (UfoGeometry *geometry,
+                       gpointer    *meta);
 
     void (*setup) (UfoGeometry  *geometry,
                    UfoResources *resources,
@@ -60,13 +71,25 @@ ufo_geometry_scan_angles_device (UfoGeometry *geometry,
                                  UfoAnglesType type);
 
 void
-ufo_geometry_get_volume_requisitions (UfoGeometry     *geometry,
-                                      UfoRequisition  *requisition);
+ufo_geometry_get_volume_requisitions (UfoGeometry    *geometry,
+                                      UfoBuffer      *measurements,
+                                      UfoRequisition *requisition,
+                                      GError         **error);
+
+gsize
+ufo_geometry_get_meta (UfoGeometry *geometry,
+                       gpointer    *meta);
+
 
 void
 ufo_geometry_setup (UfoGeometry  *geometry,
                     UfoResources *resources,
                     GError       **error);
+
+gpointer
+ufo_geometry_from_json (JsonObject       *object,
+                        UfoPluginManager *manager,
+                        GError           **error);
 
 
 GType ufo_geometry_get_type (void);

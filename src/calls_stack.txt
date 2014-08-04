@@ -16,7 +16,7 @@ ufo_ir_task_get_mode
 
 ufo_ir_task_get_mode
 
-ufo_ir_task_setup
+ufo_ir_task_setup               ++++++
 
 ufo_ir_task_get_mode
 
@@ -26,6 +26,6 @@ ufo_ir_task_get_num_dimensions
 
 ufo_ir_task_get_mode
 
-ufo_ir_task_get_requisition
+ufo_ir_task_get_requisition     ++++++
 
 (process:19118): Ufo-WARNING **: UfoIrTask: `process' not implemented
