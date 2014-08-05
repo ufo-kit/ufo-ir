@@ -36,6 +36,15 @@ typedef enum {
     COS_VALUES
 } UfoAnglesType;
 
+enum {
+    GEOMETRY_PROP_0 = 0,
+    PROP_NUM_ANGLES,
+    PROP_ANGLE_STEP,
+    PROP_ANGLE_OFFSET,
+    PROP_BEAM_GEOMETRY,
+    N_GEOMETRY_BASE_PROPERTIES
+};
+
 struct _UfoGeometry {
     GObject parent_instance;
     UfoGeometryPrivate *priv;
@@ -48,8 +57,6 @@ struct _UfoGeometryClass {
                                      UfoBuffer      *measurements,
                                      UfoRequisition *requisition,
                                      GError         **error);
-
-    const gchar* (*beam_geometry) (UfoGeometry *geometry);
 
     gsize (*get_meta) (UfoGeometry *geometry,
                        gpointer    *meta);

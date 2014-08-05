@@ -56,7 +56,7 @@ test_task ()
 
     JsonObject *jgeometry = json_object_new ();
     json_object_set_string_member (jgeometry, "beam-geometry", "parallel");
-    json_object_set_double_member (jgeometry, "num-angles", 10);
+    json_object_set_double_member (jgeometry, "num-angles", 300);
     json_object_set_double_member (jgeometry, "angle-offset", 0.0);
     json_object_set_double_member (jgeometry, "angle-step", 0.025);
     json_object_set_double_member (jgeometry, "detector-scale", 1.0);
@@ -77,6 +77,9 @@ test_task ()
 
     GError *error = NULL;
     UfoConfig *config = ufo_config_new();
+    GList *path_list = NULL;
+    path_list = g_list_append (path_list, "/pdv/home/ashkarin/CurrentWork/ufo.ir/src/");
+    ufo_config_add_paths (config, path_list);
 
     UfoGraph *ufo_task_graph = ufo_task_graph_new();
     UfoScheduler *ufo_scheduler  = ufo_scheduler_new (config, NULL);

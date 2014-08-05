@@ -62,8 +62,11 @@ ufo_ir_task_setup (UfoTask      *task,
 
     g_print ("\n projector: %p  geometry: %p \n", priv->projector, priv->geometry);
     g_object_set (priv->projector, "geometry", priv->geometry, NULL);
-    g_object_set (priv->method, "projection-model", priv->projector, NULL);
+    g_object_set (priv->method,
+                  "projection-model", priv->projector,
+                  "command-queue", priv->cmd_queue, NULL);
 
+    ufo_processor_setup (priv->method, priv->resources, error);
     ufo_geometry_setup (priv->geometry, priv->resources, error);
     ufo_projector_setup (priv->projector, priv->resources, error);
 }
@@ -114,8 +117,8 @@ ufo_ir_task_process (UfoTask        *task,
                      UfoBuffer      *output,
                      UfoRequisition *requisition)
 {
-    UfoIrMethod *method = ufo_ir_sart_new ();
-    ufo_method_process (UFO_METHOD(method), inputs[0], output);
+    UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
+    ufo_method_process (priv->method, inputs[0], output);
     return TRUE;
 }
 

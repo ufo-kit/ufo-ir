@@ -91,16 +91,9 @@ ufo_ir_sart_process_real (UfoMethod *method,
                   NULL);
 
     UfoGeometry *geometry = NULL;
-    g_print ("\nPROJ: %p", projector);
     g_object_get (projector, "geometry", &geometry, NULL);
-    g_print ("\nMETHOD: relax-p: %f  max-iters: %d GEOM: %p \n",
-             relaxation_factor, max_iterations, geometry);
 
-    gfloat *_sins = ufo_geometry_scan_angles_host (geometry, SIN_VALUES);
-    for (int i = 0; i < 10; ++i) {
-      g_print("\n %f", _sins[i]);
-    }
-
+    g_print ("\n UFO RES: %p IS PROC: %d\n", resources, UFO_IS_PROCESSOR (method));
     //
     // resize
     UfoBuffer **method_buffers[4] = {
@@ -170,7 +163,8 @@ ufo_ir_sart_process_real (UfoMethod *method,
         iteration++;
     }
 
-    return FALSE;
+//    ufo_op_set (output, 7.77, resources, cmd_queue);
+    return TRUE;
 }
 
 static void

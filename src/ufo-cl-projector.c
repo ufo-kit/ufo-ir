@@ -38,22 +38,25 @@ ufo_cl_projector_setup_real (UfoProjector *projector,
                              UfoResources *resources,
                              GError       **error)
 {
-    g_print ("\nufo_cl_projector_setup_real\n");
-    //UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
-    // get kernels
+    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
+
     UfoGeometry *geometry = NULL;
     gchar *model = NULL;
     gchar *beam_geometry = NULL;
+
     g_object_get (projector, "geometry", &geometry,
                              "model", &model, NULL);
-
     g_object_get (geometry, "beam-geometry", &beam_geometry, NULL);
 
-    #warning "Problem is here `beam-geometry' is not stored in geometry"
-    gchar *cl_filename = g_strconcat("projector-", beam_geometry, "-", model, NULL);
+    gchar *cl_filename = g_strconcat("projector-", beam_geometry, "-", model, ".cl", NULL);
+    g_print ("\nCL Filename: %s  RES: %p\n", cl_filename, resources);
 
-    g_print ("\nCL Filename: %s", cl_filename);
-
+    priv->bp_kernel = ufo_resources_get_kernel (resources, cl_filename, "BP", error);
+    if (*error) return;
+    priv->fp_kernel[Horizontal] = ufo_resources_get_kernel (resources, cl_filename, "FP_hor", error);
+    if (*error) return;
+    priv->fp_kernel[Vertical] = ufo_resources_get_kernel (resources, cl_filename, "FP_vert", error);
+    if (*error) return;
 }
 
 static void

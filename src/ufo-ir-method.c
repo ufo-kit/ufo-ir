@@ -47,6 +47,8 @@ ufo_ir_method_set_property (GObject *object,
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
             priv->projector = g_object_ref (g_value_get_pointer (value));
+            g_print ("\nufo_ir_method_set_property %p: PROP_PROJECTION_MODEL: %p", object, priv->projector);
+            g_value_set_pointer (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:
             priv->relaxation_factor = g_value_get_float (value);
@@ -70,6 +72,7 @@ ufo_ir_method_get_property (GObject *object,
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
+            g_print ("\nufo_ir_method_get_property %p: PROP_PROJECTION_MODEL: %p", object, priv->projector);
             g_value_set_pointer (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:

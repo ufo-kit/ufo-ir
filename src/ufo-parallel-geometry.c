@@ -2,6 +2,8 @@
 #include <ufo-cl-parallel-geometry.h>
 #include <math.h>
 
+#define BEAM_GEOMETRY "parallel"
+
 G_DEFINE_TYPE (UfoParallelGeometry, ufo_parallel_geometry, UFO_TYPE_GEOMETRY)
 
 #define UFO_PARALLEL_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_GEOMETRY, UfoParallelGeometryPrivate))
@@ -17,8 +19,7 @@ struct _UfoParallelGeometryPrivate {
 };
 
 enum {
-    PROP_0,
-    PROP_DETECTOR_SCALE,
+    PROP_DETECTOR_SCALE = N_GEOMETRY_BASE_PROPERTIES,
     PROP_DETECTOR_OFFSET,
     N_PROPERTIES
 };
@@ -66,6 +67,9 @@ ufo_parallel_geometry_get_property (GObject    *object,
         case PROP_DETECTOR_OFFSET:
             g_value_set_float (value, priv->meta.detector_offset);
             break;
+        case PROP_BEAM_GEOMETRY:
+            g_value_set_string (value, BEAM_GEOMETRY);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -98,23 +102,14 @@ ufo_parallel_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
                      "Actual number of directions is less than it was stated.");
     }
 }
-
-static const gchar*
-ufo_parallel_geometry_beam_geometry_real (UfoGeometry *geometry)
-{
-    return "parallel";
-}
-
 static gsize
 ufo_parallel_geometry_get_meta_real (UfoGeometry *geometry,
-                                     gpointer    *meta,
-                                     GError      **error)
+                                     gpointer    *meta)
 {
     UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
-    *meta = g_malloc (sizeof (UfoParallelGeometryMeta));
-    //**meta = priv->meta;
-    // memcopy instead
-    return sizeof (UfoParallelGeometryMeta);
+    gsize size = sizeof (UfoParallelGeometryMeta);
+    *meta = g_memdup (&priv->meta, size);
+    return size;
 }
 
 static void
@@ -125,6 +120,10 @@ ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
     gobject_class->get_property = ufo_parallel_geometry_get_property;
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
+
+    g_object_class_override_property(gobject_class,
+                                     PROP_BEAM_GEOMETRY,
+                                     "beam-geometry");
 
     properties[PROP_DETECTOR_SCALE] =
         g_param_spec_float ("detector-scale",
@@ -140,13 +139,12 @@ ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
                             -limit, +limit, 0.0f,
                             G_PARAM_READWRITE);
 
-    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
+    for (guint i = GEOMETRY_PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
     g_type_class_add_private (gobject_class, sizeof(UfoParallelGeometryPrivate));
 
     UFO_GEOMETRY_CLASS(klass)->get_volume_requisitions = ufo_parallel_geometry_get_volume_requisitions_real;
-    UFO_GEOMETRY_CLASS(klass)->beam_geometry = ufo_parallel_geometry_beam_geometry_real;
     UFO_GEOMETRY_CLASS(klass)->get_meta = ufo_parallel_geometry_get_meta_real;
 }
 

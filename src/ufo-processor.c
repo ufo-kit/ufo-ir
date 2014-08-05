@@ -164,9 +164,12 @@ ufo_processor_setup (UfoProcessor *processor,
                      UfoResources *resources,
                      GError       **error)
 {
+    g_print ("\n ufo_processor_setup \n");
     g_return_if_fail(UFO_IS_PROCESSOR (processor) &&
                      UFO_IS_RESOURCES (resources));
 
     UfoProcessorClass *klass = UFO_PROCESSOR_GET_CLASS (processor);
+    g_object_set (processor, "ufo-resources", resources, NULL);
+    g_print ("\n ufo_processor_setup: %p %p \n", processor, resources);
     klass->setup (processor, resources, error);
 }

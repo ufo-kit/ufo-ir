@@ -11,6 +11,8 @@ ufo_geometry_error_quark (void)
     return g_quark_from_static_string ("ufo-ir-geometry-error-quark");
 }
 
+static GParamSpec *ufo_geometry_props[N_GEOMETRY_BASE_PROPERTIES] = { NULL, };
+
 struct _UfoGeometryPrivate {
     cl_context context;
 
@@ -23,16 +25,6 @@ struct _UfoGeometryPrivate {
     gfloat *scan_host_sin_lut;
     gfloat *scan_host_cos_lut;
 };
-
-enum {
-    PROP_0,
-    PROP_NUM_ANGLES,
-    PROP_ANGLE_STEP,
-    PROP_ANGLE_OFFSET,
-    PROP_BEAM_GEOMETRY,
-    N_PROPERTIES
-};
-static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 static cl_mem
 create_lut_buffer (UfoGeometryPrivate *priv,
@@ -123,9 +115,7 @@ ufo_geometry_get_property (GObject    *object,
             g_value_set_double (value, priv->angle_offset);
             break;
         case PROP_BEAM_GEOMETRY: {
-            gchar* geom = UFO_GEOMETRY_GET_CLASS(object)->beam_geometry(UFO_GEOMETRY(object));
-            geom = geom ? geom : "unknown";
-            g_value_set_string (value, geom);
+            g_value_set_string (value, "unknown");
           }
             break;
         default:
@@ -159,16 +149,12 @@ ufo_geometry_finalize (GObject *object)
 }
 
 static void
-ufo_geometry_get_volume_requisitions_real (UfoGeometry     *geometry,
-                                           UfoRequisition  *requisition)
+ufo_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
+                                           UfoBuffer      *measurements,
+                                           UfoRequisition *requisition,
+                                           GError         **error)
 {
   warn_unimplemented (geometry, "get_volume_requisitions");
-}
-
-static gchar*
-ufo_geometry_beam_geometry_real (UfoGeometry *geometry)
-{
-  warn_unimplemented (geometry, "beam_geometry");
 }
 
 gsize
@@ -190,42 +176,41 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
 
-    properties[PROP_NUM_ANGLES] =
+    ufo_geometry_props[PROP_NUM_ANGLES] =
         g_param_spec_uint("num-angles",
                           "Number of angles",
                           "Number of angles",
                           0, G_MAXUINT, 0,
                           G_PARAM_READWRITE);
 
-    properties[PROP_ANGLE_STEP] =
+    ufo_geometry_props[PROP_ANGLE_STEP] =
         g_param_spec_double ("angle-step",
                              "Increment of angle in radians.",
                              "Increment of angle in radians.",
                              -limit, +limit, 0.0,
                              G_PARAM_READWRITE);
 
-    properties[PROP_ANGLE_OFFSET] =
+    ufo_geometry_props[PROP_ANGLE_OFFSET] =
         g_param_spec_double ("angle-offset",
                              "Angle offset in radians.",
                              "Angle offset in radians determining the first angle position.",
                              0.0, +limit, 0.0,
                              G_PARAM_READWRITE);
 
-    properties[PROP_BEAM_GEOMETRY] =
+    ufo_geometry_props[PROP_BEAM_GEOMETRY] =
         g_param_spec_string ("beam-geometry",
                              "Geometry of the beam.",
                              "Geometry of the beam.",
                              "unknown",
                              G_PARAM_READABLE);
 
-    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
-        g_object_class_install_property (gobject_class, i, properties[i]);
+    for (guint i = GEOMETRY_PROP_0 + 1; i < N_GEOMETRY_BASE_PROPERTIES; i++)
+        g_object_class_install_property (gobject_class, i, ufo_geometry_props[i]);
 
 
     g_type_class_add_private (gobject_class, sizeof(UfoGeometryPrivate));
 
     UFO_GEOMETRY_CLASS (klass)->get_volume_requisitions = ufo_geometry_get_volume_requisitions_real;
-    UFO_GEOMETRY_CLASS (klass)->beam_geometry = ufo_geometry_beam_geometry_real;
     UFO_GEOMETRY_CLASS (klass)->get_meta = ufo_geometry_get_meta_real;
     UFO_GEOMETRY_CLASS (klass)->setup = ufo_geometry_setup_real;
 }
