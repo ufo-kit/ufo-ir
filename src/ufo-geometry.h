@@ -1,15 +1,28 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef __UFO_GEOMETRY_H
 #define __UFO_GEOMETRY_H
 
 #include <glib.h>
 #include <ufo/ufo.h>
 #include <ufo-common-routines.h>
-
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
 
 G_BEGIN_DECLS
 
@@ -31,18 +44,10 @@ typedef enum {
     UFO_GEOMETRY_ERROR_INPUT_DATA
 } UfoGeometryError;
 
-typedef enum {
-    SIN_VALUES,
-    COS_VALUES
-} UfoAnglesType;
-
 enum {
     GEOMETRY_PROP_0 = 0,
-    PROP_NUM_ANGLES,
-    PROP_ANGLE_STEP,
-    PROP_ANGLE_OFFSET,
     PROP_BEAM_GEOMETRY,
-    N_GEOMETRY_BASE_PROPERTIES
+    N_GEOMETRY_VIRTUAL_PROPERTIES
 };
 
 struct _UfoGeometry {
@@ -53,40 +58,57 @@ struct _UfoGeometry {
 struct _UfoGeometryClass {
     GObjectClass parent_class;
 
-    void (*get_volume_requisitions) (UfoGeometry    *geometry,
-                                     UfoBuffer      *measurements,
-                                     UfoRequisition *requisition,
-                                     GError         **error);
+    void (*configure) (UfoGeometry    *geometry,
+                       UfoRequisition *requisition,
+                       GError         **error);
 
-    gsize (*get_meta) (UfoGeometry *geometry,
-                       gpointer    *meta);
+    void (*get_volume_requisitions) (UfoGeometry    *geometry,
+                                     UfoRequisition *requisition);
+
+    gpointer (*get_spec) (UfoGeometry *geometry,
+                          gsize *data_size);
 
     void (*setup) (UfoGeometry  *geometry,
                    UfoResources *resources,
                    GError       **error);
 };
 
+typedef enum {
+    SIN_VALUES,
+    COS_VALUES
+} UfoAnglesType;
+
+typedef struct {
+  unsigned long height;
+  unsigned long width;
+  unsigned long depth;
+
+  unsigned long n_dets;
+  unsigned long n_angles;
+} UfoGeometryDims;
+
 UfoGeometry *
 ufo_geometry_new ();
 
 gfloat *
-ufo_geometry_scan_angles_host (UfoGeometry *geometry,
+ufo_geometry_scan_angles_host (UfoGeometry   *geometry,
                                UfoAnglesType type);
 
 gpointer
-ufo_geometry_scan_angles_device (UfoGeometry *geometry,
+ufo_geometry_scan_angles_device (UfoGeometry   *geometry,
                                  UfoAnglesType type);
+void
+ufo_geometry_configure (UfoGeometry    *geometry,
+                        UfoRequisition *input_req,
+                        GError         **error);
 
 void
 ufo_geometry_get_volume_requisitions (UfoGeometry    *geometry,
-                                      UfoBuffer      *measurements,
-                                      UfoRequisition *requisition,
-                                      GError         **error);
+                                      UfoRequisition *requisition);
 
-gsize
-ufo_geometry_get_meta (UfoGeometry *geometry,
-                       gpointer    *meta);
-
+gpointer
+ufo_geometry_get_spec (UfoGeometry *geometry,
+                       gsize       *data_size);
 
 void
 ufo_geometry_setup (UfoGeometry  *geometry,
@@ -95,8 +117,7 @@ ufo_geometry_setup (UfoGeometry  *geometry,
 
 gpointer
 ufo_geometry_from_json (JsonObject       *object,
-                        UfoPluginManager *manager,
-                        GError           **error);
+                        UfoPluginManager *manager);
 
 
 GType ufo_geometry_get_type (void);

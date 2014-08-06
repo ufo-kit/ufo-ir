@@ -1,3 +1,22 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -52,23 +71,27 @@ ufo_ir_task_setup (UfoTask      *task,
                    UfoResources *resources,
                    GError       **error)
 {
-    g_print ("\nufo_ir_task_setup\n");
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE (task)));
-    priv->resources = g_object_ref (resources);
 
+    priv->resources = g_object_ref (resources);
     priv->cmd_queue = ufo_gpu_node_get_cmd_queue (node);
     UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
 
-    g_print ("\n projector: %p  geometry: %p \n", priv->projector, priv->geometry);
-    g_object_set (priv->projector, "geometry", priv->geometry, NULL);
+    ufo_geometry_setup  (priv->geometry, priv->resources, error);
+    g_object_set (priv->projector,
+                  "geometry", priv->geometry,
+                  "command-queue", priv->cmd_queue, NULL);
+
+    ufo_projector_setup (priv->projector, priv->resources, error);
+    ufo_processor_setup (UFO_PROCESSOR (priv->method), priv->resources, error);
+
+    if (error && *error)
+      return;
+
     g_object_set (priv->method,
                   "projection-model", priv->projector,
                   "command-queue", priv->cmd_queue, NULL);
-
-    ufo_processor_setup (priv->method, priv->resources, error);
-    ufo_geometry_setup (priv->geometry, priv->resources, error);
-    ufo_projector_setup (priv->projector, priv->resources, error);
 }
 
 static void
@@ -78,15 +101,18 @@ ufo_ir_task_get_requisition (UfoTask        *task,
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
 
+    UfoRequisition in_req;
+    ufo_buffer_get_requisition (inputs[0], &in_req);
+
     GError *error = NULL;
-    ufo_geometry_get_volume_requisitions (priv->geometry,
-                                          inputs[0],
-                                          requisition,
-                                          &error);
+    ufo_geometry_configure (priv->geometry, &in_req, &error);
     if (error) {
       g_error ("Error: %s", error->message);
       g_error_free (error);
     }
+    ufo_geometry_get_volume_requisitions (priv->geometry,
+                                          requisition);
+    ufo_projector_configure (priv->projector);
 }
 
 
@@ -118,46 +144,36 @@ ufo_ir_task_process (UfoTask        *task,
                      UfoRequisition *requisition)
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
-    ufo_method_process (priv->method, inputs[0], output);
-    return TRUE;
+    return ufo_method_process (UFO_METHOD (priv->method), inputs[0], output);
 }
 
 static void
-ufo_task_set_json_object_property_real (UfoTask *task,
+ufo_task_set_json_object_property_real (UfoTask     *task,
                                         const gchar *prop_name,
-                                        JsonObject *object)
+                                        JsonObject  *json_obj)
 {
-    UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
-    gpointer method, projector, geometry, prior;
+    UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
+    gpointer obj;
 
     if (g_strcmp0 (prop_name, "geometry") == 0) {
-        geometry = ufo_geometry_from_json (object,
-                                           priv->plugin_manager,
-                                           NULL);
-
-        g_object_set (task, prop_name, geometry, NULL);
+        obj = ufo_geometry_from_json (json_obj, priv->plugin_manager);
     }
     else if (g_strcmp0 (prop_name, "projector") == 0) {
-        projector = ufo_projector_from_json (object,
-                                             priv->plugin_manager,
-                                             NULL);
-        g_object_set (task, prop_name, projector, NULL);
+        obj = ufo_projector_from_json (json_obj, priv->plugin_manager);
     }
     else if (g_strcmp0 (prop_name, "prior-knowledge") == 0) {
 
     }
     else if (g_strcmp0 (prop_name, "method") == 0) {
-        method = ufo_method_from_json (object,
-                                       priv->plugin_manager,
-                                       NULL);
-        g_object_set (task, prop_name, method, NULL);
+        obj = ufo_method_from_json (json_obj, priv->plugin_manager);
     }
+
+    g_object_set (task, prop_name, obj, NULL);
 }
 
 static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
-    g_print ("\nufo_task_interface_init\n");
     iface->setup = ufo_ir_task_setup;
     iface->get_num_inputs = ufo_ir_task_get_num_inputs;
     iface->get_num_dimensions = ufo_ir_task_get_num_dimensions;
@@ -225,11 +241,13 @@ static void
 ufo_ir_task_dispose (GObject *object)
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
+    UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue(priv->cmd_queue));
 
-    if (priv->resources != NULL) {
-        g_object_unref (priv->resources);
-        priv->resources = NULL;
-    }
+    g_clear_object (&priv->resources);
+    g_clear_object (&priv->method);
+    g_clear_object (&priv->geometry);
+    g_clear_object (&priv->projector);
+    g_clear_object (&priv->prior);
 
     G_OBJECT_CLASS (ufo_ir_task_parent_class)->dispose (object);
 }
@@ -237,9 +255,7 @@ ufo_ir_task_dispose (GObject *object)
 static void
 ufo_ir_task_finalize (GObject *object)
 {
-    UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
-
-    UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue(priv->cmd_queue));
+    //UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
     G_OBJECT_CLASS (ufo_ir_task_parent_class)->finalize (object);
 }
 
@@ -288,12 +304,12 @@ ufo_ir_task_init(UfoIrTask *self)
 {
     UfoIrTaskPrivate *priv = NULL;
     self->priv = priv = UFO_IR_TASK_GET_PRIVATE(self);
-
+    priv->plugin_manager = ufo_plugin_manager_new (NULL);
     priv->resources = NULL;
     priv->cmd_queue = NULL;
+
     priv->method = NULL;
     priv->geometry = NULL;
-    priv->prior = NULL;
     priv->projector = NULL;
-    priv->plugin_manager = ufo_plugin_manager_new (NULL);
+    priv->prior = NULL;
 }

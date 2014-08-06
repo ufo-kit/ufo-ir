@@ -58,12 +58,12 @@ test_task ()
     json_object_set_string_member (jgeometry, "beam-geometry", "parallel");
     json_object_set_double_member (jgeometry, "num-angles", 300);
     json_object_set_double_member (jgeometry, "angle-offset", 0.0);
-    json_object_set_double_member (jgeometry, "angle-step", 0.025);
+    json_object_set_double_member (jgeometry, "angle-step", 0.72);
     json_object_set_double_member (jgeometry, "detector-scale", 1.0);
     json_object_set_int_member (jgeometry, "detector-offset", 0);
 
     JsonObject *jproj_model = json_object_new ();
-    json_object_set_string_member (jproj_model, "model", "joseph");
+    json_object_set_string_member (jproj_model, "model", "jOsePh");
     json_object_set_boolean_member (jproj_model, "on-gpu", TRUE);
 
     JsonObject *jmethod = json_object_new ();
