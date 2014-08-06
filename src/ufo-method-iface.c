@@ -1,3 +1,22 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <ufo-method-iface.h>
 #include <ufo-ir-sart.h>
 
@@ -5,19 +24,15 @@ typedef UfoMethodIface UfoMethodInterface;
 
 G_DEFINE_INTERFACE (UfoMethod, ufo_method, G_TYPE_OBJECT)
 
-GQuark
-ufo_method_error_quark ()
-{
-    return g_quark_from_static_string ("ufo-method-error-quark");
-}
-
 gboolean
 ufo_method_process (UfoMethod *method,
                     UfoBuffer *input,
                     UfoBuffer *output)
 {
-    g_return_if_fail(UFO_IS_BUFFER (input) &&
-                     UFO_IS_BUFFER (output));
+    g_return_val_if_fail(UFO_IS_METHOD (method) &&
+                         UFO_IS_BUFFER (input) &&
+                         UFO_IS_BUFFER (output),
+                         FALSE);
     return UFO_METHOD_GET_IFACE (method)->process (method, input, output);
 }
 
@@ -36,11 +51,9 @@ ufo_method_default_init (UfoMethodInterface *iface)
     iface->process = ufo_method_process_real;
 }
 
-
 gpointer
 ufo_method_from_json (JsonObject       *object,
-                      UfoPluginManager *manager,
-                      GError           **error)
+                      UfoPluginManager *manager)
 {
     gchar *plugin_name = json_object_get_string_member (object, "plugin");
     /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
@@ -54,7 +67,7 @@ ufo_method_from_json (JsonObject       *object,
     gchar *name = NULL;
 
     for (member = g_list_first (members);
-         member != NULL && !error;
+         member != NULL;
          member = g_list_next (member))
     {
         name = member->data;
@@ -70,8 +83,7 @@ ufo_method_from_json (JsonObject       *object,
         else if (JSON_NODE_HOLDS_OBJECT (node)) {
 
             gpointer inner_obj = ufo_method_from_json (json_node_get_object (node),
-                                                       manager,
-                                                       error);
+                                                       manager);
             g_object_set (plugin, name, inner_obj, NULL);
         }
         else {

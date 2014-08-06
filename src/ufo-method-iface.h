@@ -1,3 +1,22 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef UFO_METHOD_IFACE_H
 #define UFO_METHOD_IFACE_H
 
@@ -12,14 +31,8 @@ G_BEGIN_DECLS
 #define UFO_IS_METHOD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_TYPE_METHOD))
 #define UFO_METHOD_GET_IFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE((inst), UFO_TYPE_METHOD, UfoMethodIface))
 
-#define UFO_METHOD_ERROR ufo_method_error_quark()
-
 typedef struct _UfoMethod UfoMethod;
 typedef struct _UfoMethodIface UfoMethodIface;
-
-typedef enum {
-    UFO_METHOD_ERROR_JSON_KEY
-} UfoMethodError;
 
 struct _UfoMethodIface {
     /*< private >*/
@@ -37,10 +50,8 @@ ufo_method_process (UfoMethod *method,
 
 gpointer
 ufo_method_from_json (JsonObject       *object,
-                      UfoPluginManager *manager,
-                      GError           **error);
+                      UfoPluginManager *manager);
 
-GQuark ufo_method_error_quark (void);
 GType ufo_method_get_type (void);
 
 G_END_DECLS

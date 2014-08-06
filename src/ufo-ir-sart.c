@@ -91,16 +91,11 @@ ufo_ir_sart_process_real (UfoMethod *method,
                   NULL);
 
     UfoGeometry *geometry = NULL;
-    g_print ("\nPROJ: %p", projector);
     g_object_get (projector, "geometry", &geometry, NULL);
     g_print ("\nMETHOD: relax-p: %f  max-iters: %d GEOM: %p \n",
              relaxation_factor, max_iterations, geometry);
 
-    gfloat *_sins = ufo_geometry_scan_angles_host (geometry, SIN_VALUES);
-    for (int i = 0; i < 10; ++i) {
-      g_print("\n %f", _sins[i]);
-    }
-
+    g_print ("\n resources: %p", resources);
     //
     // resize
     UfoBuffer **method_buffers[4] = {
@@ -115,7 +110,7 @@ ufo_ir_sart_process_real (UfoMethod *method,
         input,
         input
     };
-    for (guint i = 0; i < 3; ++i) {
+    for (guint i = 0; i < 4; ++i) {
         UfoRequisition _req;
         if (*method_buffers[i]) {
             ufo_buffer_get_requisition (ref_buffers[i], &_req);
@@ -124,7 +119,7 @@ ufo_ir_sart_process_real (UfoMethod *method,
             *method_buffers[i] = ufo_buffer_dup (ref_buffers [i]);
         }
     }
-
+    ufo_op_set (output, 0, resources, cmd_queue);
     ufo_op_set (priv->singular_volume, 1.0f, resources, cmd_queue);
     ufo_op_set (priv->singular_sino, 1.0f, resources, cmd_queue);
     ufo_op_set (priv->ray_weights, 0, resources, cmd_queue);
@@ -136,20 +131,21 @@ ufo_ir_sart_process_real (UfoMethod *method,
         ufo_projector_FP (projector,
                           priv->singular_volume,
                           priv->ray_weights,
-                          subset[i],
+                          &subset[i],
                           1.0f,
                           NULL);
     }
+
     ufo_op_inv (priv->ray_weights, resources, cmd_queue);
 
     guint iteration = 0;
-    while (iteration < max_iterations) {
+    //while (iteration < max_iterations) {
         ufo_buffer_copy (input, priv->b_temp);
         for (guint i = 0 ; i < n_subsets; i++) {
             ufo_projector_FP (projector,
                               output,
                               priv->b_temp,
-                              subset[i],
+                              &subset[i],
                               -1.0f,
                               NULL);
 
@@ -164,13 +160,23 @@ ufo_ir_sart_process_real (UfoMethod *method,
             ufo_projector_BP (projector,
                               output,
                               priv->b_temp,
-                              subset[i],
+                              &subset[i],
+                              relaxation_factor,
                               NULL);
+
+/*
+            ufo_projector_BP (projector,
+                              output,
+                              priv->b_temp,
+                              subset[i],
+                              1.0f,
+                              NULL);
+*/
         }
         iteration++;
-    }
+    //}
 
-    return FALSE;
+    return TRUE;
 }
 
 static void

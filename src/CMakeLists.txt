@@ -15,6 +15,7 @@ set(PROJECT_SRCS
     ufo-method-iface.c
     ufo-ir-method.c
     ufo-ir-sart.c
+    ufo-ir-asdpocs.c
 
     ufo-sparsity-iface.c
     ufo-custom-sparsity.c

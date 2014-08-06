@@ -1,40 +1,27 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef __UFO_PROJECTOR_H
 #define __UFO_PROJECTOR_H
 
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
 #include <glib.h>
 #include <ufo/ufo.h>
-
-/*
-  Geometry
-    |- Model name
-    |- Parallel/conical
-   ------
-  /      \
-par       conic
-@1        @1
-@2        @2
-          @3
-
-add function to Geometru
-ufo_geometry_get_parameters (geometry, gsize *parameters_size, gpointer *p_parameters);
-
-
-  projector-parallel-joseph.cl
-    |- FP_horizontal
-    |- FP_vertical
-    |- BP
-
-  projector-conical-dd.cl
-    |- FP_horizontal
-    |- FP_vertical
-    |- BP
-*/
 
 G_BEGIN_DECLS
 
@@ -69,25 +56,28 @@ struct _UfoProjectorClass {
                     UfoBuffer            *volume,
                     UfoRegion            *volume_roi,
                     UfoBuffer            *measurements,
-                    UfoProjectionsSubset subset,
+                    UfoProjectionsSubset *subset,
                     gfloat               scale,
-                    cl_event             *finish_event);
+                    gpointer             *finish_event);
 
     void (*BP_ROI) (UfoProjector         *projector,
                     UfoBuffer            *volume,
                     UfoRegion            *volume_roi,
                     UfoBuffer            *measurements,
-                    UfoProjectionsSubset subset,
-                    cl_event             *finish_event);
+                    UfoProjectionsSubset *subset,
+                    gfloat               relax_param,
+                    gpointer             *finish_event);
 
     void (*setup) (UfoProjector  *projector,
                    UfoResources  *resources,
                    GError        **error);
+
+    void (*configure) (UfoProjector  *projector);
 };
 
 typedef enum {
-    Vertical = 1,
-    Horizontal = 0
+    Horizontal = 0,
+    Vertical
 } Direction;
 
 struct _UfoProjectionsSubset {
@@ -104,42 +94,46 @@ ufo_projector_FP_ROI (UfoProjector         *projector,
                       UfoBuffer            *volume,
                       UfoRegion            *volume_roi,
                       UfoBuffer            *measurements,
-                      UfoProjectionsSubset subset,
+                      UfoProjectionsSubset *subset,
                       gfloat               scale,
-                      cl_event             *finish_event);
+                      gpointer             *finish_event);
 
 void
 ufo_projector_BP_ROI (UfoProjector         *projector,
                       UfoBuffer            *volume,
                       UfoRegion            *volume_roi,
                       UfoBuffer            *measurements,
-                      UfoProjectionsSubset subset,
-                      cl_event             *finish_event);
+                      UfoProjectionsSubset *subset,
+                      gfloat               relax_param,
+                      gpointer             *finish_event);
 
 void
 ufo_projector_FP (UfoProjector         *projector,
                   UfoBuffer            *volume,
                   UfoBuffer            *measurements,
-                  UfoProjectionsSubset subset,
+                  UfoProjectionsSubset *subset,
                   gfloat               scale,
-                  cl_event             *finish_event);
+                  gpointer             *finish_event);
 
 void
 ufo_projector_BP (UfoProjector         *projector,
                   UfoBuffer            *volume,
                   UfoBuffer            *measurements,
-                  UfoProjectionsSubset subset,
-                  cl_event             *finish_event);
+                  UfoProjectionsSubset *subset,
+                  gfloat               relax_param,
+                  gpointer             *finish_event);
 
 void
 ufo_projector_setup (UfoProjector *projector,
                      UfoResources *resources,
                      GError       **error);
 
+void
+ufo_projector_configure (UfoProjector *projector);
+
 gpointer
 ufo_projector_from_json (JsonObject       *object,
-                         UfoPluginManager *manager,
-                         GError           **error);
+                         UfoPluginManager *manager);
 
 GType ufo_projector_get_type (void);
 G_END_DECLS

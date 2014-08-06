@@ -1,3 +1,22 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <ufo-ir-method.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
@@ -7,12 +26,6 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrMethod, ufo_ir_method, UFO_TYPE_PROCESSOR,
                                                 ufo_method_interface_init))
 
 #define UFO_IR_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_IR_METHOD, UfoIrMethodPrivate))
-
-GQuark
-ufo_ir_method_error_quark (void)
-{
-    return g_quark_from_static_string ("ufo-ir-method-error-quark");
-}
 
 struct _UfoIrMethodPrivate {
     UfoProjector *projector;
@@ -37,15 +50,16 @@ ufo_ir_method_new ()
 }
 
 static void
-ufo_ir_method_set_property (GObject *object,
-                                 guint property_id,
-                                 const GValue *value,
-                                 GParamSpec *pspec)
+ufo_ir_method_set_property (GObject      *object,
+                            guint        property_id,
+                            const GValue *value,
+                            GParamSpec   *pspec)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
+            g_clear_object(&priv->projector);
             priv->projector = g_object_ref (g_value_get_pointer (value));
             break;
         case PROP_RELAXATION_FACTOR:
@@ -61,9 +75,9 @@ ufo_ir_method_set_property (GObject *object,
 }
 
 static void
-ufo_ir_method_get_property (GObject *object,
-                            guint property_id,
-                            GValue *value,
+ufo_ir_method_get_property (GObject    *object,
+                            guint      property_id,
+                            GValue     *value,
                             GParamSpec *pspec)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
@@ -88,7 +102,7 @@ static void
 ufo_ir_method_dispose (GObject *object)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
-    g_object_unref(priv->projector);
+    g_clear_object(&priv->projector);
     G_OBJECT_CLASS (ufo_ir_method_parent_class)->dispose (object);
 }
 
@@ -163,7 +177,8 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof (UfoIrMethodPrivate));
 
-    UFO_IR_METHOD_CLASS (klass)->set_prior_knowledge = ufo_ir_method_set_prior_knowledge_real;
+    UFO_IR_METHOD_CLASS (klass)->set_prior_knowledge =
+        ufo_ir_method_set_prior_knowledge_real;
     UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_method_setup_real;
 }
 
@@ -172,9 +187,7 @@ ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
                                    GHashTable  *prior)
 {
     g_return_if_fail (UFO_IS_IR_METHOD (method) && prior);
-
-    UfoIrMethodClass *klass = UFO_IR_METHOD_GET_CLASS (method);
-    klass->set_prior_knowledge(method, prior);
+    UFO_IR_METHOD_GET_CLASS (method)->set_prior_knowledge(method, prior);
 }
 
 static void
@@ -182,4 +195,7 @@ ufo_ir_method_init (UfoIrMethod *self)
 {
     UfoIrMethodPrivate *priv = NULL;
     self->priv = priv = UFO_IR_METHOD_GET_PRIVATE (self);
+    priv->projector = NULL;
+    priv->relaxation_factor = 1.0f;
+    priv->max_iterations = 1;
 }

@@ -1,7 +1,27 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef UFO_TRANSFORM_IFACE_H
 #define UFO_TRANSFORM_IFACE_H
 
-#include <ufo-processor.h>
+#include <glib-object.h>
+#include <ufo/ufo.h>
 
 G_BEGIN_DECLS
 
@@ -12,8 +32,6 @@ G_BEGIN_DECLS
 #define UFO_IS_TRANSFORM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_TYPE_TRANSFORM))
 #define UFO_TRANSFORM_GET_IFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE((inst), UFO_TYPE_TRANSFORM, UfoTransformIface))
 
-#define UFO_TRANSFORM_ERROR ufo_transform_error_quark()
-
 typedef struct _UfoTransform UfoTransform;
 typedef struct _UfoTransformIface UfoTransformIface;
 
@@ -22,24 +40,23 @@ struct _UfoTransformIface {
     GTypeInterface parent_iface;
 
     gboolean (*direct) (UfoTransform *transform,
-                        UfoBuffer *input,
-                        UfoBuffer *output);
+                        UfoBuffer    *input,
+                        UfoBuffer    *output);
 
     gboolean (*inverse) (UfoTransform *transform,
-                         UfoBuffer *input,
-                         UfoBuffer *output);
+                         UfoBuffer    *input,
+                         UfoBuffer    *output);
 };
 
 gboolean
 ufo_transform_direct (UfoTransform *transform,
-                      UfoBuffer *input,
-                      UfoBuffer *output);
+                      UfoBuffer    *input,
+                      UfoBuffer    *output);
 gboolean
 ufo_transform_inverse (UfoTransform *transform,
-                       UfoBuffer *input,
-                       UfoBuffer *output);
+                       UfoBuffer    *input,
+                       UfoBuffer    *output);
 
-GQuark ufo_transform_error_quark (void);
 GType ufo_transform_get_type (void);
 
 G_END_DECLS
