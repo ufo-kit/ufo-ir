@@ -1,0 +1,48 @@
+{
+    "nodes" : [
+        {
+            "plugin": "reader",
+            "name": "reader",
+            "properties" : {
+                "path": "/pdv/home/ashkarin/Data/Bug/sino-00177.tif"
+            }
+        },
+        {
+            "plugin" : "ir",
+            "name"   : "ir",
+            "properties" : {
+                "geometry" : {
+                    "beam"  : "parallel",
+                    "model" : "joseph",
+                    "pixel-scale" : 1.0,
+                    "offset" : 0,
+                    "angle-offset" : 0.0,
+                    "angle-step" : 0.222
+                },
+
+                "prior-knowledge" : {
+                    "sparsity" : "gradient"
+                },
+
+                "method" : {
+                    "plugin" : "sart",
+                    "lambda" : 0.25,
+                }
+            }
+        },
+        {
+            "plugin": "writer",
+            "name": "writer"
+        }
+    ],
+    "edges" : [
+        {
+            "from": { "name": "reader" },
+            "to": { "name": "ir" }
+        },
+        {
+            "from": { "name": "ir" },
+            "to": { "name": "writer" }
+        }
+    ]
+}
