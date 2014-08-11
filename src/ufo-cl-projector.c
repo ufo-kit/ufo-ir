@@ -146,8 +146,8 @@ ufo_cl_projector_dispose (GObject *object)
                             &priv->fp_kernel[Horizontal],
                             &priv->fp_kernel[Vertical]};
     for (int i = 0; i < 3; ++i) {
-      UFO_RESOURCES_CHECK_CLERR (clReleaseKernel (*kernel[i]));
-      *kernel[i] = NULL;
+        UFO_RESOURCES_CHECK_CLERR (clReleaseKernel (*kernel[i]));
+        *kernel[i] = NULL;
     }
 
     G_OBJECT_CLASS (ufo_cl_projector_parent_class)->dispose (object);
@@ -167,11 +167,14 @@ ufo_cl_projector_FP_ROI_real (UfoProjector         *projector,
                               UfoBuffer            *measurements,
                               UfoProjectionsSubset *subset,
                               gfloat               scale,
-                              gpointer             *finish_event)
+                              gpointer             finish_event)
 {
     UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->fp_kernel[subset->direction];
     cl_command_queue cmd_queue = priv->cmd_queue;
+
+    UfoProfiler *profiler = NULL;
+    g_object_get (projector, "ufo-profiler", &profiler, NULL);
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -187,15 +190,22 @@ ufo_cl_projector_FP_ROI_real (UfoProjector         *projector,
     ufo_buffer_get_requisition (measurements, &requisitions);
     requisitions.dims[1] = subset->n;
 
-    UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(cmd_queue,
-                                                      kernel,
-                                                      requisitions.n_dims,
-                                                      NULL,
-                                                      requisitions.dims,
-                                                      NULL,
-                                                      0,
-                                                      NULL,
-                                                      (cl_event*)finish_event));
+    if (finish_event) {
+        g_print ("\n finish_event: %p", finish_event);
+        UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(cmd_queue,
+                                                          kernel,
+                                                          requisitions.n_dims,
+                                                          NULL,
+                                                          requisitions.dims,
+                                                          NULL,
+                                                          0,
+                                                          NULL,
+                                                          (cl_event*)finish_event));
+        ufo_profiler_register_event (profiler, cmd_queue, kernel, finish_event);
+    } else {
+        ufo_profiler_call (profiler, cmd_queue, kernel, requisitions.n_dims,
+                           requisitions.dims, NULL);
+    }
 }
 
 static void
@@ -205,11 +215,14 @@ ufo_cl_projector_BP_ROI_real (UfoProjector         *projector,
                               UfoBuffer            *measurements,
                               UfoProjectionsSubset *subset,
                               gfloat               relax_param,
-                              gpointer             *finish_event)
+                              gpointer             finish_event)
 {
     UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->bp_kernel;
     cl_command_queue cmd_queue = priv->cmd_queue;
+
+    UfoProfiler *profiler = NULL;
+    g_object_get (projector, "ufo-profiler", &profiler, NULL);
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -224,42 +237,48 @@ ufo_cl_projector_BP_ROI_real (UfoProjector         *projector,
     UfoRequisition requisitions;
     ufo_buffer_get_requisition (volume, &requisitions);
 
-    UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(cmd_queue,
-                                                      kernel,
-                                                      requisitions.n_dims,
-                                                      NULL,
-                                                      requisitions.dims,
-                                                      NULL,
-                                                      0, NULL,
-                                                      (cl_event*)finish_event));
+    if (finish_event) {
+        UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(cmd_queue,
+                                                          kernel,
+                                                          requisitions.n_dims,
+                                                          NULL,
+                                                          requisitions.dims,
+                                                          NULL,
+                                                          0, NULL,
+                                                          (cl_event*)finish_event));
+        ufo_profiler_register_event (profiler, cmd_queue, kernel, finish_event);
+    } else {
+        ufo_profiler_call (profiler, cmd_queue, kernel, requisitions.n_dims,
+                           requisitions.dims, NULL);
+    }
 }
 
 static void
 ufo_cl_projector_configure_real (UfoProjector *projector)
 {
-  UFO_PROJECTOR_CLASS (ufo_cl_projector_parent_class)->configure (projector);
-  UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
+    UFO_PROJECTOR_CLASS (ufo_cl_projector_parent_class)->configure (projector);
+    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
 
-  UfoGeometry *geometry = NULL;
-  g_object_get (projector, "geometry", &geometry, NULL);
+    UfoGeometry *geometry = NULL;
+    g_object_get (projector, "geometry", &geometry, NULL);
 
-  cl_mem d_sin_vals = ufo_geometry_scan_angles_device (geometry, SIN_VALUES);
-  cl_mem d_cos_vals = ufo_geometry_scan_angles_device (geometry, COS_VALUES);
+    cl_mem d_sin_vals = ufo_geometry_scan_angles_device (geometry, SIN_VALUES);
+    cl_mem d_cos_vals = ufo_geometry_scan_angles_device (geometry, COS_VALUES);
 
-  UfoGeometryDims *dims = NULL;
-  gsize spec_size = 0;
-  gpointer spec = ufo_geometry_get_spec (geometry, &spec_size);
-  g_object_get (geometry, "dimensions", &dims, NULL);
+    UfoGeometryDims *dims = NULL;
+    gsize spec_size = 0;
+    gpointer spec = ufo_geometry_get_spec (geometry, &spec_size);
+    g_object_get (geometry, "dimensions", &dims, NULL);
 
-  cl_kernel kernel[3] = { priv->bp_kernel,
-                          priv->fp_kernel[Horizontal],
-                          priv->fp_kernel[Vertical] };
-  for (int i = 0; i < 3; ++i) {
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 5, sizeof (cl_mem), &d_sin_vals));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 6, sizeof (cl_mem), &d_cos_vals));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 7, sizeof (UfoGeometryDims), dims));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 8, spec_size, spec));
-  }
+    cl_kernel kernel[3] = { priv->bp_kernel,
+                            priv->fp_kernel[Horizontal],
+                            priv->fp_kernel[Vertical] };
+    for (int i = 0; i < 3; ++i) {
+        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 5, sizeof (cl_mem), &d_sin_vals));
+        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 6, sizeof (cl_mem), &d_cos_vals));
+        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 7, sizeof (UfoGeometryDims), dims));
+        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 8, spec_size, spec));
+    }
 }
 
 static void

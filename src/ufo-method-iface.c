@@ -60,7 +60,12 @@ ufo_method_from_json (JsonObject       *object,
                                             METHOD_FUNC_NAME, // depends on method categeory
                                             plugin_name,
                                             error);*/
-    gpointer plugin = ufo_ir_sart_new ();
+    gpointer plugin = NULL;
+    if (g_strcmp0 (plugin_name, "sart") == 0)
+        plugin = ufo_ir_sart_new ();
+    else
+        plugin = ufo_ir_asdpocs_new ();
+    /////////////////////////////////////////////////////
 
     GList *members = json_object_get_members (object);
     GList *member = NULL;

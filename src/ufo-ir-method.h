@@ -22,9 +22,12 @@
 
 #include <glib-object.h>
 #include <ufo-processor.h>
-#include <ufo-method-iface.h>
 #include <ufo-projector.h>
 #include <ufo-geometry.h>
+#include <ufo-prior-knowledge.h>
+#include <ufo-method-iface.h>
+#include <ufo-sparsity-iface.h>
+#include <ufo-transform-iface.h>
 
 G_BEGIN_DECLS
 
@@ -38,6 +41,12 @@ G_BEGIN_DECLS
 typedef struct _UfoIrMethod         UfoIrMethod;
 typedef struct _UfoIrMethodClass    UfoIrMethodClass;
 typedef struct _UfoIrMethodPrivate  UfoIrMethodPrivate;
+
+enum {
+    IR_METHOD_PROP_0 = 0,
+    IR_METHOD_PROP_PRIOR_KNOWLEDGE,
+    N_IR_METHOD_VIRTUAL_PROPERTIES
+};
 
 struct _UfoIrMethod {
     UfoProcessor parent_instance;

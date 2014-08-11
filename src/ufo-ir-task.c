@@ -30,6 +30,7 @@
 
 #include "ufo-ir-sart.h"
 #include "ufo-parallel-geometry.h"
+#include "ufo-prior-knowledge.h"
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
 G_DEFINE_TYPE_WITH_CODE (UfoIrTask, ufo_ir_task, UFO_TYPE_TASK_NODE,
@@ -46,7 +47,7 @@ struct _UfoIrTaskPrivate {
     UfoIrMethod       *method;
     UfoGeometry       *geometry;
     UfoProjector      *projector;
-    GHashTable        *prior;
+    UfoPriorKnowledge *prior;
 };
 
 enum {
@@ -78,20 +79,26 @@ ufo_ir_task_setup (UfoTask      *task,
     priv->cmd_queue = ufo_gpu_node_get_cmd_queue (node);
     UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
 
+    UfoProfiler  *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
+    g_print ("\n profiler: %p", profiler);
+
     ufo_geometry_setup  (priv->geometry, priv->resources, error);
     g_object_set (priv->projector,
+                  "ufo-profiler", profiler,
                   "geometry", priv->geometry,
                   "command-queue", priv->cmd_queue, NULL);
 
     ufo_projector_setup (priv->projector, priv->resources, error);
-    ufo_processor_setup (UFO_PROCESSOR (priv->method), priv->resources, error);
 
     if (error && *error)
       return;
 
     g_object_set (priv->method,
                   "projection-model", priv->projector,
-                  "command-queue", priv->cmd_queue, NULL);
+                  "command-queue", priv->cmd_queue,
+                  "prior-knowledge", priv->prior,
+                  "ufo-profiler", profiler, NULL);
+    ufo_processor_setup (UFO_PROCESSOR (priv->method), priv->resources, error);
 }
 
 static void
@@ -144,7 +151,12 @@ ufo_ir_task_process (UfoTask        *task,
                      UfoRequisition *requisition)
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
-    return ufo_method_process (UFO_METHOD (priv->method), inputs[0], output);
+    ufo_op_set (output, 0, priv->resources, priv->cmd_queue);
+    gboolean res = ufo_method_process (UFO_METHOD (priv->method), inputs[0], output);
+
+    UfoProfiler  *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
+
+    return res;
 }
 
 static void
@@ -162,7 +174,7 @@ ufo_task_set_json_object_property_real (UfoTask     *task,
         obj = ufo_projector_from_json (json_obj, priv->plugin_manager);
     }
     else if (g_strcmp0 (prop_name, "prior-knowledge") == 0) {
-
+        obj = ufo_prior_knowledge_from_json (json_obj, priv->plugin_manager);
     }
     else if (g_strcmp0 (prop_name, "method") == 0) {
         obj = ufo_method_from_json (json_obj, priv->plugin_manager);
@@ -202,7 +214,7 @@ ufo_ir_task_set_property (GObject      *object,
           priv->projector = g_object_ref (g_value_get_pointer(value));
           break;
       case PROP_PRIOR_KNOWLEDGE:
-          priv->prior = g_object_ref (g_value_get_pointer(value));
+          priv->prior = g_hash_table_ref (g_value_get_pointer(value));
           break;
       default:
           G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -247,7 +259,11 @@ ufo_ir_task_dispose (GObject *object)
     g_clear_object (&priv->method);
     g_clear_object (&priv->geometry);
     g_clear_object (&priv->projector);
-    g_clear_object (&priv->prior);
+
+    if (priv->prior) {
+        g_hash_table_unref (priv->prior);
+        priv->prior = NULL;
+    }
 
     G_OBJECT_CLASS (ufo_ir_task_parent_class)->dispose (object);
 }

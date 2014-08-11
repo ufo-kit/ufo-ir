@@ -34,8 +34,7 @@ struct _UfoIrMethodPrivate {
 };
 
 enum {
-    PROP_0,
-    PROP_PROJECTION_MODEL,
+    PROP_PROJECTION_MODEL = N_IR_METHOD_VIRTUAL_PROPERTIES,
     PROP_RELAXATION_FACTOR,
     PROP_MAX_ITERATIONS,
     N_PROPERTIES
@@ -58,11 +57,12 @@ ufo_ir_method_set_property (GObject      *object,
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
+        case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
+            g_warning ("%s : does not use a prior knowledge", G_OBJECT_TYPE_NAME (object));
+            break;
         case PROP_PROJECTION_MODEL:
             g_clear_object(&priv->projector);
             priv->projector = g_object_ref (g_value_get_pointer (value));
-            g_print ("\nufo_ir_method_set_property %p: PROP_PROJECTION_MODEL: %p", object, priv->projector);
-            g_value_set_pointer (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:
             priv->relaxation_factor = g_value_get_float (value);
@@ -86,7 +86,6 @@ ufo_ir_method_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
-            g_print ("\nufo_ir_method_get_property %p: PROP_PROJECTION_MODEL: %p", object, priv->projector);
             g_value_set_pointer (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:
@@ -154,6 +153,12 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
     gobject_class->set_property = ufo_ir_method_set_property;
     gobject_class->get_property = ufo_ir_method_get_property;
 
+    properties[IR_METHOD_PROP_PRIOR_KNOWLEDGE] =
+        g_param_spec_pointer("prior-knowledge",
+                             "Pointer to the instance of UfoPriorKnowledge.",
+                             "Pointer to the instance of UfoPriorKnowledge.",
+                             G_PARAM_WRITABLE);
+
     properties[PROP_PROJECTION_MODEL] =
         g_param_spec_pointer("projection-model",
                              "Pointer to the instance of UfoProjector.",
@@ -174,7 +179,7 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
                           0, G_MAXUINT, 1,
                           G_PARAM_READWRITE);
 
-    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
+    for (guint i = IR_METHOD_PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
 

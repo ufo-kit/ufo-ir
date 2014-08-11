@@ -58,7 +58,7 @@ struct _UfoProjectorClass {
                     UfoBuffer            *measurements,
                     UfoProjectionsSubset *subset,
                     gfloat               scale,
-                    gpointer             *finish_event);
+                    gpointer             finish_event);
 
     void (*BP_ROI) (UfoProjector         *projector,
                     UfoBuffer            *volume,
@@ -66,7 +66,7 @@ struct _UfoProjectorClass {
                     UfoBuffer            *measurements,
                     UfoProjectionsSubset *subset,
                     gfloat               relax_param,
-                    gpointer             *finish_event);
+                    gpointer             finish_event);
 
     void (*setup) (UfoProjector  *projector,
                    UfoResources  *resources,
@@ -96,7 +96,7 @@ ufo_projector_FP_ROI (UfoProjector         *projector,
                       UfoBuffer            *measurements,
                       UfoProjectionsSubset *subset,
                       gfloat               scale,
-                      gpointer             *finish_event);
+                      gpointer             finish_event);
 
 void
 ufo_projector_BP_ROI (UfoProjector         *projector,
@@ -105,7 +105,7 @@ ufo_projector_BP_ROI (UfoProjector         *projector,
                       UfoBuffer            *measurements,
                       UfoProjectionsSubset *subset,
                       gfloat               relax_param,
-                      gpointer             *finish_event);
+                      gpointer             finish_event);
 
 void
 ufo_projector_FP (UfoProjector         *projector,
@@ -113,7 +113,7 @@ ufo_projector_FP (UfoProjector         *projector,
                   UfoBuffer            *measurements,
                   UfoProjectionsSubset *subset,
                   gfloat               scale,
-                  gpointer             *finish_event);
+                  gpointer             finish_event);
 
 void
 ufo_projector_BP (UfoProjector         *projector,
@@ -121,7 +121,7 @@ ufo_projector_BP (UfoProjector         *projector,
                   UfoBuffer            *measurements,
                   UfoProjectionsSubset *subset,
                   gfloat               relax_param,
-                  gpointer             *finish_event);
+                  gpointer             finish_event);
 
 void
 ufo_projector_setup (UfoProjector *projector,

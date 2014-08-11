@@ -24,6 +24,7 @@ set(PROJECT_SRCS
     ufo-transform-iface.c
 
     ufo-common-routines.c
+    ufo-prior-knowledge.c
 
 #    ufo-geom.c
 #    ufo-par-geom.c

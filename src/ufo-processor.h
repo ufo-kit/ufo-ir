@@ -48,6 +48,8 @@ struct _UfoProcessorClass {
     void (*setup) (UfoProcessor *processor,
                    UfoResources *resources,
                    GError       **error);
+
+    void (*configure) (UfoProcessor *processor);
 };
 
 UfoProcessor*
@@ -57,11 +59,6 @@ void
 ufo_processor_setup (UfoProcessor *processor,
                      UfoResources *resources,
                      GError       **error);
-
-void
-ufo_processor_process (UfoProcessor *processor,
-                       UfoBuffer    *input,
-                       UfoBuffer    *output);
 
 GType ufo_processor_get_type (void);
 

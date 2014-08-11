@@ -32,6 +32,13 @@ G_BEGIN_DECLS
 #define UFO_IS_IR_ASDPOCS_CLASS(klass)   (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_TYPE_IR_ASDPOCS)
 #define UFO_IR_ASDPOCS_GET_CLASS(obj)    (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_TYPE_IR_ASDPOCS, UfoIrASDPOCSClass))
 
+GQuark ufo_ir_sart_error_quark (void);
+#define UFO_IR_ASDPOCS_ERROR           ufo_ir_asdpocs_error_quark()
+
+typedef enum {
+    UFO_IR_ASDPOCS_ERROR_SETUP
+} UfoIrASDPOCSError;
+
 typedef struct _UfoIrASDPOCS         UfoIrASDPOCS;
 typedef struct _UfoIrASDPOCSClass    UfoIrASDPOCSClass;
 typedef struct _UfoIrASDPOCSPrivate  UfoIrASDPOCSPrivate;

@@ -1,3 +1,22 @@
+/*
+* Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+*
+* This file is part of Ufo.
+*
+* This library is free software: you can redistribute it and/or
+* modify it under the terms of the GNU Lesser General Public
+* License as published by the Free Software Foundation, either
+* version 3 of the License, or (at your option) any later version.
+*
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+* Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with this library. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -74,7 +93,6 @@ ufo_ir_sart_process_real (UfoMethod *method,
                           UfoBuffer *input,
                           UfoBuffer *output)
 {
-    g_print ("\nufo_ir_sart_process_real\n");
     UfoIrSARTPrivate *priv = UFO_IR_SART_GET_PRIVATE (method);
 
     UfoResources *resources = NULL;
@@ -92,10 +110,7 @@ ufo_ir_sart_process_real (UfoMethod *method,
 
     UfoGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
-    g_print ("\nMETHOD: relax-p: %f  max-iters: %d GEOM: %p \n",
-             relaxation_factor, max_iterations, geometry);
 
-    g_print ("\n resources: %p", resources);
     //
     // resize
     UfoBuffer **method_buffers[4] = {
@@ -119,7 +134,6 @@ ufo_ir_sart_process_real (UfoMethod *method,
             *method_buffers[i] = ufo_buffer_dup (ref_buffers [i]);
         }
     }
-    ufo_op_set (output, 0, resources, cmd_queue);
     ufo_op_set (priv->singular_volume, 1.0f, resources, cmd_queue);
     ufo_op_set (priv->singular_sino, 1.0f, resources, cmd_queue);
     ufo_op_set (priv->ray_weights, 0, resources, cmd_queue);
@@ -139,7 +153,7 @@ ufo_ir_sart_process_real (UfoMethod *method,
     ufo_op_inv (priv->ray_weights, resources, cmd_queue);
 
     guint iteration = 0;
-    //while (iteration < max_iterations) {
+    while (iteration < max_iterations) {
         ufo_buffer_copy (input, priv->b_temp);
         for (guint i = 0 ; i < n_subsets; i++) {
             ufo_projector_FP (projector,
@@ -163,18 +177,9 @@ ufo_ir_sart_process_real (UfoMethod *method,
                               &subset[i],
                               relaxation_factor,
                               NULL);
-
-/*
-            ufo_projector_BP (projector,
-                              output,
-                              priv->b_temp,
-                              subset[i],
-                              1.0f,
-                              NULL);
-*/
         }
         iteration++;
-    //}
+    }
 
     return TRUE;
 }

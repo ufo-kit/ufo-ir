@@ -35,12 +35,14 @@ ufo_projector_error_quark (void)
 
 struct _UfoProjectorPrivate {
     UfoGeometry *geometry;
+    UfoProfiler *profiler;
     UfoRegion   full_volume_region;
 };
 
 enum {
     PROP_0,
     PROP_GEOMETRY,
+    PROP_UFO_PROFILER,
     N_PROPERTIES
 };
 
@@ -78,6 +80,10 @@ ufo_projector_set_property (GObject      *object,
             g_clear_object(&priv->geometry);
             priv->geometry = g_object_ref (g_value_get_pointer(value));
             break;
+        case PROP_UFO_PROFILER:
+            g_clear_object(&priv->profiler);
+            priv->profiler = g_object_ref (g_value_get_pointer (value));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -95,6 +101,9 @@ ufo_projector_get_property (GObject    *object,
     switch (property_id) {
         case PROP_GEOMETRY:
             g_value_set_pointer (value, priv->geometry);
+            break;
+        case PROP_UFO_PROFILER:
+            g_value_set_pointer (value, priv->profiler);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -118,7 +127,7 @@ ufo_projector_FP_ROI_real (UfoProjector         *projector,
                            UfoBuffer            *measurements,
                            UfoProjectionsSubset *subset,
                            gfloat               scale,
-                           gpointer             *finish_event)
+                           gpointer             finish_event)
 {
     warn_unimplemented (projector, "FP_ROI");
 }
@@ -130,7 +139,7 @@ ufo_projector_BP_ROI_real (UfoProjector         *projector,
                            UfoBuffer            *measurements,
                            UfoProjectionsSubset *subset,
                            gfloat               relax_param,
-                           gpointer             *finish_event)
+                           gpointer             finish_event)
 {
     warn_unimplemented (projector, "BP_ROI");
 }
@@ -162,6 +171,12 @@ ufo_projector_class_init (UfoProjectorClass *klass)
                              "Pointer to the instance of UfoGeometry structure",
                              G_PARAM_READWRITE);
 
+    properties[PROP_UFO_PROFILER] =
+        g_param_spec_pointer("ufo-profiler",
+                             "Pointer to the instance of UfoProfiler.",
+                             "Pointer to the instance of UfoProfiler.",
+                             G_PARAM_READWRITE);
+
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
@@ -181,7 +196,7 @@ ufo_projector_FP_ROI (UfoProjector         *projector,
                       UfoBuffer            *measurements,
                       UfoProjectionsSubset *subset,
                       gfloat               scale,
-                      gpointer             *finish_event)
+                      gpointer             finish_event)
 {
     g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
                       UFO_IS_BUFFER (volume) &&
@@ -208,7 +223,7 @@ ufo_projector_BP_ROI (UfoProjector         *projector,
                       UfoBuffer            *measurements,
                       UfoProjectionsSubset *subset,
                       gfloat               relax_param,
-                      gpointer             *finish_event)
+                      gpointer             finish_event)
 {
     g_return_if_fail (UFO_IS_PROJECTOR (projector) &&
                       UFO_IS_BUFFER (volume) &&
@@ -235,7 +250,7 @@ ufo_projector_FP (UfoProjector         *projector,
                   UfoBuffer            *measurements,
                   UfoProjectionsSubset *subset,
                   gfloat               scale,
-                  gpointer             *finish_event)
+                  gpointer             finish_event)
 {
     UfoProjectorPrivate *priv = UFO_PROJECTOR_GET_PRIVATE (projector);
     ufo_projector_FP_ROI (projector,
@@ -253,7 +268,7 @@ ufo_projector_BP (UfoProjector         *projector,
                   UfoBuffer            *measurements,
                   UfoProjectionsSubset *subset,
                   gfloat               relax_param,
-                  gpointer             *finish_event)
+                  gpointer             finish_event)
 {
     UfoProjectorPrivate *priv = UFO_PROJECTOR_GET_PRIVATE (projector);
     ufo_projector_BP_ROI (projector,
@@ -291,6 +306,7 @@ ufo_projector_init (UfoProjector *self)
     UfoProjectorPrivate *priv = NULL;
     self->priv = priv = UFO_PROJECTOR_GET_PRIVATE (self);
     priv->geometry = NULL;
+    priv->profiler = NULL;
 }
 
 gpointer

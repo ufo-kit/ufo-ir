@@ -8,6 +8,7 @@
 
 #include <ufo-sparsity-iface.h>
 #include <ufo-custom-sparsity.h>
+#include <ufo-prior-knowledge.h>
 //#include <ufo-geom.h>
 
 void
@@ -28,6 +29,9 @@ int main(int n_args, char *argv[])
     ufo_sparsity_minimize (cs, buffer1, buffer2);
 */
     //g_object_unref (NULL);
+    UfoPriorKnowledge *prior = ufo_prior_knowledge_new ();
+    ufo_prior_knowledge_set_boolean (prior, "bool1", FALSE);
+    ufo_prior_knowledge_set_boolean (prior, "bool2", TRUE);
     test_task ();
 /*
     UfoGeom *geom = ufo_geom_new();
@@ -52,13 +56,26 @@ int main(int n_args, char *argv[])
 void
 test_task ()
 {
+    /*
     #define IN_FILE_NAME "/pdv/home/ashkarin/Data/Bug/sino-00177-normalized.tif"
+    #define N_ANGLES 300
+    #define ANGLE_STEP 0.72
+    */
+    /*
+    #define IN_FILE_NAME "/pdv/home/ashkarin/Data/Bug/bug_sino_2_88(quadro).tif"
+    #define N_ANGLES 75
+    #define ANGLE_STEP 2.88
+    */
+    #define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"  // 1/4
+    #define N_ANGLES 287
+    #define ANGLE_STEP 0.6288f
+
 
     JsonObject *jgeometry = json_object_new ();
     json_object_set_string_member (jgeometry, "beam-geometry", "parallel");
-    json_object_set_double_member (jgeometry, "num-angles", 300);
+    json_object_set_double_member (jgeometry, "num-angles", N_ANGLES);
     json_object_set_double_member (jgeometry, "angle-offset", 0.0);
-    json_object_set_double_member (jgeometry, "angle-step", 0.72);
+    json_object_set_double_member (jgeometry, "angle-step", ANGLE_STEP);
     json_object_set_double_member (jgeometry, "detector-scale", 1.0);
     json_object_set_int_member (jgeometry, "detector-offset", 0);
 
@@ -69,11 +86,23 @@ test_task ()
     JsonObject *jmethod = json_object_new ();
     json_object_set_string_member (jmethod, "plugin", "sart");
     json_object_set_double_member (jmethod, "relaxation-factor", 0.25);
-    json_object_set_int_member (jmethod, "max-iterations", 2);
+    json_object_set_int_member (jmethod, "max-iterations", 10);
+
+    JsonObject *jmethod2 = json_object_new ();
+    json_object_set_string_member (jmethod2, "plugin", "asdpocs");
+    json_object_set_double_member (jmethod2, "relaxation-factor", 1.0);
+    json_object_set_int_member (jmethod2, "max-iterations", 2);
+    json_object_set_object_member (jmethod2, "df-minimizer", jmethod);
+
+    JsonObject *jsparsity = json_object_new ();
+    json_object_set_string_member (jsparsity, "plugin", "gradient-sparsity");
+    //json_object_set_string_member (jsparsity, "domain", "my-wavelet");
 
     JsonObject *jprior = json_object_new ();
-    json_object_set_string_member (jprior, "object-sparsity", "gradient");
+    json_object_set_object_member (jprior, "image-sparsity", jsparsity);
     json_object_set_boolean_member (jprior, "phase-contrast", FALSE);
+
+    //------------
 
     GError *error = NULL;
     UfoConfig *config = ufo_config_new();
@@ -83,6 +112,7 @@ test_task ()
 
     UfoGraph *ufo_task_graph = ufo_task_graph_new();
     UfoScheduler *ufo_scheduler  = ufo_scheduler_new (config, NULL);
+    g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
     UfoPluginManager *ufo_plugin_manager = ufo_plugin_manager_new (config);
 
     UfoNode *reader = UFO_NODE (ufo_plugin_manager_get_task (ufo_plugin_manager, "reader", &error));
@@ -107,8 +137,8 @@ test_task ()
 */
     ufo_task_set_json_object_property (ir_filter, "geometry", jgeometry);
     ufo_task_set_json_object_property (ir_filter, "projector", jproj_model);
-    //ufo_task_set_json_object_property (ir_filter, "prior-knowledge", jprior);
-    ufo_task_set_json_object_property (ir_filter, "method", jmethod);
+    ufo_task_set_json_object_property (ir_filter, "prior-knowledge", jprior);
+    ufo_task_set_json_object_property (ir_filter, "method", jmethod2);
 
 
 

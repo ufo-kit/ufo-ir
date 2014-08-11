@@ -49,8 +49,8 @@ ufo_transform_inverse (UfoTransform *transform,
 
 static gboolean
 ufo_transform_direct_real (UfoTransform *transform,
-                            UfoBuffer *input,
-                            UfoBuffer *output)
+                           UfoBuffer *input,
+                           UfoBuffer *output)
 {
     warn_unimplemented (transform, "direct");
     return FALSE;

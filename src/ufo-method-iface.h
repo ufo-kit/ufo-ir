@@ -20,7 +20,8 @@
 #ifndef UFO_METHOD_IFACE_H
 #define UFO_METHOD_IFACE_H
 
-#include <ufo-processor.h>
+#include <glib-object.h>
+#include <ufo/ufo.h>
 
 G_BEGIN_DECLS
 
