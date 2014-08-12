@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-sparsity-iface.h>
+#include <ufo/ir/ufo-sparsity-iface.h>
 
 typedef UfoSparsityIface UfoSparsityInterface;
 
@@ -40,7 +40,7 @@ ufo_sparsity_minimize_real (UfoSparsity *sparsity,
                             UfoBuffer *input,
                             UfoBuffer *output)
 {
-    warn_unimplemented (sparsity, "minimize");
+    g_warning ("%s: `minimize' not implemented", G_OBJECT_TYPE_NAME (sparsity));
     return FALSE;
 }
 

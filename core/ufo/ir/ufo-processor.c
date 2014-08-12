@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-processor.h>
+#include <ufo/ir/ufo-processor.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -45,7 +45,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoProcessor *
-ufo_processor_new ()
+ufo_processor_new (void)
 {
     return (UfoProcessor *) g_object_new (UFO_TYPE_PROCESSOR,
                                        NULL);

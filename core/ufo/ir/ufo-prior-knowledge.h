@@ -27,24 +27,24 @@
 typedef GHashTable UfoPriorKnowledge;
 
 UfoPriorKnowledge *
-ufo_prior_knowledge_new ();
+ufo_prior_knowledge_new (void);
 
 void
 ufo_prior_knowledge_set_boolean (UfoPriorKnowledge *prior,
-                                 const gchar       *key,
+                                 gchar             *key,
                                  gboolean          value);
 
 gboolean
 ufo_prior_knowledge_boolean (UfoPriorKnowledge *prior,
-                             const gchar       *key);
+                             gchar             *key);
 
 void
 ufo_prior_knowledge_set_pointer (UfoPriorKnowledge *prior,
-                                 const gchar       *key,
+                                 gchar             *key,
                                  gpointer          obj);
 gpointer
 ufo_prior_knowledge_pointer (UfoPriorKnowledge *prior,
-                             const gchar       *key);
+                             gchar             *key);
 
 gpointer
 ufo_prior_knowledge_from_json (JsonObject       *object,

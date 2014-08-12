@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-transform-iface.h>
+#include <ufo/ir/ufo-transform-iface.h>
 
 typedef UfoTransformIface UfoTransformInterface;
 
@@ -52,7 +52,7 @@ ufo_transform_direct_real (UfoTransform *transform,
                            UfoBuffer *input,
                            UfoBuffer *output)
 {
-    warn_unimplemented (transform, "direct");
+    g_warning ("%s: `direct' not implemented", G_OBJECT_TYPE_NAME (transform));
     return FALSE;
 }
 
@@ -61,7 +61,7 @@ ufo_transform_inverse_real (UfoTransform *transform,
                             UfoBuffer *input,
                             UfoBuffer *output)
 {
-    warn_unimplemented (transform, "inverse");
+    g_warning ("%s: `inverse' not implemented", G_OBJECT_TYPE_NAME (transform));
     return FALSE;
 }
 

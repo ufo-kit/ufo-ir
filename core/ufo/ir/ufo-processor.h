@@ -22,7 +22,6 @@
 
 #include <glib-object.h>
 #include <ufo/ufo.h>
-#include <ufo-common-routines.h>
 
 G_BEGIN_DECLS
 
@@ -53,7 +52,7 @@ struct _UfoProcessorClass {
 };
 
 UfoProcessor*
-ufo_processor_new ();
+ufo_processor_new (void);
 
 void
 ufo_processor_setup (UfoProcessor *processor,

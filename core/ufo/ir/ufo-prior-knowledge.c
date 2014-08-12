@@ -17,18 +17,17 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ufo-prior-knowledge.h"
-#include <ufo-gradient-sparsity.h>
+#include <ufo/ir/ufo-prior-knowledge.h>
 
 UfoPriorKnowledge *
-ufo_prior_knowledge_new ()
+ufo_prior_knowledge_new (void)
 {
     return g_hash_table_new (g_str_hash, g_str_equal);
 }
 
 void
 ufo_prior_knowledge_set_boolean (UfoPriorKnowledge *prior,
-                                 const gchar       *key,
+                                 gchar             *key,
                                  gboolean          value)
 {
     GValue *gval = g_hash_table_lookup (prior, key);
@@ -42,7 +41,7 @@ ufo_prior_knowledge_set_boolean (UfoPriorKnowledge *prior,
 
 gboolean
 ufo_prior_knowledge_boolean (UfoPriorKnowledge *prior,
-                             const gchar       *key)
+                             gchar             *key)
 {
     GValue *gval = g_hash_table_lookup (prior, key);
     return gval ? g_value_get_boolean (gval) : FALSE;
@@ -50,7 +49,7 @@ ufo_prior_knowledge_boolean (UfoPriorKnowledge *prior,
 
 void
 ufo_prior_knowledge_set_pointer (UfoPriorKnowledge *prior,
-                                 const gchar       *key,
+                                 gchar             *key,
                                  gpointer          obj)
 {
     g_hash_table_insert (prior, key, obj);
@@ -58,7 +57,7 @@ ufo_prior_knowledge_set_pointer (UfoPriorKnowledge *prior,
 
 gpointer
 ufo_prior_knowledge_pointer (UfoPriorKnowledge *prior,
-                             const gchar       *key)
+                             gchar             *key)
 {
     return g_hash_table_lookup (prior, key);
 }
@@ -68,9 +67,9 @@ ufo_prior_knowledge_from_json (JsonObject       *object,
                                UfoPluginManager *manager)
 {
     UfoPriorKnowledge   *prior = ufo_prior_knowledge_new ();
-    UfoSparsity *sparsity = ufo_gradient_sparsity_new ();
-    ufo_prior_knowledge_set_boolean (prior, "phase-contrast", TRUE);
-    ufo_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
+    //UfoSparsity *sparsity = ufo_gradient_sparsity_new ();
+    //ufo_prior_knowledge_set_boolean (prior, "phase-contrast", TRUE);
+    //ufo_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
     /*
     GList *members = json_object_get_members (object);
     gchar *name = NULL;

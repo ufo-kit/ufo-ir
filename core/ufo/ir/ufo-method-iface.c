@@ -17,8 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-method-iface.h>
-#include <ufo-ir-sart.h>
+#include <ufo/ir/ufo-method-iface.h>
 
 typedef UfoMethodIface UfoMethodInterface;
 
@@ -41,7 +40,7 @@ ufo_method_process_real (UfoMethod *method,
                          UfoBuffer *input,
                          UfoBuffer *output)
 {
-    warn_unimplemented (method, "process");
+    g_warning ("%s: `process' not implemented", G_OBJECT_TYPE_NAME (method));
     return FALSE;
 }
 
@@ -55,6 +54,7 @@ gpointer
 ufo_method_from_json (JsonObject       *object,
                       UfoPluginManager *manager)
 {
+    #if 0
     gchar *plugin_name = json_object_get_string_member (object, "plugin");
     /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
                                             METHOD_FUNC_NAME, // depends on method categeory
@@ -95,6 +95,7 @@ ufo_method_from_json (JsonObject       *object,
             g_warning ("`%s' is neither a primitive value nor an object!", name);
         }
     }
-
     return plugin;
+    #endif
+    return NULL;
 }

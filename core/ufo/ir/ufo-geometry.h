@@ -22,7 +22,6 @@
 
 #include <glib.h>
 #include <ufo/ufo.h>
-#include <ufo-common-routines.h>
 
 G_BEGIN_DECLS
 
@@ -88,7 +87,7 @@ typedef struct {
 } UfoGeometryDims;
 
 UfoGeometry *
-ufo_geometry_new ();
+ufo_geometry_new (void);
 
 gfloat *
 ufo_geometry_scan_angles_host (UfoGeometry   *geometry,

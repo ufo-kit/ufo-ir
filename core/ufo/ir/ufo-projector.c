@@ -17,10 +17,8 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-projector.h>
-#include <ufo-geometry.h>
-
-#include <ufo-cl-projector.h>
+#include <ufo/ir/ufo-projector.h>
+#include <ufo/ir/ufo-geometry.h>
 
 G_DEFINE_TYPE (UfoProjector, ufo_projector, G_TYPE_OBJECT)
 
@@ -49,7 +47,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoProjector *
-ufo_projector_new ()
+ufo_projector_new (void)
 {
     return UFO_PROJECTOR (g_object_new (UFO_TYPE_PROJECTOR, NULL));
 }
@@ -129,7 +127,7 @@ ufo_projector_FP_ROI_real (UfoProjector         *projector,
                            gfloat               scale,
                            gpointer             finish_event)
 {
-    warn_unimplemented (projector, "FP_ROI");
+    g_warning ("%s: `FP_ROI' not implemented", G_OBJECT_TYPE_NAME (projector));
 }
 
 static void
@@ -141,7 +139,7 @@ ufo_projector_BP_ROI_real (UfoProjector         *projector,
                            gfloat               relax_param,
                            gpointer             finish_event)
 {
-    warn_unimplemented (projector, "BP_ROI");
+    g_warning ("%s: `BP_ROI' not implemented", G_OBJECT_TYPE_NAME (projector));
 }
 
 static void
@@ -313,6 +311,7 @@ gpointer
 ufo_projector_from_json (JsonObject       *object,
                          UfoPluginManager *manager)
 {
+  #if 0
     gboolean gpu = json_object_get_boolean_member (object, "on-gpu");
     gchar *model = json_object_get_string_member (object, "model");
     gpointer plugin = NULL;
@@ -333,4 +332,6 @@ ufo_projector_from_json (JsonObject       *object,
     }
 
     return plugin;
+  #endif
+    return NULL;
 }

@@ -87,7 +87,7 @@ struct _UfoProjectionsSubset {
 };
 
 UfoProjector *
-ufo_projector_new ();
+ufo_projector_new (void);
 
 void
 ufo_projector_FP_ROI (UfoProjector         *projector,

@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-ir-method.h>
+#include <ufo/ir/ufo-ir-method.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
 
@@ -42,7 +42,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoMethod *
-ufo_ir_method_new ()
+ufo_ir_method_new (void)
 {
     return (UfoMethod *) g_object_new (UFO_TYPE_IR_METHOD,
                                        NULL);
@@ -134,7 +134,7 @@ ufo_ir_method_process_real (UfoMethod *method,
                             UfoBuffer *input,
                             UfoBuffer *output)
 {
-    warn_unimplemented (method, "process");
+    g_warning ("%s: `process' not implemented", G_OBJECT_TYPE_NAME (method));
     return FALSE;
 }
 

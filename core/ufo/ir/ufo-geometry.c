@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-geometry.h>
+#include <ufo/ir/ufo-geometry.h>
 #include <math.h>
 
 #ifdef __APPLE__
@@ -88,7 +88,7 @@ create_lut_buffer (UfoGeometryPrivate *priv,
 }
 
 UfoGeometry *
-ufo_geometry_new ()
+ufo_geometry_new (void)
 {
     return UFO_GEOMETRY(g_object_new (UFO_TYPE_GEOMETRY, NULL));
 }
@@ -223,14 +223,14 @@ static void
 ufo_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
                                            UfoRequisition *requisition)
 {
-    warn_unimplemented (geometry, "get_volume_requisitions");
+    g_warning ("%s: `get_volume_requisitions' not implemented", G_OBJECT_TYPE_NAME (geometry));
 }
 
 static gpointer
 ufo_geometry_get_spec_real (UfoGeometry *geometry,
                             gsize *data_size)
 {
-    warn_unimplemented (geometry, "get_spec");
+    g_warning ("%s: `get_spec' not implemented", G_OBJECT_TYPE_NAME (geometry));
     return NULL;
 }
 
@@ -381,6 +381,7 @@ gpointer
 ufo_geometry_from_json (JsonObject       *object,
                         UfoPluginManager *manager)
 {
+  #if 0
     gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
     /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
                                             METHOD_FUNC_NAME, // depends on method categeory
@@ -413,4 +414,6 @@ ufo_geometry_from_json (JsonObject       *object,
     }
 
     return plugin;
+  #endif
+    return NULL;
 }
