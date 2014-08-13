@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-method-iface.h>
+#include "ufo-method-iface.h"
 
 typedef UfoMethodIface UfoMethodInterface;
 
@@ -54,6 +54,7 @@ gpointer
 ufo_method_from_json (JsonObject       *object,
                       UfoPluginManager *manager)
 {
+    /*
     gchar *plugin_name = json_object_get_string_member (object, "plugin");
     gpointer plugin = ufo_plugin_manager_get_plugin (manager,
                                                      METHOD_FUNC_NAME, // depends on method categeory
@@ -95,6 +96,6 @@ ufo_method_from_json (JsonObject       *object,
         }
     }
     return plugin;
-    #endif
+    #endif*/
     return NULL;
 }

@@ -17,8 +17,8 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-projector.h>
-#include <ufo/ir/ufo-geometry.h>
+#include "ufo-projector.h"
+#include "ufo-geometry.h"
 
 G_DEFINE_TYPE (UfoProjector, ufo_projector, G_TYPE_OBJECT)
 

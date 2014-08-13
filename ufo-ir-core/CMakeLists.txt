@@ -8,7 +8,7 @@ set(UFO_IR_DESCRIPTION_SUMMARY "Iterative reconstruction for UFO")
 
 #{{{ Library version
 set(UFO_IR_VERSION_MAJOR "0")
-set(UFO_IR_VERSION_MINOR "2")
+set(UFO_IR_VERSION_MINOR "1")
 set(UFO_IR_VERSION_PATCH "0")
 set(UFO_IR_GIR_VERSION "${UFO_IR_VERSION_MAJOR}.0")
 #}}}
@@ -42,6 +42,7 @@ endif ()
 #{{{ Dependencies
 set(PKG_GLIB2_MIN_REQUIRED "2.22")
 set(PKG_UFO_MIN_REQUIRED "0.2")
+set(PKG_UFO_METHODS_MIN_REQUIRED "0.1")
 
 find_package(OpenCL REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -49,12 +50,19 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB2 glib-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(GOBJECT2 gobject-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(UFO ufo>=${PKG_UFO_MIN_REQUIRED} REQUIRED)
+pkg_check_modules(UFO_METHODS ufomethods>=${PKG_UFO_METHODS_MIN_REQUIRED} REQUIRED)
 
-set(DEPS
+set(UFO_IR_DEPS
     ${OPENCL_LIBRARIES}
     ${GLIB2_LIBRARIES}
+    ${GOBJECT2_LIBRARIES}
+    ${JSON_GLIB_LIBRARIES}
     ${UFO_LIBRARIES}
+    ${UFO_METHODS_LIBRARIES}
     )
+
+link_directories(${UFO_LIBRARY_DIRS}
+                 ${UFO_LIBRARY_DIRS})
 
 #{{{ Add include directories
 include_directories(
@@ -62,22 +70,21 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}
     ${GLIB2_INCLUDE_DIRS}
     ${OPENCL_INCLUDE_DIRS}
-    ${UFO_INCLUDE_DIRS})
+    ${UFO_INCLUDE_DIRS}
+    ${UFO_METHODS_INCLUDE_DIRS})
 #}}}
 #}}}
 #{{{ CMake: Add configure-like prefixes and directories
 include(ConfigurePaths)
 configure_paths(UFO_IR)
 
-if (${UFO_FOUND})
-    string(REGEX MATCH "[A-Za-z/]*ufo-[0-9]" UFO_INCLUDE_DIR ${UFO_INCLUDE_DIRS})
-    set(UFO_IR_INCLUDE_DIR "${UFO_INCLUDEDIR}")
-else()
-    set(UFO_IR_INCLUDE_DIR "${UFO_IR_INCLUDEDIR}/ufo-ir-${UFO_IR_VERSION_MAJOR}")
-endif()
+string(REGEX MATCH "[A-Za-z./]*ufo-[0-9]" UFO_IR_INCLUDE_DIR ${UFO_INCLUDE_DIRS})
+set (UFO_INCLUDE_DIR
+     ${UFO_IR_INCLUDE_DIR})
 
-message ("UFO_IR_INCLUDE_DIR: ${UFO_IR_INCLUDE_DIR}")
-message ("UFO_IR_INCLUDEDIR: ${UFO_IR_INCLUDEDIR}")
+if (${UFO_IR_INCLUDE_DIR})
+    set(UFO_IR_INCLUDE_DIR "${UFO_IR_INCLUDEDIR}/ufoir-${UFO_IR_VERSION_MAJOR}")
+endif()
 
 #}}}
 #{{{ Definitions
@@ -103,7 +110,7 @@ endif()
 
 #}}}
 #{{{ Subdirectories
-add_subdirectory(ufo)
+add_subdirectory(src)
 #}}}
 #{{{ CPack
 set(CPACK_PACKAGE_DESCRIPTION ${UFO_IR_DESCRIPTION})

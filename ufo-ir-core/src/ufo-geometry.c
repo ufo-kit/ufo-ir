@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-geometry.h>
+#include "ufo-geometry.h"
 #include <math.h>
 
 #ifdef __APPLE__

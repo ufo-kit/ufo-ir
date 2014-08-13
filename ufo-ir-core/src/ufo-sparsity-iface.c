@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-sparsity-iface.h>
+#include "ufo-sparsity-iface.h"
 
 typedef UfoSparsityIface UfoSparsityInterface;
 

@@ -17,7 +17,13 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-ir-method.h>
+#include "ufo-ir-method.h"
+#include <ufo/methods/ufo-method-iface.h>
+#include <ufo/methods/ufo-transform-iface.h>
+#include "ufo-projector.h"
+#include "ufo-geometry.h"
+#include "ufo-prior-knowledge.h"
+#include "ufo-sparsity-iface.h"
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
 

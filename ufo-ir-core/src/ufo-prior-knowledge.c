@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-prior-knowledge.h>
+#include "ufo-prior-knowledge.h"
 
 UfoPriorKnowledge *
 ufo_prior_knowledge_new (void)

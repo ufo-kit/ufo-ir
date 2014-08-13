@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo/ir/ufo-transform-iface.h>
+#include "ufo-transform-iface.h"
 
 typedef UfoTransformIface UfoTransformInterface;
 

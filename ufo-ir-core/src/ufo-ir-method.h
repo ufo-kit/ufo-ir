@@ -21,13 +21,7 @@
 #define __UFO_IR_METHOD_H
 
 #include <glib-object.h>
-#include <ufo/ir/ufo-processor.h>
-#include <ufo/ir/ufo-projector.h>
-#include <ufo/ir/ufo-geometry.h>
-#include <ufo/ir/ufo-prior-knowledge.h>
-#include <ufo/ir/ufo-method-iface.h>
-#include <ufo/ir/ufo-sparsity-iface.h>
-#include <ufo/ir/ufo-transform-iface.h>
+#include <ufo/methods/ufo-processor.h>
 
 G_BEGIN_DECLS
 
