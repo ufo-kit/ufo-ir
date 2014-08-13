@@ -22,7 +22,7 @@
 
 #include <glib.h>
 #include <ufo/ufo.h>
-#include "ufo-projector.h"
+#include <ufo/ir/ufo-projector.h>
 
 G_BEGIN_DECLS
 
@@ -54,7 +54,7 @@ struct _UfoClProjectorClass {
 };
 
 UfoProjector *
-ufo_cl_projector_new ();
+ufo_cl_projector_new (void);
 
 GType ufo_cl_projector_get_type (void);
 G_END_DECLS

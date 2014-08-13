@@ -17,8 +17,8 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-cl-projector.h>
-#include <ufo-geometry.h>
+#include "ufo-cl-projector.h"
+#include <ufo/ir/ufo-geometry.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -52,7 +52,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoProjector *
-ufo_cl_projector_new ()
+ufo_cl_projector_new (void)
 {
     return UFO_PROJECTOR (g_object_new (UFO_TYPE_CL_PROJECTOR, NULL));
 }

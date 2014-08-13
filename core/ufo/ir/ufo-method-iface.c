@@ -54,12 +54,11 @@ gpointer
 ufo_method_from_json (JsonObject       *object,
                       UfoPluginManager *manager)
 {
-    #if 0
     gchar *plugin_name = json_object_get_string_member (object, "plugin");
-    /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
-                                            METHOD_FUNC_NAME, // depends on method categeory
-                                            plugin_name,
-                                            error);*/
+    gpointer plugin = ufo_plugin_manager_get_plugin (manager,
+                                                     METHOD_FUNC_NAME, // depends on method categeory
+                                                     plugin_name,
+                                                     error);
     gpointer plugin = NULL;
     if (g_strcmp0 (plugin_name, "sart") == 0)
         plugin = ufo_ir_sart_new ();

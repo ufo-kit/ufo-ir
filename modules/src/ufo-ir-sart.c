@@ -23,7 +23,7 @@
 #include <CL/cl.h>
 #endif
 
-#include <ufo-ir-sart.h>
+#include "ufo-ir-sart.h"
 #include <ufo/ufo.h>
 #include <math.h>
 
@@ -69,7 +69,7 @@ generate_subsets (UfoGeometry *geometry, guint *n_subsets)
 }
 
 UfoIrMethod *
-ufo_ir_sart_new ()
+ufo_ir_sart_new (void)
 {
     UfoIrMethod *method =
         (UfoIrMethod *) g_object_new (UFO_TYPE_IR_SART,

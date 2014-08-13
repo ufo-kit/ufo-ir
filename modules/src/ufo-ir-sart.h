@@ -21,7 +21,7 @@
 #define __UFO_IR_SART_H
 
 #include <glib-object.h>
-#include <ufo-ir-method.h>
+#include <ufo/ir/ufo-ir-method.h>
 
 G_BEGIN_DECLS
 
@@ -49,7 +49,7 @@ struct _UfoIrSARTClass {
 };
 
 UfoIrMethod*
-ufo_ir_sart_new ();
+ufo_ir_sart_new (void);
 
 GType ufo_ir_sart_get_type (void);
 G_END_DECLS

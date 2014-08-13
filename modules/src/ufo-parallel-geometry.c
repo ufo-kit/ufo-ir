@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ufo-parallel-geometry.h>
+#include "ufo-parallel-geometry.h"
 #include <math.h>
 
 #define BEAM_GEOMETRY "parallel"
@@ -39,7 +39,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoGeometry *
-ufo_parallel_geometry_new ()
+ufo_parallel_geometry_new (void)
 {
     return UFO_GEOMETRY(g_object_new (UFO_TYPE_PARALLEL_GEOMETRY, NULL));
 }

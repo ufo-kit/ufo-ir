@@ -4,7 +4,7 @@
 #include <CL/cl.h>
 #endif
 
-#include <ufo-ir-asdpocs.h>
+#include "ufo-ir-asdpocs.h"
 #include <ufo/ufo.h>
 #include <math.h>
 
@@ -63,7 +63,7 @@ set_prior_knowledge (GObject *object,
 }
 
 UfoIrMethod *
-ufo_ir_asdpocs_new ()
+ufo_ir_asdpocs_new (void)
 {
     return UFO_IR_METHOD (g_object_new (UFO_TYPE_IR_ASDPOCS, NULL));
 }

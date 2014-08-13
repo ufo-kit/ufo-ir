@@ -1,4 +1,4 @@
-#include <ufo-gradient-sparsity.h>
+#include "ufo-gradient-sparsity.h"
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -31,7 +31,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoSparsity *
-ufo_gradient_sparsity_new ()
+ufo_gradient_sparsity_new (void)
 {
     return (UfoSparsity *) g_object_new (UFO_TYPE_GRADIENT_SPARSITY,
                                          NULL);
@@ -111,8 +111,7 @@ ufo_gradient_sparsity_finalize (GObject *object)
 static gboolean
 ufo_gradient_sparsity_minimize_real (UfoSparsity *sparsity,
                                      UfoBuffer *input,
-                                     UfoBuffer *output,
-                                     gpointer finish_event)
+                                     UfoBuffer *output)
 {
     UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (sparsity);
     UfoResources *resources = NULL;

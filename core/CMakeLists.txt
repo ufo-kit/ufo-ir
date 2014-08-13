@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-project(ufo_ir C)
+project(ufoir C)
 
 set(TARNAME "libufoir")
 
@@ -70,11 +70,14 @@ include(ConfigurePaths)
 configure_paths(UFO_IR)
 
 if (${UFO_FOUND})
-    string(REGEX MATCH "[A-Za-z/]*ufo-[0-9]" UFO_INCLUDEDIR ${UFO_INCLUDE_DIRS})
-    set(UFO_IR_INCLUDEDIR "${UFO_INCLUDEDIR}/ufo")
+    string(REGEX MATCH "[A-Za-z/]*ufo-[0-9]" UFO_INCLUDE_DIR ${UFO_INCLUDE_DIRS})
+    set(UFO_IR_INCLUDE_DIR "${UFO_INCLUDEDIR}")
 else()
-    set(UFO_IR_INCLUDEDIR "${UFO_IR_INCLUDEDIR}/ufoir-${UFO_IR_VERSION_MAJOR}")
+    set(UFO_IR_INCLUDE_DIR "${UFO_IR_INCLUDEDIR}/ufo-ir-${UFO_IR_VERSION_MAJOR}")
 endif()
+
+message ("UFO_IR_INCLUDE_DIR: ${UFO_IR_INCLUDE_DIR}")
+message ("UFO_IR_INCLUDEDIR: ${UFO_IR_INCLUDEDIR}")
 
 #}}}
 #{{{ Definitions
@@ -97,8 +100,6 @@ if (CMAKE_COMPILER_IS_GNUCC  OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang"))
                      -Wstrict-prototypes
                      -Wwrite-strings")
 endif()
-
-add_definitions(-DG_LOG_DOMAIN=\"ufo-ir-test\")
 
 #}}}
 #{{{ Subdirectories

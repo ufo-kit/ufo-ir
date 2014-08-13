@@ -21,7 +21,7 @@
 #define __UFO_IR_ASDPOCS_H
 
 #include <glib-object.h>
-#include <ufo-ir-method.h>
+#include <ufo/ir/ufo-ir-method.h>
 
 G_BEGIN_DECLS
 
@@ -53,7 +53,7 @@ struct _UfoIrASDPOCSClass {
 };
 
 UfoIrMethod*
-ufo_ir_asdpocs_new ();
+ufo_ir_asdpocs_new (void);
 
 GType ufo_ir_asdpocs_get_type (void);
 G_END_DECLS

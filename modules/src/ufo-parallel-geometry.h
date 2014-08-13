@@ -20,7 +20,7 @@
 #ifndef __UFO_PARALLEL_GEOMETRY_H
 #define __UFO_PARALLEL_GEOMETRY_H
 
-#include <ufo-geometry.h>
+#include <ufo/ir/ufo-geometry.h>
 
 G_BEGIN_DECLS
 
@@ -50,7 +50,7 @@ typedef struct {
 } UfoParallelGeometrySpec;
 
 UfoGeometry *
-ufo_parallel_geometry_new ();
+ufo_parallel_geometry_new (void);
 
 GType ufo_parallel_geometry_get_type (void);
 

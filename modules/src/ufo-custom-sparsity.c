@@ -1,4 +1,4 @@
-#include <ufo-custom-sparsity.h>
+#include "ufo-custom-sparsity.h"
 
 static void ufo_sparsity_interface_init (UfoSparsityIface *iface);
 
@@ -28,7 +28,7 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoSparsity *
-ufo_custom_sparsity_new ()
+ufo_custom_sparsity_new (void)
 {
     return (UfoSparsity *) g_object_new (UFO_TYPE_CUSTOM_SPARSITY,
                                          NULL);

@@ -24,23 +24,25 @@ set(ufo_ir_core_HDRS
     ir/ufo-ir-method.h
 )
 #}}}
-#{{{ libufoir
+#{{{ libufo-ir
 if(CMAKE_BUILD_TYPE MATCHES "Release")
     add_definitions(-DG_DISABLE_ASSERT)
 endif()
 
+message ("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+message ("CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories(${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(ufo_ir SHARED
+add_library(ufoir SHARED
             ${ufo_ir_core_SRCS}
             ${CMAKE_CURRENT_BINARY_DIR}/ufo-ir-enums.c)
 
-set_target_properties(ufo_ir PROPERTIES
+set_target_properties(ufoir PROPERTIES
     VERSION ${PACKAGE_VERSION}
     SOVERSION ${UFO_IR_VERSION_MAJOR})
 
-target_link_libraries(ufo_ir ${UFO_IR_CORE_DEPS})
+target_link_libraries(ufoir ${UFO_IR_CORE_DEPS})
 
 #{{{ install target
 include_directories(${CMAKE_CURRENT_BINARY_DIR}
@@ -48,14 +50,17 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
                     ${OPENCL_INCLUDE_DIRS}
                     ${UFO_INCLUDE_DIRS})
 
-install(TARGETS ufo_ir
+message ("INSTALL-1 UFO_IR_LIBDIR: ${UFO_IR_LIBDIR}")
+install(TARGETS ufoir
         ARCHIVE DESTINATION ${UFO_IR_LIBDIR}
         LIBRARY DESTINATION ${UFO_IR_LIBDIR})
 
+message ("INSTALL-2 UFO_IR_INCLUDEDIR: ${UFO_IR_INCLUDEDIR}/ir")
+message ("INSTALL-2 UFO_IR_INCLUDE_DIR: ${UFO_IR_INCLUDE_DIR}/ir")
 install(FILES ${ufo_ir_core_HDRS}
               ${CMAKE_CURRENT_SOURCE_DIR}/ufo-ir.h
               ${CMAKE_CURRENT_BINARY_DIR}/ufo-ir-enums.h
-        DESTINATION ${UFO_IR_INCLUDEDIR}/ir)
+        DESTINATION ${UFO_IR_INCLUDE_DIR}/ufo/ir)
 #}}}
 #}}}
 #{{{ glib-mkenums
@@ -86,8 +91,14 @@ add_custom_command(
 #{{{ g-ir-scanner and g-ir-compiler
 find_program(INTROSPECTION_SCANNER "g-ir-scanner")
 find_program(INTROSPECTION_COMPILER "g-ir-compiler")
+message ("JSON_GLIB_INCLUDE_DIRS: ${JSON_GLIB_INCLUDE_DIRS}")
+message ("OPENCL_INCLUDE_DIRS: ${OPENCL_INCLUDE_DIRS}")
+message ("UFO_INCLUDE_DIR: ${UFO_INCLUDE_DIR}")
+message ("UFO_IR_TYPELIBDIR: ${UFO_IR_TYPELIBDIR}")
+message ("UFO_IR_GIRDIR: ${UFO_IR_GIRDIR}")
 
-if (INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
+
+if (0 AND INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
     option(WITH_GIR "Build introspection files" ON)
     if (WITH_GIR)
         set(GIR_PREFIX "UfoIr-${UFO_IR_GIR_VERSION}")
@@ -111,9 +122,9 @@ if (INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
                     --include=Json-1.0
                     -I${OPENCL_INCLUDE_DIRS}
                     -I${JSON_GLIB_INCLUDE_DIRS}
-                    -I${UFO_INCLUDE_DIRS}
+                    -I${UFO_INCLUDE_DIR}
                     -I${CMAKE_CURRENT_SOURCE_DIR}/..
-                    -DUFO_COMPILATION
+                    -DUFO_IR_COMPILATION
                     --output ${GIR_XML}
                     --warn-all
                     --quiet
@@ -129,7 +140,7 @@ if (INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
         add_custom_target(gir ALL DEPENDS ${GIR_XML} ${GIR_TYPELIB})
-        add_dependencies(gir ufoir)
+        add_dependencies(gir ufo-ir)
 
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${GIR_XML}
                 DESTINATION ${UFO_IR_GIRDIR})
@@ -142,9 +153,9 @@ endif()
 #{{{ pkg-config
 # FIXME: inside the ufo.pc.in we should set the lib names that we found out, not
 # hard coded values
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ufo-ir.pc.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/ufo-ir.pc" @ONLY IMMEDIATE)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ufoir.pc.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc" @ONLY IMMEDIATE)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ufo-ir.pc
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc
         DESTINATION ${UFO_IR_PKGCONFIGDIR})
 #}}}

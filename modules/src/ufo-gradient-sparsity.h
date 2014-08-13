@@ -2,8 +2,8 @@
 #define __UFO_GRADIENT_SPARSITY_H
 
 #include <glib-object.h>
-#include <ufo-processor.h>
-#include <ufo-sparsity-iface.h>
+#include <ufo/ir/ufo-processor.h>
+#include <ufo/ir/ufo-sparsity-iface.h>
 
 G_BEGIN_DECLS
 
@@ -28,7 +28,7 @@ struct _UfoGradientSparsityClass {
 };
 
 UfoSparsity*
-ufo_gradient_sparsity_new ();
+ufo_gradient_sparsity_new (void);
 
 GType ufo_gradient_sparsity_get_type (void);
 

@@ -2,10 +2,10 @@
 #define __UFO_CUSTOM_SPARSITY_H
 
 #include <glib-object.h>
-#include <ufo-processor.h>
-#include <ufo-sparsity-iface.h>
-#include <ufo-method-iface.h>
-#include <ufo-transform-iface.h>
+#include <ufo/ir/ufo-processor.h>
+#include <ufo/ir/ufo-sparsity-iface.h>
+#include <ufo/ir/ufo-method-iface.h>
+#include <ufo/ir/ufo-transform-iface.h>
 
 G_BEGIN_DECLS
 
@@ -34,7 +34,7 @@ struct _UfoCustomSparsityClass {
 };
 
 UfoSparsity*
-ufo_custom_sparsity_new ();
+ufo_custom_sparsity_new (void);
 
 GType ufo_custom_sparsity_get_type (void);
 
