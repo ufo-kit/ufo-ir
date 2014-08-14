@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ufo-parallel-geometry.h"
+#include "ufo-ir-parallel-geometry.h"
 #include <math.h>
 
 #define BEAM_GEOMETRY "parallel"

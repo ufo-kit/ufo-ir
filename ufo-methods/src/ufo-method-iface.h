@@ -49,10 +49,6 @@ ufo_method_process (UfoMethod *method,
                     UfoBuffer *input,
                     UfoBuffer *output);
 
-gpointer
-ufo_method_from_json (JsonObject       *object,
-                      UfoPluginManager *manager);
-
 GType ufo_method_get_type (void);
 
 G_END_DECLS

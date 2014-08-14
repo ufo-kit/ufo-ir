@@ -1,4 +1,4 @@
-#include "ufo-gradient-sparsity.h"
+#include "ufo-ir-gradient-sparsity.h"
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>

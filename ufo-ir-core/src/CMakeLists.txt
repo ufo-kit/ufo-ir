@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 
 #{{{ sources
 set(ufoir_SRCS
+    ufo-ir-method.c
     ufo-prior-knowledge.c
     ufo-sparsity-iface.c
     ufo-geometry.c
@@ -10,6 +11,7 @@ set(ufoir_SRCS
 #}}}
 #{{{ headers
 set(ufoir_HDRS
+    ufo-ir-method.h
     ufo-prior-knowledge.h
     ufo-sparsity-iface.h
     ufo-geometry.h

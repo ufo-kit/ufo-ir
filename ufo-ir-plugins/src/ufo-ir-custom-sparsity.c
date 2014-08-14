@@ -1,4 +1,4 @@
-#include "ufo-custom-sparsity.h"
+#include "ufo-ir-custom-sparsity.h"
 
 static void ufo_sparsity_interface_init (UfoSparsityIface *iface);
 

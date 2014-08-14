@@ -311,19 +311,22 @@ gpointer
 ufo_projector_from_json (JsonObject       *object,
                          UfoPluginManager *manager)
 {
-  #if 0
     gboolean gpu = json_object_get_boolean_member (object, "on-gpu");
-    gchar *model = json_object_get_string_member (object, "model");
+    const gchar *model = json_object_get_string_member (object, "model");
     gpointer plugin = NULL;
 
     if (gpu) {
-        /*
+        GError *tmp_error = NULL;
         plugin = ufo_plugin_manager_get_plugin (manager,
-                                                METHOD_FUNC_NAME,
-                                                // depends on method categeory
-                                                plugin_name,
-                                                error);*/
-        plugin = ufo_cl_projector_new ();
+                                                "ufo_cl_projector_new",
+                                                "libufoir_clprojector.so",
+                                                &tmp_error);
+
+        if (tmp_error != NULL) {
+          g_warning ("%s", tmp_error->message);
+          return NULL;
+        }
+
         g_object_set (plugin, "model", model, NULL);
         g_print ("\nProjector: %p", plugin);
     }
@@ -332,6 +335,4 @@ ufo_projector_from_json (JsonObject       *object,
     }
 
     return plugin;
-  #endif
-    return NULL;
 }

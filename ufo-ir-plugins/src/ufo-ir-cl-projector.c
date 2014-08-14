@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ufo-cl-projector.h"
+#include "ufo-ir-cl-projector.h"
 #include <ufo/ir/ufo-geometry.h>
 
 #ifdef __APPLE__

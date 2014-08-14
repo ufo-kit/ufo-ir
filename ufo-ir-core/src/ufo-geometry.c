@@ -377,17 +377,38 @@ ufo_geometry_get_spec (UfoGeometry *geometry,
     return UFO_GEOMETRY_GET_CLASS (geometry)->get_spec(geometry, data_size);
 }
 
+static gchar *
+transform_string (const gchar *pattern,
+                  const gchar *s,
+                  const gchar *separator)
+{
+    gchar **sv;
+    gchar *transformed;
+    gchar *result;
+    sv = g_strsplit_set (s, "-_ ", -1);
+    transformed = g_strjoinv (separator, sv);
+    result = g_strdup_printf (pattern, transformed);
+    g_strfreev (sv);
+    g_free (transformed);
+    return result;
+}
+
 gpointer
 ufo_geometry_from_json (JsonObject       *object,
                         UfoPluginManager *manager)
 {
-  #if 0
-    gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
-    /*gpointer plugin = ufo_plugin_manager_get_plugin (manager,
-                                            METHOD_FUNC_NAME, // depends on method categeory
-                                            plugin_name,
-                                            error);*/
-    gpointer plugin = ufo_parallel_geometry_new ();
+    GError *tmp_error = NULL;
+    const gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
+    const gchar *module_name = transform_string ("libufoir_%sgeometry.so", plugin_name, NULL);
+    gchar *func_name = transform_string ("ufo_%s_geometry_new", plugin_name, "_");
+    gpointer plugin = ufo_plugin_manager_get_plugin (manager,
+                                                     func_name, // depends on method categeory
+                                                     module_name,
+                                                     &tmp_error);
+    if (tmp_error != NULL) {
+      g_warning ("%s", tmp_error->message);
+      return NULL;
+    }
 
     GList *members = json_object_get_members (object);
     GList *member = NULL;
@@ -414,6 +435,4 @@ ufo_geometry_from_json (JsonObject       *object,
     }
 
     return plugin;
-  #endif
-    return NULL;
 }

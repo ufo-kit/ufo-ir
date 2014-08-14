@@ -5,6 +5,8 @@
 #endif
 
 #include "ufo-ir-asdpocs.h"
+#include <ufo/ir/ufo-sparsity-iface.h>
+#include <ufo/ir/ufo-prior-knowledge.h>
 #include <ufo/ufo.h>
 #include <math.h>
 

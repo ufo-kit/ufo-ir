@@ -21,7 +21,10 @@
 #define __UFO_IR_METHOD_H
 
 #include <glib-object.h>
+#include <ufo/methods/ufo-method-iface.h>
 #include <ufo/methods/ufo-processor.h>
+#include <ufo/ir/ufo-projector.h>
+#include <ufo/ir/ufo-geometry.h>
 
 G_BEGIN_DECLS
 
@@ -60,6 +63,10 @@ ufo_ir_method_new (void);
 void
 ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
                                    GHashTable  *prior);
+
+gpointer
+ufo_ir_method_from_json (JsonObject       *object,
+                         UfoPluginManager *manager);
 
 GType ufo_ir_method_get_type (void);
 
