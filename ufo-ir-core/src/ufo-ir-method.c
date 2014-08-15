@@ -18,10 +18,11 @@
 */
 
 #include "ufo-ir-method.h"
-#include "ufo-projector.h"
-#include "ufo-geometry.h"
-#include "ufo-prior-knowledge.h"
-#include "ufo-sparsity-iface.h"
+#include "ufo-ir-projector.h"
+#include "ufo-ir-geometry.h"
+#include "ufo-ir-prior-knowledge.h"
+#include "ufo-ir-sparsity-iface.h"
+
 #include <ufo/methods/ufo-transform-iface.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
@@ -30,10 +31,10 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrMethod, ufo_ir_method, UFO_TYPE_PROCESSOR,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
                                                 ufo_method_interface_init))
 
-#define UFO_IR_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_IR_METHOD, UfoIrMethodPrivate))
+#define UFO_IR_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_METHOD, UfoIrMethodPrivate))
 
 struct _UfoIrMethodPrivate {
-    UfoProjector *projector;
+    UfoIrProjector *projector;
     gfloat  relaxation_factor;
     guint   max_iterations;
 };
@@ -49,7 +50,7 @@ static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 UfoMethod *
 ufo_ir_method_new (void)
 {
-    return (UfoMethod *) g_object_new (UFO_TYPE_IR_METHOD,
+    return (UfoMethod *) g_object_new (UFO_IR_TYPE_METHOD,
                                        NULL);
 }
 
@@ -109,7 +110,7 @@ static void
 ufo_ir_method_dispose (GObject *object)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
-    g_clear_object(&priv->projector);
+    g_clear_object (&priv->projector);
     G_OBJECT_CLASS (ufo_ir_method_parent_class)->dispose (object);
 }
 
@@ -137,7 +138,8 @@ ufo_ir_method_set_prior_knowledge_real (UfoIrMethod *method,
 static gboolean
 ufo_ir_method_process_real (UfoMethod *method,
                             UfoBuffer *input,
-                            UfoBuffer *output)
+                            UfoBuffer *output,
+                            gpointer  pevent)
 {
     g_warning ("%s: `process' not implemented", G_OBJECT_TYPE_NAME (method));
     return FALSE;
@@ -166,8 +168,8 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
 
     properties[PROP_PROJECTION_MODEL] =
         g_param_spec_pointer("projection-model",
-                             "Pointer to the instance of UfoProjector.",
-                             "Pointer to the instance of UfoProjector.",
+                             "Pointer to the instance of UfoIrProjector.",
+                             "Pointer to the instance of UfoIrProjector.",
                              G_PARAM_READWRITE);
 
     properties[PROP_RELAXATION_FACTOR] =
@@ -199,7 +201,7 @@ void
 ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
                                    GHashTable  *prior)
 {
-    g_return_if_fail (UFO_IS_IR_METHOD (method) && prior);
+    g_return_if_fail (UFO_IR_IS_METHOD (method) && prior);
     UFO_IR_METHOD_GET_CLASS (method)->set_prior_knowledge(method, prior);
 }
 
@@ -235,8 +237,8 @@ ufo_ir_method_from_json (JsonObject       *object,
 {
     GError *tmp_error = NULL;
     const gchar *plugin_name = json_object_get_string_member (object, "plugin");
-    const gchar *module_name = transform_string ("libufoir_%s.so", plugin_name, NULL);
-    gchar *func_name = transform_string ("ufo_ir_%s_new", plugin_name, "_");
+    const gchar *module_name = transform_string ("libufoir_%s_method.so", plugin_name, NULL);
+    gchar *func_name = transform_string ("ufo_ir_%s_method_new", plugin_name, "_");
     gpointer plugin = ufo_plugin_manager_get_plugin (manager,
                                                      func_name,
                                                      module_name,

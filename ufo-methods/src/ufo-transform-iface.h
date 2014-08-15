@@ -41,21 +41,25 @@ struct _UfoTransformIface {
 
     gboolean (*direct) (UfoTransform *transform,
                         UfoBuffer    *input,
-                        UfoBuffer    *output);
+                        UfoBuffer    *output,
+                        gpointer     pevent);
 
     gboolean (*inverse) (UfoTransform *transform,
                          UfoBuffer    *input,
-                         UfoBuffer    *output);
+                         UfoBuffer    *output,
+                         gpointer     pevent);
 };
 
 gboolean
 ufo_transform_direct (UfoTransform *transform,
                       UfoBuffer    *input,
-                      UfoBuffer    *output);
+                      UfoBuffer    *output,
+                      gpointer     pevent);
 gboolean
 ufo_transform_inverse (UfoTransform *transform,
                        UfoBuffer    *input,
-                       UfoBuffer    *output);
+                       UfoBuffer    *output,
+                       gpointer     pevent);
 
 GType ufo_transform_get_type (void);
 

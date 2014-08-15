@@ -18,7 +18,7 @@
 */
 
 #include "ufo-ir-cl-projector.h"
-#include <ufo/ir/ufo-geometry.h>
+#include <ufo/ir/ufo-ir-geometry.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -26,19 +26,18 @@
 #include <CL/cl.h>
 #endif
 
-G_DEFINE_TYPE (UfoClProjector, ufo_cl_projector, UFO_TYPE_PROJECTOR)
+G_DEFINE_TYPE (UfoIrClProjector, ufo_ir_cl_projector, UFO_IR_TYPE_PROJECTOR)
 
-#define UFO_CL_PROJECTOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_CL_PROJECTOR, UfoClProjectorPrivate))
+#define UFO_IR_CL_PROJECTOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_CL_PROJECTOR, UfoIrClProjectorPrivate))
 
 GQuark
-ufo_cl_projector_error_quark (void)
+ufo_ir_cl_projector_error_quark (void)
 {
-    return g_quark_from_static_string ("ufo-cl-projector-error-quark");
+    return g_quark_from_static_string ("ufo-ir-cl-projector-error-quark");
 }
 
-struct _UfoClProjectorPrivate {
+struct _UfoIrClProjectorPrivate {
     gchar    *model;
-    gpointer cmd_queue;
     gpointer fp_kernel[2];
     gpointer bp_kernel;
 };
@@ -46,28 +45,29 @@ struct _UfoClProjectorPrivate {
 enum {
     PROP_0,
     PROP_MODEL,
-    PROP_CL_COMMAND_QUEUE,
     N_PROPERTIES
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-UfoProjector *
-ufo_cl_projector_new (void)
+UfoIrProjector *
+ufo_ir_cl_projector_new (void)
 {
-    return UFO_PROJECTOR (g_object_new (UFO_TYPE_CL_PROJECTOR, NULL));
+    return UFO_IR_PROJECTOR (g_object_new (UFO_IR_TYPE_CL_PROJECTOR, NULL));
 }
 
 static void
-ufo_cl_projector_setup_real (UfoProjector *projector,
-                             UfoResources *resources,
-                             GError       **error)
+ufo_ir_cl_projector_setup_real (UfoProcessor  *projector,
+                                UfoResources  *resources,
+                                GError        **error)
 {
-    UFO_PROJECTOR_CLASS (ufo_cl_projector_parent_class)->setup (projector, resources, error);
+    UFO_PROCESSOR_CLASS (ufo_ir_cl_projector_parent_class)->setup (projector,
+                                                                   resources,
+                                                                   error);
     if (error && *error)
       return;
 
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
-    UfoGeometry *geometry = NULL;
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
+    UfoIrGeometry *geometry = NULL;
     gchar *model = NULL;
     gchar *geom = NULL;
     g_object_get (projector, "geometry", &geometry, "model", &model, NULL);
@@ -76,8 +76,8 @@ ufo_cl_projector_setup_real (UfoProjector *projector,
     gchar *filename = g_strconcat("projector-", geom, "-", model, ".cl", NULL);
 
     gpointer *kernel[3] = { &priv->bp_kernel,
-                             &priv->fp_kernel[Horizontal],
-                             &priv->fp_kernel[Vertical]};
+                            &priv->fp_kernel[Horizontal],
+                            &priv->fp_kernel[Vertical]};
 
     *kernel[0] = ufo_resources_get_kernel (resources, filename, "BP", error);
     if (*error) return;
@@ -88,21 +88,14 @@ ufo_cl_projector_setup_real (UfoProjector *projector,
 }
 
 static void
-ufo_cl_projector_set_property (GObject      *object,
-                               guint        property_id,
-                               const GValue *value,
-                               GParamSpec   *pspec)
+ufo_ir_cl_projector_set_property (GObject      *object,
+                                  guint        property_id,
+                                  const GValue *value,
+                                  GParamSpec   *pspec)
 {
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (object);
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_CL_COMMAND_QUEUE:
-            if (priv->cmd_queue) {
-                UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue (priv->cmd_queue));
-            }
-            priv->cmd_queue = g_value_get_pointer(value);
-            UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
-            break;
         case PROP_MODEL:
             g_free (priv->model);
             // convert model name to lowercase
@@ -115,17 +108,14 @@ ufo_cl_projector_set_property (GObject      *object,
 }
 
 static void
-ufo_cl_projector_get_property (GObject    *object,
-                               guint      property_id,
-                               GValue     *value,
-                               GParamSpec *pspec)
+ufo_ir_cl_projector_get_property (GObject    *object,
+                                  guint      property_id,
+                                  GValue     *value,
+                                  GParamSpec *pspec)
 {
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (object);
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_CL_COMMAND_QUEUE:
-            g_value_set_pointer (value, priv->cmd_queue);
-            break;
         case PROP_MODEL:
             g_value_set_string (value, priv->model);
             break;
@@ -136,11 +126,9 @@ ufo_cl_projector_get_property (GObject    *object,
 }
 
 static void
-ufo_cl_projector_dispose (GObject *object)
+ufo_ir_cl_projector_dispose (GObject *object)
 {
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (object);
-
-    UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue (priv->cmd_queue));
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (object);
 
     gpointer *kernel[3] = { &priv->bp_kernel,
                             &priv->fp_kernel[Horizontal],
@@ -150,31 +138,33 @@ ufo_cl_projector_dispose (GObject *object)
         *kernel[i] = NULL;
     }
 
-    G_OBJECT_CLASS (ufo_cl_projector_parent_class)->dispose (object);
+    G_OBJECT_CLASS (ufo_ir_cl_projector_parent_class)->dispose (object);
 }
 
 static void
-ufo_cl_projector_finalize (GObject *gobject)
+ufo_ir_cl_projector_finalize (GObject *gobject)
 {
-    //UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (gobject);
-    G_OBJECT_CLASS(ufo_cl_projector_parent_class)->finalize(gobject);
+    //UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (gobject);
+    G_OBJECT_CLASS(ufo_ir_cl_projector_parent_class)->finalize(gobject);
 }
 
 static void
-ufo_cl_projector_FP_ROI_real (UfoProjector         *projector,
-                              UfoBuffer            *volume,
-                              UfoRegion            *volume_roi,
-                              UfoBuffer            *measurements,
-                              UfoProjectionsSubset *subset,
-                              gfloat               scale,
-                              gpointer             finish_event)
+ufo_ir_cl_projector_FP_ROI_real (UfoIrProjector         *projector,
+                                 UfoBuffer              *volume,
+                                 UfoRegion              *volume_roi,
+                                 UfoBuffer              *measurements,
+                                 UfoIrProjectionsSubset *subset,
+                                 gfloat                 scale,
+                                 gpointer               finish_event)
 {
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->fp_kernel[subset->direction];
-    cl_command_queue cmd_queue = priv->cmd_queue;
-
-    UfoProfiler *profiler = NULL;
-    g_object_get (projector, "ufo-profiler", &profiler, NULL);
+    cl_command_queue cmd_queue = NULL;
+    UfoProfiler      *profiler = NULL;
+    g_object_get (projector,
+                  "ufo-profiler", &profiler,
+                  "command-queue", &cmd_queue,
+                  NULL);
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -184,14 +174,13 @@ ufo_cl_projector_FP_ROI_real (UfoProjector         *projector,
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 2, sizeof (cl_mem), &d_measurements));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 3, sizeof (cl_mem), &d_measurements));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 4, sizeof (gfloat), &scale));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 9, sizeof (UfoProjectionsSubset), subset));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 9, sizeof (UfoIrProjectionsSubset), subset));
 
     UfoRequisition requisitions;
     ufo_buffer_get_requisition (measurements, &requisitions);
     requisitions.dims[1] = subset->n;
 
     if (finish_event) {
-        g_print ("\n finish_event: %p", finish_event);
         UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(cmd_queue,
                                                           kernel,
                                                           requisitions.n_dims,
@@ -209,20 +198,22 @@ ufo_cl_projector_FP_ROI_real (UfoProjector         *projector,
 }
 
 static void
-ufo_cl_projector_BP_ROI_real (UfoProjector         *projector,
-                              UfoBuffer            *volume,
-                              UfoRegion            *volume_roi,
-                              UfoBuffer            *measurements,
-                              UfoProjectionsSubset *subset,
-                              gfloat               relax_param,
-                              gpointer             finish_event)
+ufo_ir_cl_projector_BP_ROI_real (UfoIrProjector         *projector,
+                                 UfoBuffer              *volume,
+                                 UfoRegion              *volume_roi,
+                                 UfoBuffer              *measurements,
+                                 UfoIrProjectionsSubset *subset,
+                                 gfloat                 relax_param,
+                                 gpointer               finish_event)
 {
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->bp_kernel;
-    cl_command_queue cmd_queue = priv->cmd_queue;
-
+    cl_command_queue cmd_queue = NULL;
     UfoProfiler *profiler = NULL;
-    g_object_get (projector, "ufo-profiler", &profiler, NULL);
+    g_object_get (projector,
+                  "ufo-profiler", &profiler,
+                  "command-queue", &cmd_queue,
+                  NULL);
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -232,7 +223,7 @@ ufo_cl_projector_BP_ROI_real (UfoProjector         *projector,
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 2, sizeof (UfoRegion), volume_roi));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 3, sizeof (cl_mem), &d_measurements));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 4, sizeof (gfloat), &relax_param));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 9, sizeof (UfoProjectionsSubset), subset));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 9, sizeof (UfoIrProjectionsSubset), subset));
 
     UfoRequisition requisitions;
     ufo_buffer_get_requisition (volume, &requisitions);
@@ -254,42 +245,44 @@ ufo_cl_projector_BP_ROI_real (UfoProjector         *projector,
 }
 
 static void
-ufo_cl_projector_configure_real (UfoProjector *projector)
+ufo_ir_cl_projector_configure_real (UfoProcessor *projector)
 {
-    UFO_PROJECTOR_CLASS (ufo_cl_projector_parent_class)->configure (projector);
-    UfoClProjectorPrivate *priv = UFO_CL_PROJECTOR_GET_PRIVATE (projector);
+    UFO_PROCESSOR_CLASS (ufo_ir_cl_projector_parent_class)->configure (projector);
+    UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
 
-    UfoGeometry *geometry = NULL;
+    UfoIrGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
 
-    cl_mem d_sin_vals = ufo_geometry_scan_angles_device (geometry, SIN_VALUES);
-    cl_mem d_cos_vals = ufo_geometry_scan_angles_device (geometry, COS_VALUES);
+    cl_mem d_sin_vals = ufo_ir_geometry_scan_angles_device (geometry, SIN_VALUES);
+    cl_mem d_cos_vals = ufo_ir_geometry_scan_angles_device (geometry, COS_VALUES);
 
-    UfoGeometryDims *dims = NULL;
+    UfoIrGeometryDims *dims = NULL;
     gsize spec_size = 0;
-    gpointer spec = ufo_geometry_get_spec (geometry, &spec_size);
+    gpointer spec = ufo_ir_geometry_get_spec (geometry, &spec_size);
     g_object_get (geometry, "dimensions", &dims, NULL);
 
     cl_kernel kernel[3] = { priv->bp_kernel,
                             priv->fp_kernel[Horizontal],
                             priv->fp_kernel[Vertical] };
+
+    cl_int err = 0;
     for (int i = 0; i < 3; ++i) {
-        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 5, sizeof (cl_mem), &d_sin_vals));
-        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 6, sizeof (cl_mem), &d_cos_vals));
-        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 7, sizeof (UfoGeometryDims), dims));
-        UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel[i], 8, spec_size, spec));
+        err |= clSetKernelArg (kernel[i], 5, sizeof (cl_mem), &d_sin_vals);
+        err |= clSetKernelArg (kernel[i], 6, sizeof (cl_mem), &d_cos_vals);
+        err |= clSetKernelArg (kernel[i], 7, sizeof (UfoIrGeometryDims), dims);
+        err |= clSetKernelArg (kernel[i], 8, spec_size, spec);
+        UFO_RESOURCES_CHECK_CLERR (err);
     }
 }
 
 static void
-ufo_cl_projector_class_init (UfoClProjectorClass *klass)
+ufo_ir_cl_projector_class_init (UfoIrClProjectorClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->dispose = ufo_cl_projector_dispose;
-    gobject_class->finalize = ufo_cl_projector_finalize;
-    gobject_class->set_property = ufo_cl_projector_set_property;
-    gobject_class->get_property = ufo_cl_projector_get_property;
-
+    gobject_class->dispose = ufo_ir_cl_projector_dispose;
+    gobject_class->finalize = ufo_ir_cl_projector_finalize;
+    gobject_class->set_property = ufo_ir_cl_projector_set_property;
+    gobject_class->get_property = ufo_ir_cl_projector_get_property;
 
     properties[PROP_MODEL] =
         g_param_spec_string ("model",
@@ -298,29 +291,22 @@ ufo_cl_projector_class_init (UfoClProjectorClass *klass)
                              "joseph",
                               G_PARAM_READWRITE);
 
-    properties[PROP_CL_COMMAND_QUEUE] =
-        g_param_spec_pointer("command-queue",
-                             "Pointer to the instance of cl_command_queue.",
-                             "Pointer to the instance of cl_command_queue.",
-                             G_PARAM_READWRITE);
-
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
-    g_type_class_add_private (gobject_class, sizeof(UfoClProjectorPrivate));
+    g_type_class_add_private (gobject_class, sizeof(UfoIrClProjectorPrivate));
 
-    UfoProjectorClass *projector_class = UFO_PROJECTOR_CLASS(klass);
-    projector_class->FP_ROI = ufo_cl_projector_FP_ROI_real;
-    projector_class->BP_ROI = ufo_cl_projector_BP_ROI_real;
-    projector_class->setup  = ufo_cl_projector_setup_real;
-    projector_class->configure = ufo_cl_projector_configure_real;
+    UfoIrProjectorClass *projector_class = UFO_IR_PROJECTOR_CLASS(klass);
+    projector_class->FP_ROI = ufo_ir_cl_projector_FP_ROI_real;
+    projector_class->BP_ROI = ufo_ir_cl_projector_BP_ROI_real;
+    UFO_PROCESSOR_CLASS (klass)->setup  = ufo_ir_cl_projector_setup_real;
+    UFO_PROCESSOR_CLASS (klass)->configure = ufo_ir_cl_projector_configure_real;
 }
 
 static void
-ufo_cl_projector_init (UfoClProjector *self)
+ufo_ir_cl_projector_init (UfoIrClProjector *self)
 {
-    UfoClProjectorPrivate *priv = NULL;
-    self->priv = priv = UFO_CL_PROJECTOR_GET_PRIVATE (self);
+    UfoIrClProjectorPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (self);
     priv->model = g_strdup ("joseph");
-    priv->cmd_queue = NULL;
 }

@@ -41,13 +41,15 @@ struct _UfoMethodIface {
 
     gboolean (*process) (UfoMethod *method,
                          UfoBuffer *input,
-                         UfoBuffer *output);
+                         UfoBuffer *output,
+                         gpointer  pevent);
 };
 
 gboolean
 ufo_method_process (UfoMethod *method,
                     UfoBuffer *input,
-                    UfoBuffer *output);
+                    UfoBuffer *output,
+                    gpointer  pevent);
 
 GType ufo_method_get_type (void);
 

@@ -26,19 +26,21 @@ G_DEFINE_INTERFACE (UfoMethod, ufo_method, G_TYPE_OBJECT)
 gboolean
 ufo_method_process (UfoMethod *method,
                     UfoBuffer *input,
-                    UfoBuffer *output)
+                    UfoBuffer *output,
+                    gpointer  pevent)
 {
     g_return_val_if_fail(UFO_IS_METHOD (method) &&
                          UFO_IS_BUFFER (input) &&
                          UFO_IS_BUFFER (output),
                          FALSE);
-    return UFO_METHOD_GET_IFACE (method)->process (method, input, output);
+    return UFO_METHOD_GET_IFACE (method)->process (method, input, output, pevent);
 }
 
 static gboolean
 ufo_method_process_real (UfoMethod *method,
                          UfoBuffer *input,
-                         UfoBuffer *output)
+                         UfoBuffer *output,
+                         gpointer  pevent)
 {
     g_warning ("%s: `process' not implemented", G_OBJECT_TYPE_NAME (method));
     return FALSE;

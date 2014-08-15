@@ -1,0 +1,65 @@
+{
+    "nodes" : [
+        {
+            "plugin": "reader",
+            "name": "reader",
+            "properties" : {
+                "path": "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
+            }
+        },
+        {
+            "plugin" : "ir",
+            "name"   : "ir",
+            "properties" : {
+                "geometry" : {
+                    "beam-geometry"  : "parallel",
+                    "num-angles" : 287,
+                    "angle-offset" : 0.0,
+                    "angle-step" : 0.6288,
+                    "detector-scale" : 1.0,
+                    "detector-offset" : 0
+                },
+
+                "projector" : {
+                    "model" : "JoSePh",
+                    "on-gpu": true
+                },
+/*
+                "method" : {
+                    "plugin" : "sart",
+                    "relaxation-factor" : 0.25,
+                    "max-iterations": 10
+                }
+*/
+                "method" : {
+                    "plugin" : "asdpocs",
+                    "relaxation-factor" : 0.25,
+                    "max-iterations": 10,
+                    "df-minimizer" : {
+                        "plugin" : "sart",
+                        "relaxation-factor" : 0.25,
+                        "max-iterations": 10
+                    }
+                },
+
+                "prior-knowledge" : {
+                    "image-sparsity" : "gradient"
+                }
+            }
+        },
+        {
+            "plugin": "writer",
+            "name": "writer"
+        }
+    ],
+    "edges" : [
+        {
+            "from": { "name": "reader" },
+            "to": { "name": "ir" }
+        },
+        {
+            "from": { "name": "ir" },
+            "to": { "name": "writer" }
+        }
+    ]
+}

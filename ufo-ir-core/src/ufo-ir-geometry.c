@@ -17,7 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ufo-geometry.h"
+#include "ufo-ir-geometry.h"
 #include <math.h>
 
 #ifdef __APPLE__
@@ -26,20 +26,20 @@
 #include <CL/cl.h>
 #endif
 
-G_DEFINE_TYPE (UfoGeometry, ufo_geometry, G_TYPE_OBJECT)
+G_DEFINE_TYPE (UfoIrGeometry, ufo_ir_geometry, G_TYPE_OBJECT)
 
-#define UFO_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_GEOMETRY, UfoGeometryPrivate))
+#define UFO_IR_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_GEOMETRY, UfoIrGeometryPrivate))
 
 GQuark
-ufo_geometry_error_quark (void)
+ufo_ir_geometry_error_quark (void)
 {
-    return g_quark_from_static_string ("ufo-geometry-error-quark");
+    return g_quark_from_static_string ("ufo-ir-geometry-error-quark");
 }
 
-struct _UfoGeometryPrivate {
-    UfoGeometryDims dimensions;
+struct _UfoIrGeometryPrivate {
+    UfoIrGeometryDims dimensions;
 
-    guint  n_angles;
+    guint   n_angles;
     gdouble angle_step;
     gdouble angle_offset;
 
@@ -51,7 +51,7 @@ struct _UfoGeometryPrivate {
 };
 
 enum {
-    PROP_0 = N_GEOMETRY_VIRTUAL_PROPERTIES,
+    PROP_0 = N_IR_GEOMETRY_VIRTUAL_PROPERTIES,
     PROP_DIMENSIONS,
     PROP_NUM_ANGLES,
     PROP_ANGLE_STEP,
@@ -59,11 +59,11 @@ enum {
     N_PROPERTIES
 };
 
-static GParamSpec *ufo_geometry_props[N_PROPERTIES] = { NULL, };
+static GParamSpec *ufo_ir_geometry_props[N_PROPERTIES] = { NULL, };
 
 static cl_mem
-create_lut_buffer (UfoGeometryPrivate *priv,
-                   gfloat             **host_mem,
+create_lut_buffer (UfoIrGeometryPrivate *priv,
+                   gfloat               **host_mem,
                    double (*func)(double))
 {
     cl_int errcode;
@@ -87,21 +87,21 @@ create_lut_buffer (UfoGeometryPrivate *priv,
     return mem;
 }
 
-UfoGeometry *
-ufo_geometry_new (void)
+UfoIrGeometry *
+ufo_ir_geometry_new (void)
 {
-    return UFO_GEOMETRY(g_object_new (UFO_TYPE_GEOMETRY, NULL));
+    return UFO_IR_GEOMETRY(g_object_new (UFO_IR_TYPE_GEOMETRY, NULL));
 }
 
 static void
-ufo_geometry_setup_real (UfoGeometry  *geometry,
-                         UfoResources *resources,
-                         GError       **error)
+ufo_ir_geometry_setup_real (UfoIrGeometry *geometry,
+                            UfoResources  *resources,
+                            GError        **error)
 {
-    g_return_if_fail (UFO_IS_GEOMETRY (geometry) &&
+    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry) &&
                       UFO_IS_RESOURCES (resources));
 
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (geometry);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
     priv->context = ufo_resources_get_context (resources);
     UFO_RESOURCES_CHECK_CLERR (clRetainContext (priv->context));
     priv->scan_sin_lut = create_lut_buffer (priv, &priv->scan_host_sin_lut, sin);
@@ -109,16 +109,16 @@ ufo_geometry_setup_real (UfoGeometry  *geometry,
 }
 
 static void
-ufo_geometry_set_property (GObject      *object,
-                           guint        property_id,
-                           const GValue *value,
-                           GParamSpec   *pspec)
+ufo_ir_geometry_set_property (GObject      *object,
+                              guint        property_id,
+                              const GValue *value,
+                              GParamSpec   *pspec)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_DIMENSIONS:
-            priv->dimensions = *((UfoGeometryDims *)g_value_get_pointer(value));
+            priv->dimensions = *((UfoIrGeometryDims *)g_value_get_pointer(value));
             break;
         case PROP_NUM_ANGLES:
             priv->n_angles = g_value_get_uint(value);
@@ -136,12 +136,12 @@ ufo_geometry_set_property (GObject      *object,
 }
 
 static void
-ufo_geometry_get_property (GObject    *object,
-                           guint      property_id,
-                           GValue     *value,
-                           GParamSpec *pspec)
+ufo_ir_geometry_get_property (GObject    *object,
+                              guint      property_id,
+                              GValue     *value,
+                              GParamSpec *pspec)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_BEAM_GEOMETRY:
@@ -166,9 +166,9 @@ ufo_geometry_get_property (GObject    *object,
 }
 
 static void
-ufo_geometry_dispose (GObject *object)
+ufo_ir_geometry_dispose (GObject *object)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (object);
 
     if (priv->scan_sin_lut) {
         UFO_RESOURCES_CHECK_CLERR (clReleaseMemObject (priv->scan_sin_lut));
@@ -183,28 +183,28 @@ ufo_geometry_dispose (GObject *object)
     UFO_RESOURCES_CHECK_CLERR (clReleaseContext (priv->context));
     priv->context = NULL;
 
-    G_OBJECT_CLASS (ufo_geometry_parent_class)->dispose (object);
+    G_OBJECT_CLASS (ufo_ir_geometry_parent_class)->dispose (object);
 }
 
 static void
-ufo_geometry_finalize (GObject *object)
+ufo_ir_geometry_finalize (GObject *object)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (object);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (object);
 
     g_free (priv->scan_host_sin_lut);
     priv->scan_host_sin_lut = NULL;
     g_free (priv->scan_host_cos_lut);
     priv->scan_host_cos_lut = NULL;
 
-    G_OBJECT_CLASS (ufo_geometry_parent_class)->finalize (object);
+    G_OBJECT_CLASS (ufo_ir_geometry_parent_class)->finalize (object);
 }
 
 static void
-ufo_geometry_configure_real (UfoGeometry    *geometry,
-                             UfoRequisition *input_req,
-                             GError         **error)
+ufo_ir_geometry_configure_real (UfoIrGeometry  *geometry,
+                                UfoRequisition *input_req,
+                                GError         **error)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (geometry);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
 
     priv->dimensions.n_dets = input_req->dims[0];
     priv->dimensions.n_angles = input_req->dims[1];
@@ -213,66 +213,66 @@ ufo_geometry_configure_real (UfoGeometry    *geometry,
         g_message ("Actual number of directions is bigger than it was stated.");
     }
     else if (priv->dimensions.n_angles < priv->n_angles) {
-        g_set_error (error, UFO_GEOMETRY_ERROR, UFO_GEOMETRY_ERROR_INPUT_DATA,
+        g_set_error (error, UFO_IR_GEOMETRY_ERROR, UFO_IR_GEOMETRY_ERROR_INPUT_DATA,
                      "Actual number of directions is less than it was stated.");
     }
 
 }
 
 static void
-ufo_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
-                                           UfoRequisition *requisition)
+ufo_ir_geometry_get_volume_requisitions_real (UfoIrGeometry    *geometry,
+                                              UfoRequisition *requisition)
 {
     g_warning ("%s: `get_volume_requisitions' not implemented", G_OBJECT_TYPE_NAME (geometry));
 }
 
 static gpointer
-ufo_geometry_get_spec_real (UfoGeometry *geometry,
-                            gsize *data_size)
+ufo_ir_geometry_get_spec_real (UfoIrGeometry *geometry,
+                               gsize *data_size)
 {
     g_warning ("%s: `get_spec' not implemented", G_OBJECT_TYPE_NAME (geometry));
     return NULL;
 }
 
 static void
-ufo_geometry_class_init (UfoGeometryClass *klass)
+ufo_ir_geometry_class_init (UfoIrGeometryClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->finalize = ufo_geometry_finalize;
-    gobject_class->dispose = ufo_geometry_dispose;
-    gobject_class->set_property = ufo_geometry_set_property;
-    gobject_class->get_property = ufo_geometry_get_property;
+    gobject_class->finalize = ufo_ir_geometry_finalize;
+    gobject_class->dispose = ufo_ir_geometry_dispose;
+    gobject_class->set_property = ufo_ir_geometry_set_property;
+    gobject_class->get_property = ufo_ir_geometry_get_property;
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
 
-    ufo_geometry_props[PROP_BEAM_GEOMETRY] =
+    ufo_ir_geometry_props[PROP_BEAM_GEOMETRY] =
         g_param_spec_string ("beam-geometry",
                              "Geometry of the beam.",
                              "Geometry of the beam.",
                              "unknown",
                              G_PARAM_READABLE);
 
-    ufo_geometry_props[PROP_DIMENSIONS] =
+    ufo_ir_geometry_props[PROP_DIMENSIONS] =
         g_param_spec_pointer ("dimensions",
                               "Dimensions.",
                               "Dimensions.",
                               G_PARAM_READWRITE);
 
-    ufo_geometry_props[PROP_NUM_ANGLES] =
+    ufo_ir_geometry_props[PROP_NUM_ANGLES] =
         g_param_spec_uint("num-angles",
                           "Number of angles",
                           "Number of angles",
                           0, G_MAXUINT, 0,
                           G_PARAM_READWRITE);
 
-    ufo_geometry_props[PROP_ANGLE_STEP] =
+    ufo_ir_geometry_props[PROP_ANGLE_STEP] =
         g_param_spec_double ("angle-step",
                              "Increment of angle in radians.",
                              "Increment of angle in radians.",
                              -limit, +limit, 0.0,
                              G_PARAM_READWRITE);
 
-    ufo_geometry_props[PROP_ANGLE_OFFSET] =
+    ufo_ir_geometry_props[PROP_ANGLE_OFFSET] =
         g_param_spec_double ("angle-offset",
                              "Angle offset in radians.",
                              "Angle offset in radians determining the first angle position.",
@@ -280,23 +280,23 @@ ufo_geometry_class_init (UfoGeometryClass *klass)
                              G_PARAM_READWRITE);
 
     for (guint i = GEOMETRY_PROP_0 + 1; i < N_PROPERTIES; i++)
-        g_object_class_install_property (gobject_class, i, ufo_geometry_props[i]);
+        g_object_class_install_property (gobject_class, i, ufo_ir_geometry_props[i]);
 
 
-    g_type_class_add_private (gobject_class, sizeof(UfoGeometryPrivate));
+    g_type_class_add_private (gobject_class, sizeof(UfoIrGeometryPrivate));
 
-    UFO_GEOMETRY_CLASS (klass)->configure = ufo_geometry_configure_real;
-    UFO_GEOMETRY_CLASS (klass)->get_volume_requisitions =
-      ufo_geometry_get_volume_requisitions_real;
-    UFO_GEOMETRY_CLASS (klass)->get_spec = ufo_geometry_get_spec_real;
-    UFO_GEOMETRY_CLASS (klass)->setup = ufo_geometry_setup_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->configure = ufo_ir_geometry_configure_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->get_volume_requisitions =
+      ufo_ir_geometry_get_volume_requisitions_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->get_spec = ufo_ir_geometry_get_spec_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->setup = ufo_ir_geometry_setup_real;
 }
 
 static void
-ufo_geometry_init(UfoGeometry *self)
+ufo_ir_geometry_init(UfoIrGeometry *self)
 {
-    UfoGeometryPrivate *priv = NULL;
-    self->priv = priv = UFO_GEOMETRY_GET_PRIVATE(self);
+    UfoIrGeometryPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_GEOMETRY_GET_PRIVATE(self);
 
     priv->n_angles = 0;
     priv->angle_step = G_PI;
@@ -310,10 +310,10 @@ ufo_geometry_init(UfoGeometry *self)
 }
 
 gfloat *
-ufo_geometry_scan_angles_host (UfoGeometry *geometry,
-                               UfoAnglesType type)
+ufo_ir_geometry_scan_angles_host (UfoIrGeometry *geometry,
+                                  UfoAnglesType type)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (geometry);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
     switch (type) {
       case SIN_VALUES:
           return priv->scan_host_sin_lut;
@@ -325,10 +325,10 @@ ufo_geometry_scan_angles_host (UfoGeometry *geometry,
 }
 
 gpointer
-ufo_geometry_scan_angles_device (UfoGeometry *geometry,
-                                 UfoAnglesType type)
+ufo_ir_geometry_scan_angles_device (UfoIrGeometry *geometry,
+                                    UfoAnglesType type)
 {
-    UfoGeometryPrivate *priv = UFO_GEOMETRY_GET_PRIVATE (geometry);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
     switch (type) {
       case SIN_VALUES:
           return priv->scan_sin_lut;
@@ -340,41 +340,41 @@ ufo_geometry_scan_angles_device (UfoGeometry *geometry,
 }
 
 void
-ufo_geometry_configure (UfoGeometry    *geometry,
-                        UfoRequisition *input_req,
-                        GError         **error)
+ufo_ir_geometry_configure (UfoIrGeometry  *geometry,
+                           UfoRequisition *input_req,
+                           GError         **error)
 {
-    g_return_if_fail (UFO_IS_GEOMETRY (geometry) && input_req);
-    UFO_GEOMETRY_GET_CLASS (geometry)->configure(geometry,
-                                                 input_req,
-                                                 error);
+    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry) && input_req);
+    UFO_IR_GEOMETRY_GET_CLASS (geometry)->configure(geometry,
+                                                    input_req,
+                                                    error);
 }
 
 void
-ufo_geometry_get_volume_requisitions (UfoGeometry    *geometry,
+ufo_ir_geometry_get_volume_requisitions (UfoIrGeometry    *geometry,
                                       UfoRequisition *requisition)
 {
-    g_return_if_fail (UFO_IS_GEOMETRY (geometry));
-    UFO_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry,
-                                                               requisition);
+    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry));
+    UFO_IR_GEOMETRY_GET_CLASS (geometry)->get_volume_requisitions(geometry,
+                                                                  requisition);
 }
 
 void
-ufo_geometry_setup (UfoGeometry  *geometry,
-                    UfoResources *resources,
-                    GError       **error)
+ufo_ir_geometry_setup (UfoIrGeometry *geometry,
+                       UfoResources  *resources,
+                       GError        **error)
 {
-    g_return_if_fail (UFO_IS_GEOMETRY (geometry) &&
+    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry) &&
                       UFO_IS_RESOURCES (resources));
-    UFO_GEOMETRY_GET_CLASS (geometry)->setup(geometry, resources, error);
+    UFO_IR_GEOMETRY_GET_CLASS (geometry)->setup(geometry, resources, error);
 }
 
 gpointer
-ufo_geometry_get_spec (UfoGeometry *geometry,
-                       gsize *data_size)
+ufo_ir_geometry_get_spec (UfoIrGeometry *geometry,
+                          gsize         *data_size)
 {
-    g_return_val_if_fail (UFO_IS_GEOMETRY (geometry) && data_size, NULL);
-    return UFO_GEOMETRY_GET_CLASS (geometry)->get_spec(geometry, data_size);
+    g_return_val_if_fail (UFO_IR_IS_GEOMETRY (geometry) && data_size, NULL);
+    return UFO_IR_GEOMETRY_GET_CLASS (geometry)->get_spec(geometry, data_size);
 }
 
 static gchar *
@@ -394,15 +394,15 @@ transform_string (const gchar *pattern,
 }
 
 gpointer
-ufo_geometry_from_json (JsonObject       *object,
-                        UfoPluginManager *manager)
+ufo_ir_geometry_from_json (JsonObject       *object,
+                           UfoPluginManager *manager)
 {
     GError *tmp_error = NULL;
     const gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
-    const gchar *module_name = transform_string ("libufoir_%sgeometry.so", plugin_name, NULL);
-    gchar *func_name = transform_string ("ufo_%s_geometry_new", plugin_name, "_");
+    const gchar *module_name = transform_string ("libufoir_%s_geometry.so", plugin_name, NULL);
+    gchar *func_name = transform_string ("ufo_ir_%s_geometry_new", plugin_name, "_");
     gpointer plugin = ufo_plugin_manager_get_plugin (manager,
-                                                     func_name, // depends on method categeory
+                                                     func_name,
                                                      module_name,
                                                      &tmp_error);
     if (tmp_error != NULL) {

@@ -18,6 +18,7 @@
 */
 
 #include "ufo-processor.h"
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
@@ -47,17 +48,7 @@ UfoProcessor *
 ufo_processor_new (void)
 {
     return (UfoProcessor *) g_object_new (UFO_TYPE_PROCESSOR,
-                                       NULL);
-}
-
-static void
-ufo_processor_init (UfoProcessor *self)
-{
-    UfoProcessorPrivate *priv = NULL;
-    self->priv = priv = UFO_PROCESSOR_GET_PRIVATE (self);
-    priv->resources = NULL;
-    priv->profiler  = NULL;
-    priv->cmd_queue = NULL;
+                                          NULL);
 }
 
 static void
@@ -148,6 +139,12 @@ ufo_processor_setup_real (UfoProcessor *processor,
 }
 
 static void
+ufo_processor_configure_real (UfoProcessor *processor)
+{
+    g_warning ("%s: `configure' not implemented", G_OBJECT_TYPE_NAME (processor));
+}
+
+static void
 ufo_processor_class_init (UfoProcessorClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
@@ -179,6 +176,17 @@ ufo_processor_class_init (UfoProcessorClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof (UfoProcessorPrivate));
     klass->setup = ufo_processor_setup_real;
+    klass->configure = ufo_processor_configure_real;
+}
+
+static void
+ufo_processor_init (UfoProcessor *self)
+{
+    UfoProcessorPrivate *priv = NULL;
+    self->priv = priv = UFO_PROCESSOR_GET_PRIVATE (self);
+    priv->resources = NULL;
+    priv->profiler  = NULL;
+    priv->cmd_queue = NULL;
 }
 
 void
@@ -192,4 +200,12 @@ ufo_processor_setup (UfoProcessor *processor,
     UfoProcessorClass *klass = UFO_PROCESSOR_GET_CLASS (processor);
     g_object_set (processor, "ufo-resources", resources, NULL);
     klass->setup (processor, resources, error);
+}
+
+void
+ufo_processor_configure (UfoProcessor *processor)
+{
+    g_return_if_fail (UFO_IS_PROCESSOR (processor));
+    UfoProcessorClass *klass = UFO_PROCESSOR_GET_CLASS (processor);
+    klass->configure(processor);
 }

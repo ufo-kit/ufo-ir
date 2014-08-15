@@ -1,39 +1,39 @@
+#include "ufo-ir-asdpocs-method.h"
+#include <ufo/ir/ufo-ir-projector.h>
+#include <ufo/ir/ufo-ir-sparsity-iface.h>
+#include <ufo/ir/ufo-ir-prior-knowledge.h>
+#include <ufo/ufo.h>
+#include <math.h>
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
 
-#include "ufo-ir-asdpocs.h"
-#include <ufo/ir/ufo-sparsity-iface.h>
-#include <ufo/ir/ufo-prior-knowledge.h>
-#include <ufo/ufo.h>
-#include <math.h>
-
 static void ufo_method_interface_init (UfoMethodIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (UfoIrASDPOCS, ufo_ir_asdpocs, UFO_TYPE_IR_METHOD,
+G_DEFINE_TYPE_WITH_CODE (UfoIrAsdPocsMethod, ufo_ir_asdpocs_method, UFO_IR_TYPE_METHOD,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
                                                 ufo_method_interface_init))
 
-#define UFO_IR_ASDPOCS_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_IR_ASDPOCS, UfoIrASDPOCSPrivate))
+#define UFO_IR_ASDPOCS_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_ASDPOCS_METHOD, UfoIrAsdPocsMethodPrivate))
 
 GQuark
-ufo_ir_asdpocs_error_quark (void)
+ufo_ir_asdpocs_method_error_quark (void)
 {
-    return g_quark_from_static_string ("ufo-ir-asdpocs-error-quark");
+    return g_quark_from_static_string ("ufo-ir-asdpocs-method-error-quark");
 }
 
-struct _UfoIrASDPOCSPrivate {
-  UfoIrMethod *df_minimizer;
-  UfoSparsity *sparsity;
+struct _UfoIrAsdPocsMethodPrivate {
+    UfoIrMethod   *df_minimizer;
+    UfoIrSparsity *sparsity;
 
-  gfloat beta;
-  gfloat beta_red;
-  guint ng;
-  gfloat alpha;
-  gfloat alpha_red;
-  gfloat r_max;
+    gfloat beta;
+    gfloat beta_red;
+    guint  ng;
+    gfloat alpha;
+    gfloat alpha_red;
+    gfloat r_max;
 };
 
 enum {
@@ -52,11 +52,12 @@ static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 static void
 set_prior_knowledge (GObject *object,
-                     UfoPriorKnowledge *prior)
+                     UfoIrPriorKnowledge *prior)
 {
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (object);
-    UfoSparsity *s = ufo_prior_knowledge_pointer (prior, "image-sparsity");
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
+    UfoIrSparsity *s = ufo_ir_prior_knowledge_pointer (prior, "image-sparsity");
     if (s) {
+      g_clear_object(&priv->sparsity);
       priv->sparsity = g_object_ref(s);
     } else {
       g_error ("%s : received prior knowledge without \"image-sparsity\".",
@@ -65,33 +66,18 @@ set_prior_knowledge (GObject *object,
 }
 
 UfoIrMethod *
-ufo_ir_asdpocs_new (void)
+ufo_ir_asdpocs_method_new (void)
 {
-    return UFO_IR_METHOD (g_object_new (UFO_TYPE_IR_ASDPOCS, NULL));
+    return UFO_IR_METHOD (g_object_new (UFO_IR_TYPE_ASDPOCS_METHOD, NULL));
 }
 
 static void
-ufo_ir_asdpocs_init (UfoIrASDPOCS *self)
+ufo_ir_asdpocs_method_set_property (GObject      *object,
+                                    guint        property_id,
+                                    const GValue *value,
+                                    GParamSpec   *pspec)
 {
-    UfoIrASDPOCSPrivate *priv = NULL;
-    self->priv = priv = UFO_IR_ASDPOCS_GET_PRIVATE (self);
-    priv->df_minimizer = NULL;
-    priv->sparsity = NULL;
-    priv->beta = 1.0f;
-    priv->beta_red = 0.995f;
-    priv->ng = 20;
-    priv->alpha = 0.2f;
-    priv->alpha_red = 0.95f;
-    priv->r_max = 0.95f;
-}
-
-static void
-ufo_ir_asdpocs_set_property (GObject      *object,
-                             guint        property_id,
-                             const GValue *value,
-                             GParamSpec   *pspec)
-{
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (object);
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
         case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
@@ -126,12 +112,12 @@ ufo_ir_asdpocs_set_property (GObject      *object,
 }
 
 static void
-ufo_ir_asdpocs_get_property (GObject    *object,
-                             guint      property_id,
-                             GValue     *value,
-                             GParamSpec *pspec)
+ufo_ir_asdpocs_method_get_property (GObject    *object,
+                                    guint      property_id,
+                                    GValue     *value,
+                                    GParamSpec *pspec)
 {
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (object);
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_DF_MINIMIZER:
@@ -162,37 +148,41 @@ ufo_ir_asdpocs_get_property (GObject    *object,
 }
 
 static void
-ufo_ir_asdpocs_dispose (GObject *object)
+ufo_ir_asdpocs_method_dispose (GObject *object)
 {
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (object);
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
     g_clear_object(&priv->df_minimizer);
 
-    G_OBJECT_CLASS (ufo_ir_asdpocs_parent_class)->dispose (object);
+    G_OBJECT_CLASS (ufo_ir_asdpocs_method_parent_class)->dispose (object);
 }
 
 static void
-ufo_ir_asdpocs_setup_real (UfoProcessor *processor,
-                           UfoResources *resources,
-                           GError       **error)
+ufo_ir_asdpocs_method_setup_real (UfoProcessor *processor,
+                                  UfoResources *resources,
+                                  GError       **error)
 {
-    UFO_PROCESSOR_CLASS (ufo_ir_asdpocs_parent_class)->setup (processor, resources, error);
+    UFO_PROCESSOR_CLASS (ufo_ir_asdpocs_method_parent_class)->setup (processor,
+                                                                     resources,
+                                                                     error);
     if (error && *error)
       return;
 
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (processor);
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (processor);
     if (priv->df_minimizer == NULL) {
-        g_set_error (error, UFO_IR_ASDPOCS_ERROR, UFO_IR_ASDPOCS_ERROR_SETUP,
+        g_set_error (error, UFO_IR_ASDPOCS_METHOD_ERROR,
+                     UFO_IR_ASDPOCS_METHOD_ERROR_SETUP,
                      "Data-fidelity minimizer does not set.");
         return;
     }
 
     if (priv->sparsity == NULL) {
-        g_set_error (error, UFO_IR_ASDPOCS_ERROR, UFO_IR_ASDPOCS_ERROR_SETUP,
+        g_set_error (error, UFO_IR_ASDPOCS_METHOD_ERROR,
+                     UFO_IR_ASDPOCS_METHOD_ERROR_SETUP,
                      "Sparsity does not set.");
         return;
     }
 
-    UfoProjector *projector = NULL;
+    UfoIrProjector *projector = NULL;
     UfoProfiler  *profiler = NULL;
     gpointer cmd_queue = NULL;
     g_object_get (processor,
@@ -208,35 +198,37 @@ ufo_ir_asdpocs_setup_real (UfoProcessor *processor,
                   "ufo-profiler", profiler,
                   "command-queue", cmd_queue,
                   NULL);
-    ufo_processor_setup (priv->df_minimizer, resources, error);
-    ufo_processor_setup (priv->sparsity, resources, error);
+
+    ufo_processor_setup (UFO_PROCESSOR (priv->df_minimizer), resources, error);
+    ufo_processor_setup (UFO_PROCESSOR (priv->sparsity), resources, error);
 }
 
 static gboolean
-ufo_ir_asdpocs_process_real (UfoMethod *method,
-                             UfoBuffer *input,
-                             UfoBuffer *output)
+ufo_ir_asdpocs_method_process_real (UfoMethod *method,
+                                    UfoBuffer *input,
+                                    UfoBuffer *output,
+                                    gpointer  pevent)
 {
-    UfoIrASDPOCSPrivate *priv = UFO_IR_ASDPOCS_GET_PRIVATE (method);
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (method);
     UfoBuffer *x_residual = ufo_buffer_dup (output);
     UfoBuffer *b_residual = ufo_buffer_dup (input);
     UfoBuffer *x = ufo_buffer_dup (output);
     UfoBuffer *x_prev = ufo_buffer_dup (output);
 
-    UfoResources *resources = NULL;
-    UfoProjector *projector = NULL;
-    gpointer     *cmd_queue = NULL;
+    UfoResources     *resources = NULL;
+    UfoIrProjector   *projector = NULL;
+    cl_command_queue cmd_queue = NULL;
     guint max_iterations = 0;
     g_object_get (method,
                   "projection-model", &projector,
-                  "command-queue", &cmd_queue,
-                  "ufo-resources", &resources,
-                  "max-iterations", &max_iterations,
+                  "command-queue",    &cmd_queue,
+                  "ufo-resources",    &resources,
+                  "max-iterations",   &max_iterations,
                   NULL);
 
     UfoRequisition b_req;
     ufo_buffer_get_requisition (input, &b_req);
-    UfoProjectionsSubset complete_set;
+    UfoIrProjectionsSubset complete_set;
     complete_set.offset = 0;
     complete_set.n = b_req.dims[1];
     complete_set.direction = Vertical;
@@ -254,12 +246,12 @@ ufo_ir_asdpocs_process_real (UfoMethod *method,
         g_object_set (priv->df_minimizer,
                       "relaxation-factor", priv->beta,
                       NULL);
-        ufo_method_process (priv->df_minimizer, input, x);
+        ufo_method_process (UFO_METHOD (priv->df_minimizer), input, x, NULL);
 
         ufo_buffer_copy (x, output);
         ufo_buffer_copy (input, b_residual);
 
-        ufo_projector_FP (projector, x, b_residual, &complete_set, -1, NULL);
+        ufo_ir_projector_FP (projector, x, b_residual, &complete_set, -1, NULL);
         dd = ufo_op_l1_norm (b_residual, resources, cmd_queue);
 
         ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
@@ -273,8 +265,7 @@ ufo_ir_asdpocs_process_real (UfoMethod *method,
         g_object_set (priv->sparsity,
                       "relaxation-factor", dtgv,
                       NULL);
-        ufo_sparsity_minimize (priv->sparsity, x, x);
-
+        ufo_ir_sparsity_minimize (priv->sparsity, x, x, NULL);
 
         ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
         dg = ufo_op_l1_norm (x_residual, resources, cmd_queue);
@@ -292,16 +283,16 @@ ufo_ir_asdpocs_process_real (UfoMethod *method,
 static void
 ufo_method_interface_init (UfoMethodIface *iface)
 {
-    iface->process = ufo_ir_asdpocs_process_real;
+    iface->process = ufo_ir_asdpocs_method_process_real;
 }
 
 static void
-ufo_ir_asdpocs_class_init (UfoIrASDPOCSClass *klass)
+ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->dispose = ufo_ir_asdpocs_dispose;
-    gobject_class->set_property = ufo_ir_asdpocs_set_property;
-    gobject_class->get_property = ufo_ir_asdpocs_get_property;
+    gobject_class->dispose = ufo_ir_asdpocs_method_dispose;
+    gobject_class->set_property = ufo_ir_asdpocs_method_set_property;
+    gobject_class->get_property = ufo_ir_asdpocs_method_get_property;
 
     g_object_class_override_property(gobject_class,
                                      IR_METHOD_PROP_PRIOR_KNOWLEDGE,
@@ -358,7 +349,22 @@ ufo_ir_asdpocs_class_init (UfoIrASDPOCSClass *klass)
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
-    g_type_class_add_private (gobject_class, sizeof(UfoIrASDPOCSPrivate));
+    g_type_class_add_private (gobject_class, sizeof(UfoIrAsdPocsMethodPrivate));
 
-    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_asdpocs_setup_real;
+    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_asdpocs_method_setup_real;
+}
+
+static void
+ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
+{
+    UfoIrAsdPocsMethodPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (self);
+    priv->df_minimizer = NULL;
+    priv->sparsity = NULL;
+    priv->beta = 1.0f;
+    priv->beta_red = 0.995f;
+    priv->ng = 20;
+    priv->alpha = 0.2f;
+    priv->alpha_red = 0.95f;
+    priv->r_max = 0.95f;
 }

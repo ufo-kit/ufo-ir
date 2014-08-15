@@ -6,8 +6,8 @@ set(ufoirplugins_SRCS
     ufo-ir-cl-projector.c
     ufo-ir-custom-sparsity.c
     ufo-ir-gradient-sparsity.c
-    ufo-ir-sart.c
-    ufo-ir-asdpocs.c
+    ufo-ir-sart-method.c
+    ufo-ir-asdpocs-method.c
 )
 
 set(ufoirplugins_LIBS
@@ -39,19 +39,16 @@ foreach(_src ${ufoirplugins_SRCS})
     string(REGEX REPLACE "ufo-ir-?([^ \\.]+).*" "\\1" plugin "${_src}")
 
     # build string to get miscalleanous sources
-    string(REPLACE "-" "_" _misc ${plugin})
-    string(TOUPPER ${_misc} _misc_upper)
+    string(REPLACE "-" "_" target ${plugin})
+    string(TOUPPER ${target} _misc_upper)
 
     # create an option name and add this to disable filters
     set(target_option "ENABLE_${_misc_upper}")
-    option(${target_option} "Build filter ${plugin}" ON)
+    option(${target_option} "Build plugin ${plugin}" ON)
 
     if (${target_option})
-        set(_misc "${_misc}_misc_SRCS")
-
-        string(REPLACE "-" "" _targetname ${plugin})
-        set(target "ufoir_${_targetname}")
-        message ("target: ${target}")
+        set(_misc "${target}_misc_SRCS")
+        set(target "ufoir_${target}")
 
         # build single shared library per filter
         if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

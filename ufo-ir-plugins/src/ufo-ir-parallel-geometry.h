@@ -17,42 +17,40 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __UFO_PARALLEL_GEOMETRY_H
-#define __UFO_PARALLEL_GEOMETRY_H
+#ifndef __UFO_IR_PARALLEL_GEOMETRY_H
+#define __UFO_IR_PARALLEL_GEOMETRY_H
 
-#include <ufo/ir/ufo-geometry.h>
+#include <ufo/ir/ufo-ir-geometry.h>
 
 G_BEGIN_DECLS
 
-#define UFO_TYPE_PARALLEL_GEOMETRY            (ufo_parallel_geometry_get_type())
-#define UFO_PARALLEL_GEOMETRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_TYPE_PARALLEL_GEOMETRY, UfoParallelGeometry))
-#define UFO_IS_PARALLEL_GEOMETRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_TYPE_PARALLEL_GEOMETRY))
-#define UFO_PARALLEL_GEOMETRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), UFO_TYPE_PARALLEL_GEOMETRY, UfoParallelGeometryClass))
-#define UFO_IS_PARALLEL_GEOMETRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_TYPE_PARALLEL_GEOMETRY))
-#define UFO_PARALLEL_GEOMETRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_TYPE_PARALLEL_GEOMETRY, UfoParallelGeometryClass))
+#define UFO_IR_TYPE_PARALLEL_GEOMETRY            (ufo_ir_parallel_geometry_get_type())
+#define UFO_IR_PARALLEL_GEOMETRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_IR_TYPE_PARALLEL_GEOMETRY, UfoIrParallelGeometry))
+#define UFO_IR_IS_PARALLEL_GEOMETRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_IR_TYPE_PARALLEL_GEOMETRY))
+#define UFO_IR_PARALLEL_GEOMETRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), UFO_IR_TYPE_PARALLEL_GEOMETRY, UfoIrParallelGeometryClass))
+#define UFO_IR_IS_PARALLEL_GEOMETRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_IR_TYPE_PARALLEL_GEOMETRY))
+#define UFO_IR_PARALLEL_GEOMETRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_IR_TYPE_PARALLEL_GEOMETRY, UfoIrParallelGeometryClass))
 
-typedef struct _UfoParallelGeometry         UfoParallelGeometry;
-typedef struct _UfoParallelGeometryClass    UfoParallelGeometryClass;
-typedef struct _UfoParallelGeometryPrivate  UfoParallelGeometryPrivate;
+typedef struct _UfoIrParallelGeometry         UfoIrParallelGeometry;
+typedef struct _UfoIrParallelGeometryClass    UfoIrParallelGeometryClass;
+typedef struct _UfoIrParallelGeometryPrivate  UfoIrParallelGeometryPrivate;
 
-struct _UfoParallelGeometry {
-    UfoGeometry parent_instance;
-    UfoParallelGeometryPrivate *priv;
+struct _UfoIrParallelGeometry {
+    UfoIrGeometry parent_instance;
+    UfoIrParallelGeometryPrivate *priv;
 };
 
-struct _UfoParallelGeometryClass {
-    UfoGeometryClass parent_class;
+struct _UfoIrParallelGeometryClass {
+    UfoIrGeometryClass parent_class;
 };
 
 typedef struct {
     float det_scale;
     float det_offset;
-} UfoParallelGeometrySpec;
+} UfoIrParallelGeometrySpec;
 
-UfoGeometry *
-ufo_parallel_geometry_new (void);
-
-GType ufo_parallel_geometry_get_type (void);
+UfoIrGeometry   *ufo_ir_parallel_geometry_new       (void);
+GType            ufo_ir_parallel_geometry_get_type  (void);
 
 G_END_DECLS
 #endif

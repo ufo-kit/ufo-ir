@@ -17,35 +17,40 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ufo-sparsity-iface.h"
+#include "ufo-ir-sparsity-iface.h"
 
-typedef UfoSparsityIface UfoSparsityInterface;
+typedef UfoIrSparsityIface UfoIrSparsityInterface;
 
-G_DEFINE_INTERFACE (UfoSparsity, ufo_sparsity, G_TYPE_OBJECT)
+G_DEFINE_INTERFACE (UfoIrSparsity, ufo_ir_sparsity, G_TYPE_OBJECT)
 
 gboolean
-ufo_sparsity_minimize (UfoSparsity *sparsity,
-                       UfoBuffer *input,
-                       UfoBuffer *output)
+ufo_ir_sparsity_minimize (UfoIrSparsity *sparsity,
+                          UfoBuffer     *input,
+                          UfoBuffer     *output,
+                          gpointer      pevent)
 {
-    g_return_val_if_fail(UFO_IS_SPARSITY (sparsity) &&
+    g_return_val_if_fail(UFO_IR_IS_SPARSITY (sparsity) &&
                          UFO_IS_BUFFER (input) &&
                          UFO_IS_BUFFER (output),
                          FALSE);
-    return UFO_SPARSITY_GET_IFACE (sparsity)->minimize (sparsity, input, output);
+    return UFO_IR_SPARSITY_GET_IFACE (sparsity)->minimize (sparsity,
+                                                           input,
+                                                           output,
+                                                           pevent);
 }
 
 static gboolean
-ufo_sparsity_minimize_real (UfoSparsity *sparsity,
-                            UfoBuffer *input,
-                            UfoBuffer *output)
+ufo_ir_sparsity_minimize_real (UfoIrSparsity *sparsity,
+                               UfoBuffer     *input,
+                               UfoBuffer     *output,
+                               gpointer      pevent)
 {
     g_warning ("%s: `minimize' not implemented", G_OBJECT_TYPE_NAME (sparsity));
     return FALSE;
 }
 
 static void
-ufo_sparsity_default_init (UfoSparsityInterface *iface)
+ufo_ir_sparsity_default_init (UfoIrSparsityInterface *iface)
 {
-    iface->minimize = ufo_sparsity_minimize_real;
+    iface->minimize = ufo_ir_sparsity_minimize_real;
 }

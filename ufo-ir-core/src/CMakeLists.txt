@@ -3,19 +3,19 @@ cmake_minimum_required(VERSION 2.6)
 #{{{ sources
 set(ufoir_SRCS
     ufo-ir-method.c
-    ufo-prior-knowledge.c
-    ufo-sparsity-iface.c
-    ufo-geometry.c
-    ufo-projector.c
+    ufo-ir-prior-knowledge.c
+    ufo-ir-sparsity-iface.c
+    ufo-ir-geometry.c
+    ufo-ir-projector.c
 )
 #}}}
 #{{{ headers
 set(ufoir_HDRS
     ufo-ir-method.h
-    ufo-prior-knowledge.h
-    ufo-sparsity-iface.h
-    ufo-geometry.h
-    ufo-projector.h
+    ufo-ir-prior-knowledge.h
+    ufo-ir-sparsity-iface.h
+    ufo-ir-geometry.h
+    ufo-ir-projector.h
 )
 #}}}
 #{{{ libufoir

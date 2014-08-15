@@ -25,32 +25,35 @@ G_DEFINE_INTERFACE (UfoTransform, ufo_transform, G_TYPE_OBJECT)
 
 gboolean
 ufo_transform_direct (UfoTransform *transform,
-                      UfoBuffer *input,
-                      UfoBuffer *output)
+                      UfoBuffer    *input,
+                      UfoBuffer    *output,
+                      gpointer     pevent)
 {
     g_return_val_if_fail(UFO_IS_TRANSFORM (transform) &&
                          UFO_IS_BUFFER (input) &&
                          UFO_IS_BUFFER (output),
                          FALSE);
-    return UFO_TRANSFORM_GET_IFACE (transform)->direct (transform, input, output);
+    return UFO_TRANSFORM_GET_IFACE (transform)->direct (transform, input, output, pevent);
 }
 
 gboolean
 ufo_transform_inverse (UfoTransform *transform,
-                       UfoBuffer *input,
-                       UfoBuffer *output)
+                       UfoBuffer    *input,
+                       UfoBuffer    *output,
+                       gpointer     pevent)
 {
     g_return_val_if_fail(UFO_IS_TRANSFORM (transform) &&
                          UFO_IS_BUFFER (input) &&
                          UFO_IS_BUFFER (output),
                          FALSE);
-    return UFO_TRANSFORM_GET_IFACE (transform)->inverse (transform, input, output);
+    return UFO_TRANSFORM_GET_IFACE (transform)->inverse (transform, input, output, pevent);
 }
 
 static gboolean
 ufo_transform_direct_real (UfoTransform *transform,
-                           UfoBuffer *input,
-                           UfoBuffer *output)
+                           UfoBuffer    *input,
+                           UfoBuffer    *output,
+                           gpointer     pevent)
 {
     g_warning ("%s: `direct' not implemented", G_OBJECT_TYPE_NAME (transform));
     return FALSE;
@@ -58,8 +61,9 @@ ufo_transform_direct_real (UfoTransform *transform,
 
 static gboolean
 ufo_transform_inverse_real (UfoTransform *transform,
-                            UfoBuffer *input,
-                            UfoBuffer *output)
+                            UfoBuffer    *input,
+                            UfoBuffer    *output,
+                            gpointer     pevent)
 {
     g_warning ("%s: `inverse' not implemented", G_OBJECT_TYPE_NAME (transform));
     return FALSE;

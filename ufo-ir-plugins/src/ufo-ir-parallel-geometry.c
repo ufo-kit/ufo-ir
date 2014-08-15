@@ -22,35 +22,35 @@
 
 #define BEAM_GEOMETRY "parallel"
 
-G_DEFINE_TYPE (UfoParallelGeometry, ufo_parallel_geometry, UFO_TYPE_GEOMETRY)
+G_DEFINE_TYPE (UfoIrParallelGeometry, ufo_ir_parallel_geometry, UFO_IR_TYPE_GEOMETRY)
 
-#define UFO_PARALLEL_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_PARALLEL_GEOMETRY, UfoParallelGeometryPrivate))
+#define UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_PARALLEL_GEOMETRY, UfoIrParallelGeometryPrivate))
 
-struct _UfoParallelGeometryPrivate {
-    UfoParallelGeometrySpec spec;
+struct _UfoIrParallelGeometryPrivate {
+    UfoIrParallelGeometrySpec spec;
 };
 
 enum {
-    PROP_0 = N_GEOMETRY_VIRTUAL_PROPERTIES,
+    PROP_0 = N_IR_GEOMETRY_VIRTUAL_PROPERTIES,
     PROP_DETECTOR_SCALE,
     PROP_DETECTOR_OFFSET,
     N_PROPERTIES
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-UfoGeometry *
-ufo_parallel_geometry_new (void)
+UfoIrGeometry *
+ufo_ir_parallel_geometry_new (void)
 {
-    return UFO_GEOMETRY(g_object_new (UFO_TYPE_PARALLEL_GEOMETRY, NULL));
+    return UFO_IR_GEOMETRY (g_object_new (UFO_IR_TYPE_PARALLEL_GEOMETRY, NULL));
 }
 
 static void
-ufo_parallel_geometry_set_property (GObject      *object,
-                                    guint        property_id,
-                                    const GValue *value,
-                                    GParamSpec   *pspec)
+ufo_ir_parallel_geometry_set_property (GObject      *object,
+                                       guint        property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec)
 {
-    UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (object);
+    UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_DETECTOR_SCALE:
@@ -66,12 +66,12 @@ ufo_parallel_geometry_set_property (GObject      *object,
 }
 
 static void
-ufo_parallel_geometry_get_property (GObject    *object,
-                                    guint      property_id,
-                                    GValue     *value,
-                                    GParamSpec *pspec)
+ufo_ir_parallel_geometry_get_property (GObject    *object,
+                                       guint      property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
 {
-    UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (object);
+    UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_BEAM_GEOMETRY:
@@ -91,15 +91,17 @@ ufo_parallel_geometry_get_property (GObject    *object,
 
 
 static void
-ufo_parallel_geometry_configure_real (UfoGeometry    *geometry,
-                                      UfoRequisition *input_req,
-                                      GError         **error)
+ufo_ir_parallel_geometry_configure_real (UfoIrGeometry  *geometry,
+                                         UfoRequisition *input_req,
+                                         GError         **error)
 {
-    UFO_GEOMETRY_CLASS (ufo_parallel_geometry_parent_class)->configure (geometry, input_req, error);
+    UFO_IR_GEOMETRY_CLASS (ufo_ir_parallel_geometry_parent_class)->configure (geometry,
+                                                                            input_req,
+                                                                            error);
     if (error && *error)
       return;
 
-    UfoGeometryDims *dims = NULL;
+    UfoIrGeometryDims *dims = NULL;
     gfloat det_scale = 1.0;
     g_object_get (geometry,
                   "dimensions", &dims,
@@ -115,10 +117,10 @@ ufo_parallel_geometry_configure_real (UfoGeometry    *geometry,
 }
 
 static void
-ufo_parallel_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
-                                                    UfoRequisition *requisition)
+ufo_ir_parallel_geometry_get_volume_requisitions_real (UfoIrGeometry  *geometry,
+                                                       UfoRequisition *requisition)
 {
-    UfoGeometryDims *dims = NULL;
+    UfoIrGeometryDims *dims = NULL;
     g_object_get (geometry, "dimensions", &dims, NULL);
 
     if (dims->depth > 1)
@@ -132,20 +134,20 @@ ufo_parallel_geometry_get_volume_requisitions_real (UfoGeometry    *geometry,
 }
 
 static gpointer
-ufo_parallel_geometry_get_spec_real (UfoGeometry *geometry,
-                                     gsize *data_size)
+ufo_ir_parallel_geometry_get_spec_real (UfoIrGeometry *geometry,
+                                        gsize         *data_size)
 {
-    UfoParallelGeometryPrivate *priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
-    *data_size = sizeof (UfoParallelGeometrySpec);
+    UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
+    *data_size = sizeof (UfoIrParallelGeometrySpec);
     return &priv->spec;
 }
 
 static void
-ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
+ufo_ir_parallel_geometry_class_init (UfoIrParallelGeometryClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->set_property = ufo_parallel_geometry_set_property;
-    gobject_class->get_property = ufo_parallel_geometry_get_property;
+    gobject_class->set_property = ufo_ir_parallel_geometry_set_property;
+    gobject_class->get_property = ufo_ir_parallel_geometry_get_property;
 
     const gfloat limit = (gfloat) (4.0 * G_PI);
 
@@ -170,19 +172,19 @@ ufo_parallel_geometry_class_init (UfoParallelGeometryClass *klass)
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
-    g_type_class_add_private (gobject_class, sizeof(UfoParallelGeometryPrivate));
+    g_type_class_add_private (gobject_class, sizeof(UfoIrParallelGeometryPrivate));
 
-    UFO_GEOMETRY_CLASS (klass)->configure = ufo_parallel_geometry_configure_real;
-    UFO_GEOMETRY_CLASS (klass)->get_volume_requisitions =
-        ufo_parallel_geometry_get_volume_requisitions_real;
-    UFO_GEOMETRY_CLASS (klass)->get_spec = ufo_parallel_geometry_get_spec_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->get_volume_requisitions =
+        ufo_ir_parallel_geometry_get_volume_requisitions_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->get_spec = ufo_ir_parallel_geometry_get_spec_real;
+    UFO_IR_GEOMETRY_CLASS (klass)->configure = ufo_ir_parallel_geometry_configure_real;
 }
 
 static void
-ufo_parallel_geometry_init(UfoParallelGeometry *self)
+ufo_ir_parallel_geometry_init(UfoIrParallelGeometry *self)
 {
-    UfoParallelGeometryPrivate *priv = NULL;
-    self->priv = priv = UFO_PARALLEL_GEOMETRY_GET_PRIVATE(self);
+    UfoIrParallelGeometryPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE(self);
     priv->spec.det_scale = 1.0f;
     priv->spec.det_offset = 0.0f;
 }

@@ -6,20 +6,19 @@
 #include <CL/cl.h>
 #endif
 
-static void ufo_sparsity_interface_init (UfoSparsityIface *iface);
+static void ufo_ir_sparsity_interface_init (UfoIrSparsityIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (UfoGradientSparsity, ufo_gradient_sparsity, UFO_TYPE_PROCESSOR,
-                         G_IMPLEMENT_INTERFACE (UFO_TYPE_SPARSITY,
-                                                ufo_sparsity_interface_init))
+G_DEFINE_TYPE_WITH_CODE (UfoIrGradientSparsity, ufo_ir_gradient_sparsity, UFO_TYPE_PROCESSOR,
+                         G_IMPLEMENT_INTERFACE (UFO_IR_TYPE_SPARSITY,
+                                                ufo_ir_sparsity_interface_init))
 
-#define UFO_GRADIENT_SPARSITY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_GRADIENT_SPARSITY, UfoGradientSparsityPrivate))
+#define UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_GRADIENT_SPARSITY, UfoIrGradientSparsityPrivate))
 
-struct _UfoGradientSparsityPrivate {
-    guint     n_iters;
-    gfloat    relaxation_factor;
-    UfoBuffer *grad;
-
-    gpointer kernel;
+struct _UfoIrGradientSparsityPrivate {
+    guint       n_iters;
+    gfloat      relaxation_factor;
+    UfoBuffer   *grad;
+    gpointer    kernel;
 };
 
 enum {
@@ -30,36 +29,36 @@ enum {
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-UfoSparsity *
-ufo_gradient_sparsity_new (void)
+UfoIrSparsity *
+ufo_ir_gradient_sparsity_new (void)
 {
-    return (UfoSparsity *) g_object_new (UFO_TYPE_GRADIENT_SPARSITY,
-                                         NULL);
+    return (UfoIrSparsity *) g_object_new (UFO_IR_TYPE_GRADIENT_SPARSITY,
+                                           NULL);
 }
 
 static void
-ufo_gradient_sparsity_setup_real (UfoProcessor *sparsity,
-                                  UfoResources *resources,
-                                  GError       **error)
+ufo_ir_gradient_sparsity_setup_real (UfoProcessor *sparsity,
+                                     UfoResources *resources,
+                                     GError       **error)
 {
-    UFO_PROCESSOR_CLASS (ufo_gradient_sparsity_parent_class)->setup (sparsity, resources, error);
+    UFO_PROCESSOR_CLASS (ufo_ir_gradient_sparsity_parent_class)->setup (sparsity, resources, error);
     if (error && *error)
         return;
 
-    UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (sparsity);
+    UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (sparsity);
     priv->kernel = ufo_resources_get_kernel (resources,
                                              "sparsity-gradient.cl",
                                              "l1_grad",
-                                              error);
+                                             error);
 }
 
 static void
-ufo_gradient_sparsity_set_property (GObject *object,
-                                    guint property_id,
-                                    const GValue *value,
-                                    GParamSpec *pspec)
+ufo_ir_gradient_sparsity_set_property (GObject      *object,
+                                       guint        property_id,
+                                       const GValue *value,
+                                       GParamSpec   *pspec)
 {
-    UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (object);
+    UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_NUM_ITERS:
@@ -75,12 +74,12 @@ ufo_gradient_sparsity_set_property (GObject *object,
 }
 
 static void
-ufo_gradient_sparsity_get_property (GObject *object,
-                                    guint property_id,
-                                    GValue *value,
-                                    GParamSpec *pspec)
+ufo_ir_gradient_sparsity_get_property (GObject    *object,
+                                       guint      property_id,
+                                       GValue     *value,
+                                       GParamSpec *pspec)
 {
-    UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (object);
+    UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_NUM_ITERS:
@@ -96,24 +95,25 @@ ufo_gradient_sparsity_get_property (GObject *object,
 }
 
 static void
-ufo_gradient_sparsity_dispose (GObject *object)
+ufo_ir_gradient_sparsity_dispose (GObject *object)
 {
-    //UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (object);
-    G_OBJECT_CLASS (ufo_gradient_sparsity_parent_class)->dispose (object);
+    //UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (object);
+    G_OBJECT_CLASS (ufo_ir_gradient_sparsity_parent_class)->dispose (object);
 }
 
 static void
-ufo_gradient_sparsity_finalize (GObject *object)
+ufo_ir_gradient_sparsity_finalize (GObject *object)
 {
-    G_OBJECT_CLASS (ufo_gradient_sparsity_parent_class)->finalize (object);
+    G_OBJECT_CLASS (ufo_ir_gradient_sparsity_parent_class)->finalize (object);
 }
 
 static gboolean
-ufo_gradient_sparsity_minimize_real (UfoSparsity *sparsity,
-                                     UfoBuffer *input,
-                                     UfoBuffer *output)
+ufo_ir_gradient_sparsity_minimize_real (UfoIrSparsity *sparsity,
+                                        UfoBuffer     *input,
+                                        UfoBuffer     *output,
+                                        gpointer      pevent)
 {
-    UfoGradientSparsityPrivate *priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (sparsity);
+    UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (sparsity);
     UfoResources *resources = NULL;
     UfoProfiler  *profiler = NULL;
     gpointer     *cmd_queue = NULL;
@@ -161,19 +161,19 @@ ufo_gradient_sparsity_minimize_real (UfoSparsity *sparsity,
 }
 
 static void
-ufo_sparsity_interface_init (UfoSparsityIface *iface)
+ufo_ir_sparsity_interface_init (UfoIrSparsityIface *iface)
 {
-    iface->minimize = ufo_gradient_sparsity_minimize_real;
+    iface->minimize = ufo_ir_gradient_sparsity_minimize_real;
 }
 
 static void
-ufo_gradient_sparsity_class_init (UfoGradientSparsityClass *klass)
+ufo_ir_gradient_sparsity_class_init (UfoIrGradientSparsityClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->finalize = ufo_gradient_sparsity_finalize;
-    gobject_class->dispose = ufo_gradient_sparsity_dispose;
-    gobject_class->set_property = ufo_gradient_sparsity_set_property;
-    gobject_class->get_property = ufo_gradient_sparsity_get_property;
+    gobject_class->finalize = ufo_ir_gradient_sparsity_finalize;
+    gobject_class->dispose = ufo_ir_gradient_sparsity_dispose;
+    gobject_class->set_property = ufo_ir_gradient_sparsity_set_property;
+    gobject_class->get_property = ufo_ir_gradient_sparsity_get_property;
 
     properties[PROP_RELAXATION_FACTOR] =
         g_param_spec_float("relaxation-factor",
@@ -192,16 +192,16 @@ ufo_gradient_sparsity_class_init (UfoGradientSparsityClass *klass)
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
-    g_type_class_add_private (gobject_class, sizeof (UfoGradientSparsityPrivate));
+    g_type_class_add_private (gobject_class, sizeof (UfoIrGradientSparsityPrivate));
 
-    UFO_PROCESSOR_CLASS (klass)->setup = ufo_gradient_sparsity_setup_real;
+    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_gradient_sparsity_setup_real;
 }
 
 static void
-ufo_gradient_sparsity_init (UfoGradientSparsity *self)
+ufo_ir_gradient_sparsity_init (UfoIrGradientSparsity *self)
 {
-    UfoGradientSparsityPrivate *priv = NULL;
-    self->priv = priv = UFO_GRADIENT_SPARSITY_GET_PRIVATE (self);
+    UfoIrGradientSparsityPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (self);
     priv->n_iters = 20;
     priv->relaxation_factor = 1.0f;
     priv->grad = NULL;
