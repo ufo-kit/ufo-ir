@@ -296,7 +296,6 @@ ufo_ir_projector_from_json (JsonObject       *object,
         }
 
         g_object_set (plugin, "model", model, NULL);
-        g_print ("\nProjector: %p", plugin);
     }
     else {
       // plugin-name = model+geometry.type = joseph-parallel

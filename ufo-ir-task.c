@@ -24,6 +24,7 @@
 #endif
 
 #include "ufo-ir-task.h"
+#include <ufo/methods/ufo-common-routines.h>
 #include <ufo/ir/ufo-ir-method.h>
 #include <ufo/ir/ufo-ir-geometry.h>
 #include <ufo/ir/ufo-ir-projector.h>
@@ -77,7 +78,6 @@ ufo_ir_task_setup (UfoTask      *task,
     UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
 
     UfoProfiler  *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
-    g_print ("\n profiler: %p", profiler);
 
     ufo_ir_geometry_setup  (priv->geometry, priv->resources, error);
     g_object_set (priv->projector,
@@ -157,9 +157,7 @@ ufo_ir_task_process (UfoTask        *task,
     ufo_op_set (output, 0, priv->resources, priv->cmd_queue);
     gboolean res = ufo_method_process (UFO_METHOD (priv->method), inputs[0], output, NULL);
 
-    UfoProfiler  *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
-
-    return res;
+    return TRUE;
 }
 
 static void
@@ -167,23 +165,21 @@ ufo_task_set_json_object_property_real (UfoTask     *task,
                                         const gchar *prop_name,
                                         JsonObject  *json_obj)
 {
+
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
-    gpointer obj;
+    gpointer obj = NULL;
 
     if (g_strcmp0 (prop_name, "geometry") == 0) {
         obj = ufo_ir_geometry_from_json (json_obj, priv->plugin_manager);
-        g_print("\ngeometry: %p ", obj);
     }
     else if (g_strcmp0 (prop_name, "projector") == 0) {
         obj = ufo_ir_projector_from_json (json_obj, priv->plugin_manager);
-        g_print("\nprojector: %p ", obj);
+    }
+    else if (g_strcmp0 (prop_name, "method") == 0) {
+        obj = ufo_object_from_json (json_obj, priv->plugin_manager);
     }
     else if (g_strcmp0 (prop_name, "prior-knowledge") == 0) {
         obj = ufo_ir_prior_knowledge_from_json (json_obj, priv->plugin_manager);
-    }
-    else if (g_strcmp0 (prop_name, "method") == 0) {
-        obj = ufo_ir_method_from_json (json_obj, priv->plugin_manager);
-        g_print("\nmethod: %p ", obj);
     }
 
     g_object_set (task, prop_name, obj, NULL);

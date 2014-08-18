@@ -23,7 +23,7 @@ struct _UfoIrGradientSparsityPrivate {
 
 enum {
     PROP_0,
-    PROP_NUM_ITERS,
+    PROP_NUM_ITERATIONS,
     PROP_RELAXATION_FACTOR,
     N_PROPERTIES
 };
@@ -61,7 +61,7 @@ ufo_ir_gradient_sparsity_set_property (GObject      *object,
     UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_NUM_ITERS:
+        case PROP_NUM_ITERATIONS:
             priv->n_iters = g_value_get_uint (value);
             break;
         case PROP_RELAXATION_FACTOR:
@@ -82,7 +82,7 @@ ufo_ir_gradient_sparsity_get_property (GObject    *object,
     UfoIrGradientSparsityPrivate *priv = UFO_IR_GRADIENT_SPARSITY_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_NUM_ITERS:
+        case PROP_NUM_ITERATIONS:
             g_value_set_uint (value, priv->n_iters);
             break;
         case PROP_RELAXATION_FACTOR:
@@ -182,8 +182,8 @@ ufo_ir_gradient_sparsity_class_init (UfoIrGradientSparsityClass *klass)
                            0.0f, G_MAXFLOAT, 0.5f,
                            G_PARAM_READWRITE);
 
-    properties[PROP_NUM_ITERS] =
-        g_param_spec_uint ("num-iters",
+    properties[PROP_NUM_ITERATIONS] =
+        g_param_spec_uint ("num-iterations",
                            "Number of iterations",
                            "Number of iterations",
                            0, 1000, 20,

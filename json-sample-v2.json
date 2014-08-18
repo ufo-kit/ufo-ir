@@ -1,0 +1,70 @@
+{
+    "nodes" : [
+        {
+            "plugin": "reader",
+            "name": "reader",
+            "properties" : {
+                "path": "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
+            }
+        },
+        {
+            "plugin" : "ir",
+            "name"   : "ir",
+            "properties" : {
+                "geometry" : {
+                    "beam-geometry"  : "parallel",
+                    "num-angles" : 287,
+                    "angle-offset" : 0.0,
+                    "angle-step" : 0.6288,
+                    "detector-scale" : 1.0,
+                    "detector-offset" : 0
+                },
+                "projector" : {
+                    "model" : "JoSePh",
+                    "on-gpu": true
+                },
+                "method" : {
+                    "namespace" : "ir",
+                    "type"   : "method",
+                    "name"   : "asdpocs",
+                    "properties" : {
+                        "max-iterations": 2,
+                        "df-minimizer" : {
+                            "namespace" : "ir",
+                            "type"   : "method",
+                            "name"   : "sart",
+                            "properties" : {
+                                "relaxation-factor" : 0.25,
+                                "max-iterations": 10
+                            }
+                        }
+                    }
+                },
+                "prior-knowledge" : {
+                    "image-sparsity" : {
+                        "namespace" : "ir",
+                        "type"   : "sparsity",
+                        "name"   : "gradient",
+                        "properties" : {
+                            "num-iterations": 1
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "plugin": "writer",
+            "name": "writer"
+        }
+    ],
+    "edges" : [
+        {
+            "from": { "name": "reader" },
+            "to": { "name": "ir" }
+        },
+        {
+            "from": { "name": "ir" },
+            "to": { "name": "writer" }
+        }
+    ]
+}

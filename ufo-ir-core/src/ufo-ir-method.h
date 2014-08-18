@@ -58,8 +58,6 @@ struct _UfoIrMethodClass {
 UfoMethod* ufo_ir_method_new                 (void);
 void       ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
                                               GHashTable  *prior);
-gpointer   ufo_ir_method_from_json           (JsonObject       *object,
-                                              UfoPluginManager *manager);
 GType ufo_ir_method_get_type                 (void);
 
 G_END_DECLS

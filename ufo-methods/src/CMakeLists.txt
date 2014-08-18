@@ -5,6 +5,7 @@ set(ufomethods_SRCS
     ufo-processor.c
     ufo-method-iface.c
     ufo-transform-iface.c
+    ufo-common-routines.c
 )
 #}}}
 #{{{ headers
@@ -12,6 +13,7 @@ set(ufomethods_HDRS
     ufo-processor.h
     ufo-method-iface.h
     ufo-transform-iface.h
+    ufo-common-routines.h
 )
 #}}}
 #{{{ libufomethods

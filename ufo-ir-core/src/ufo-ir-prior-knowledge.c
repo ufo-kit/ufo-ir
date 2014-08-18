@@ -18,6 +18,7 @@
 */
 
 #include "ufo-ir-prior-knowledge.h"
+#include <ufo/methods/ufo-common-routines.h>
 
 UfoIrPriorKnowledge *
 ufo_ir_prior_knowledge_new (void)
@@ -67,9 +68,6 @@ ufo_ir_prior_knowledge_from_json (JsonObject       *object,
                                   UfoPluginManager *manager)
 {
     UfoIrPriorKnowledge   *prior = ufo_ir_prior_knowledge_new ();
-    //UfoSparsity *sparsity = ufo_gradient_sparsity_new ();
-    //ufo_ir_prior_knowledge_set_boolean (prior, "phase-contrast", TRUE);
-    //ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     GList *members = json_object_get_members (object);
     GList *member = NULL;
@@ -80,27 +78,22 @@ ufo_ir_prior_knowledge_from_json (JsonObject       *object,
          member = g_list_next (member))
     {
         name = member->data;
-        g_print ("\n Prior: %s", name);
-        /*
         JsonNode *node = json_object_get_member(object, name);
         if (JSON_NODE_HOLDS_VALUE (node)) {
             GValue val = {0,};
             json_node_get_value (node, &val);
-            g_object_set_property (G_OBJECT(plugin), name, &val);
+            g_object_set_property (G_OBJECT (prior), name, &val);
             g_value_unset (&val);
-        }*/
+        }
+        else if (JSON_NODE_HOLDS_OBJECT (node)) {
+            JsonObject *inner_object = json_node_get_object (node);
+            gpointer val = ufo_object_from_json (inner_object, manager);
+            ufo_ir_prior_knowledge_set_pointer (prior, name, val);
+        }
+        else {
+            g_warning ("`%s' is neither a primitive value nor an object!", name);
+        }
     }
-
-    GError *tmp_error = NULL;
-    gpointer plugin = ufo_plugin_manager_get_plugin (manager,
-                                                     "ufo_ir_gradient_sparsity_new",
-                                                     "libufoir_gradient_sparsity.so",
-                                                     &tmp_error);
-    if (tmp_error != NULL) {
-      g_warning ("%s", tmp_error->message);
-      return NULL;
-    }
-    ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", plugin);
 
     return prior;
 }
