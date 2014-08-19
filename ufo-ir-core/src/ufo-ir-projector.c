@@ -298,7 +298,6 @@ ufo_ir_projector_from_json (JsonObject       *object,
         g_object_set (plugin, "model", model, NULL);
     }
     else {
-      // plugin-name = model+geometry.type = joseph-parallel
       g_error ("Case for non-gpu projector is not implemented.");
     }
 
