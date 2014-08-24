@@ -78,14 +78,24 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
                                     GParamSpec   *pspec)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
+    
+    GObject *value_object;
 
     switch (property_id) {
         case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
             set_prior_knowledge (object, g_value_get_pointer(value));
             break;
         case PROP_DF_MINIMIZER:
-            g_clear_object(&priv->df_minimizer);
-            priv->df_minimizer = g_object_ref (g_value_get_pointer(value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->df_minimizer)
+                    g_object_unref (priv->df_minimizer);
+
+                if (value_object != NULL) {
+                    priv->df_minimizer = g_object_ref (UFO_IR_METHOD (value_object));
+                }
+            }
             break;
         case PROP_BETA:
             priv->beta = g_value_get_float (value);
@@ -121,7 +131,7 @@ ufo_ir_asdpocs_method_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_DF_MINIMIZER:
-            g_value_set_pointer (value, priv->df_minimizer);
+            g_value_set_object (value, priv->df_minimizer);
             break;
         case PROP_BETA:
             g_value_set_float (value, priv->beta);
@@ -151,7 +161,11 @@ static void
 ufo_ir_asdpocs_method_dispose (GObject *object)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
-    g_clear_object(&priv->df_minimizer);
+
+    if (priv->df_minimizer) {
+        g_object_unref (priv->df_minimizer);
+        priv->df_minimizer = NULL;
+    }
 
     G_OBJECT_CLASS (ufo_ir_asdpocs_method_parent_class)->dispose (object);
 }
@@ -299,10 +313,11 @@ ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
                                      "prior-knowledge");
 
     properties[PROP_DF_MINIMIZER] =
-        g_param_spec_pointer("df-minimizer",
-                             "Pointer to the instance of UfoIrMethod.",
-                             "Pointer to the instance of UfoIrMethod",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("df-minimizer",
+                            "Pointer to the instance of UfoIrMethod.",
+                            "Pointer to the instance of UfoIrMethod",
+                            UFO_IR_TYPE_METHOD,
+                            G_PARAM_READWRITE);
 
     properties[PROP_BETA] =
         g_param_spec_float("beta",
