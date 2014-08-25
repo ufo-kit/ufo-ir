@@ -75,10 +75,20 @@ ufo_ir_projector_set_property (GObject      *object,
 {
     UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (object);
 
+    GObject *value_object;
+
     switch (property_id) {
         case PROP_GEOMETRY:
-            g_clear_object(&priv->geometry);
-            priv->geometry = g_object_ref (g_value_get_pointer(value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->geometry)
+                    g_object_unref (priv->geometry);
+
+                if (value_object != NULL) {
+                    priv->geometry = g_object_ref (UFO_IR_GEOMETRY (value_object));
+                }
+            }
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -96,7 +106,7 @@ ufo_ir_projector_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_GEOMETRY:
-            g_value_set_pointer (value, priv->geometry);
+            g_value_set_object (value, priv->geometry);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -108,7 +118,11 @@ static void
 ufo_ir_projector_dispose (GObject *object)
 {
     UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (object);
-    g_clear_object(&priv->geometry);
+
+    if (priv->geometry) {
+        g_object_unref (priv->geometry);
+        priv->geometry = NULL;
+    }
 
     G_OBJECT_CLASS (ufo_ir_projector_parent_class)->dispose (object);
 }
@@ -159,9 +173,10 @@ ufo_ir_projector_class_init (UfoIrProjectorClass *klass)
     gobject_class->get_property = ufo_ir_projector_get_property;
 
     properties[PROP_GEOMETRY] =
-        g_param_spec_pointer("geometry",
+        g_param_spec_object ("geometry",
                              "Pointer to the instance of UfoIrGeometry structure",
                              "Pointer to the instance of UfoIrGeometry structure",
+                             UFO_IR_TYPE_GEOMETRY,
                              G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)

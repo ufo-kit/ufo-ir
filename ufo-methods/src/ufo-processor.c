@@ -59,14 +59,32 @@ ufo_processor_set_property (GObject      *object,
 {
     UfoProcessorPrivate *priv = UFO_PROCESSOR_GET_PRIVATE (object);
 
+    GObject *value_object;
+
     switch (property_id) {
         case PROP_UFO_RESOURCES:
-            g_clear_object(&priv->resources);
-            priv->resources = g_object_ref (g_value_get_pointer (value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->resources)
+                    g_object_unref (priv->resources);
+
+                if (value_object != NULL) {
+                    priv->resources = g_object_ref (UFO_RESOURCES (value_object));
+                }
+            }
             break;
         case PROP_UFO_PROFILER:
-            g_clear_object(&priv->profiler);
-            priv->profiler = g_object_ref (g_value_get_pointer (value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->profiler)
+                    g_object_unref (priv->profiler);
+
+                if (value_object != NULL) {
+                    priv->profiler = g_object_ref (UFO_PROFILER (value_object));
+                }
+            }
             break;
         case PROP_CL_COMMAND_QUEUE:
             if (priv->cmd_queue) {
@@ -91,10 +109,10 @@ ufo_processor_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_UFO_RESOURCES:
-            g_value_set_pointer (value, priv->resources);
+            g_value_set_object (value, priv->resources);
             break;
         case PROP_UFO_PROFILER:
-            g_value_set_pointer (value, priv->profiler);
+            g_value_set_object (value, priv->profiler);
             break;
         case PROP_CL_COMMAND_QUEUE:
             g_value_set_pointer (value, priv->cmd_queue);
@@ -110,8 +128,16 @@ static void
 ufo_processor_dispose (GObject *object)
 {
     UfoProcessorPrivate *priv = UFO_PROCESSOR_GET_PRIVATE (object);
-    g_clear_object(&priv->resources);
-    g_clear_object(&priv->profiler);
+
+    if (priv->resources) {
+        g_object_unref (priv->resources);
+        priv->resources = NULL;
+    }
+
+    if (priv->profiler) {
+        g_object_unref (priv->profiler);
+        priv->profiler = NULL;
+    }
 
     if (priv->cmd_queue) {
         UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue (priv->cmd_queue));
@@ -124,7 +150,6 @@ ufo_processor_dispose (GObject *object)
 static void
 ufo_processor_finalize (GObject *object)
 {
-    //UfoProcessorPrivate *priv = UFO_PROCESSOR_GET_PRIVATE (object);
     G_OBJECT_CLASS (ufo_processor_parent_class)->finalize (object);
 }
 
@@ -154,16 +179,18 @@ ufo_processor_class_init (UfoProcessorClass *klass)
     gobject_class->get_property = ufo_processor_get_property;
 
     properties[PROP_UFO_RESOURCES] =
-        g_param_spec_pointer("ufo-resources",
-                             "Pointer to the instance of UfoResources.",
-                             "Pointer to the instance of UfoResources.",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("ufo-resources",
+                            "Pointer to the instance of UfoResources.",
+                            "Pointer to the instance of UfoResources.",
+                            UFO_TYPE_RESOURCES,
+                            G_PARAM_READWRITE);
 
     properties[PROP_UFO_PROFILER] =
-        g_param_spec_pointer("ufo-profiler",
-                             "Pointer to the instance of UfoProfiler.",
-                             "Pointer to the instance of UfoProfiler.",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("ufo-profiler",
+                            "Pointer to the instance of UfoProfiler.",
+                            "Pointer to the instance of UfoProfiler.",
+                            UFO_TYPE_PROFILER,
+                            G_PARAM_READWRITE);
 
     properties[PROP_CL_COMMAND_QUEUE] =
         g_param_spec_pointer("command-queue",

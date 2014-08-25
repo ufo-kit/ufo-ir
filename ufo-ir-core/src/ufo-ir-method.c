@@ -62,13 +62,23 @@ ufo_ir_method_set_property (GObject      *object,
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
 
+    GObject *value_object;
+
     switch (property_id) {
         case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
             g_warning ("%s : does not use a prior knowledge", G_OBJECT_TYPE_NAME (object));
             break;
         case PROP_PROJECTION_MODEL:
-            g_clear_object(&priv->projector);
-            priv->projector = g_object_ref (g_value_get_pointer (value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->projector)
+                    g_object_unref (priv->projector);
+
+                if (value_object != NULL) {
+                    priv->projector = g_object_ref (UFO_IR_PROJECTOR (value_object));
+                }
+            }
             break;
         case PROP_RELAXATION_FACTOR:
             priv->relaxation_factor = g_value_get_float (value);
@@ -92,7 +102,7 @@ ufo_ir_method_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_PROJECTION_MODEL:
-            g_value_set_pointer (value, priv->projector);
+            g_value_set_object (value, priv->projector);
             break;
         case PROP_RELAXATION_FACTOR:
             g_value_set_float (value, priv->relaxation_factor);
@@ -110,7 +120,12 @@ static void
 ufo_ir_method_dispose (GObject *object)
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
-    g_clear_object (&priv->projector);
+
+    if (priv->projector) {
+        g_object_unref (priv->projector);
+        priv->projector = NULL;
+    }
+
     G_OBJECT_CLASS (ufo_ir_method_parent_class)->dispose (object);
 }
 
@@ -167,10 +182,11 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
                              G_PARAM_WRITABLE);
 
     properties[PROP_PROJECTION_MODEL] =
-        g_param_spec_pointer("projection-model",
-                             "Pointer to the instance of UfoIrProjector.",
-                             "Pointer to the instance of UfoIrProjector.",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("projection-model",
+                            "Pointer to the instance of UfoIrProjector.",
+                            "Pointer to the instance of UfoIrProjector.",
+                            UFO_IR_TYPE_PROJECTOR,
+                            G_PARAM_READWRITE);
 
     properties[PROP_RELAXATION_FACTOR] =
         g_param_spec_float("relaxation-factor",

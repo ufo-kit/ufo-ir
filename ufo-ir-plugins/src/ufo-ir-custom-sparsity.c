@@ -41,12 +41,32 @@ ufo_ir_custom_sparsity_set_property (GObject      *object,
 {
     UfoIrCustomSparsityPrivate *priv = UFO_IR_CUSTOM_SPARSITY_GET_PRIVATE (object);
 
+    GObject *value_object;
+
     switch (property_id) {
         case PROP_METHOD:
-            priv->method = g_object_ref (g_value_get_pointer (value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->method)
+                    g_object_unref (priv->method);
+
+                if (value_object != NULL) {
+                    priv->method = g_object_ref (UFO_METHOD (value_object));
+                }
+            }
             break;
         case PROP_TRANSFORM:
-            priv->transform = g_object_ref (g_value_get_pointer (value));
+            {
+                value_object = g_value_get_object (value);
+
+                if (priv->transform)
+                    g_object_unref (priv->transform);
+
+                if (value_object != NULL) {
+                    priv->transform = g_object_ref (UFO_TRANSFORM (value_object));
+                }
+            }
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -64,10 +84,10 @@ ufo_ir_custom_sparsity_get_property (GObject    *object,
 
     switch (property_id) {
         case PROP_METHOD:
-            g_value_set_pointer (value, priv->method);
+            g_value_set_object (value, priv->method);
             break;
         case PROP_TRANSFORM:
-            g_value_set_pointer (value, priv->transform);
+            g_value_set_object (value, priv->transform);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -79,8 +99,17 @@ static void
 ufo_ir_custom_sparsity_dispose (GObject *object)
 {
     UfoIrCustomSparsityPrivate *priv = UFO_IR_CUSTOM_SPARSITY_GET_PRIVATE (object);
-    g_object_unref (priv->transform);
-    g_object_unref (priv->method);
+
+    if (priv->transform) {
+        g_object_unref (priv->transform);
+        priv->transform = NULL;
+    }
+
+    if (priv->method) {
+        g_object_unref (priv->method);
+        priv->method = NULL;
+    }
+
     G_OBJECT_CLASS (ufo_ir_custom_sparsity_parent_class)->dispose (object);
 }
 
@@ -133,16 +162,18 @@ ufo_ir_custom_sparsity_class_init (UfoIrCustomSparsityClass *klass)
     gobject_class->get_property = ufo_ir_custom_sparsity_get_property;
 
     properties[PROP_METHOD] =
-        g_param_spec_pointer("method",
-                             "Pointer to the instance of UfoMethod.",
-                             "Pointer to the instance of UfoMethod.",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("method",
+                            "Pointer to the instance of UfoMethod.",
+                            "Pointer to the instance of UfoMethod.",
+                            UFO_TYPE_METHOD,
+                            G_PARAM_READWRITE);
 
     properties[PROP_TRANSFORM] =
-        g_param_spec_pointer("transform",
-                             "Pointer to the instance of UfoTransform.",
-                             "Pointer to the instance of UfoTransform.",
-                             G_PARAM_READWRITE);
+        g_param_spec_object("transform",
+                            "Pointer to the instance of UfoTransform.",
+                            "Pointer to the instance of UfoTransform.",
+                            UFO_TYPE_TRANSFORM,
+                            G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
