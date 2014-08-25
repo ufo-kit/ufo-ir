@@ -41,7 +41,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 install(TARGETS ufomethods
         ARCHIVE DESTINATION ${UFO_METHODS_LIBDIR}
         LIBRARY DESTINATION ${UFO_METHODS_LIBDIR})
-
+    message ("DIR: ${UFO_METHODS_INCLUDE_DIR}")
 install(FILES ${ufomethods_HDRS}
         DESTINATION ${UFO_METHODS_INCLUDE_DIR}/ufo/methods)
 #}}}

@@ -156,7 +156,6 @@ ufo_ir_task_process (UfoTask        *task,
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (task);
     ufo_op_set (output, 0, priv->resources, priv->cmd_queue);
     gboolean res = ufo_method_process (UFO_METHOD (priv->method), inputs[0], output, NULL);
-
     return TRUE;
 }
 
@@ -205,44 +204,15 @@ ufo_ir_task_set_property (GObject      *object,
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
 
-    GObject *value_object;
-
     switch (property_id) {
       case PROP_METHOD:
-          {
-              value_object = g_value_get_object (value);
-
-              if (priv->method)
-                  g_object_unref (priv->method);
-
-              if (value_object != NULL) {
-                  priv->method = g_object_ref (UFO_IR_METHOD (value_object));
-              }
-          }
+          priv->method = g_object_ref (g_value_get_pointer(value));
           break;
       case PROP_GEOMETRY:
-          {
-              value_object = g_value_get_object (value);
-
-              if (priv->geometry)
-                  g_object_unref (priv->geometry);
-
-              if (value_object != NULL) {
-                  priv->geometry = g_object_ref (UFO_IR_GEOMETRY (value_object));
-              }
-          }
+          priv->geometry = g_object_ref (g_value_get_pointer(value));
           break;
       case PROP_PROJECTOR:
-          {
-              value_object = g_value_get_object (value);
-
-              if (priv->projector)
-                  g_object_unref (priv->projector);
-
-              if (value_object != NULL) {
-                  priv->projector = g_object_ref (UFO_IR_PROJECTOR (value_object));
-              }
-          }
+          priv->projector = g_object_ref (g_value_get_pointer(value));
           break;
       case PROP_PRIOR_KNOWLEDGE:
           priv->prior = g_hash_table_ref (g_value_get_pointer(value));
@@ -263,13 +233,13 @@ ufo_ir_task_get_property (GObject    *object,
 
     switch (property_id) {
       case PROP_METHOD:
-          g_value_set_object (value, priv->method);
+          g_value_set_pointer (value, priv->method);
           break;
       case PROP_GEOMETRY:
-          g_value_set_object (value, priv->geometry);
+          g_value_set_pointer (value, priv->geometry);
           break;
       case PROP_PROJECTOR:
-          g_value_set_object (value, priv->projector);
+          g_value_set_pointer (value, priv->projector);
           break;
       case PROP_PRIOR_KNOWLEDGE:
           g_value_set_pointer (value, priv->prior);
@@ -284,27 +254,13 @@ static void
 ufo_ir_task_dispose (GObject *object)
 {
     UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
-    UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue(priv->cmd_queue));
+    if (priv->cmd_queue)
+      UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue(priv->cmd_queue));
 
-    if (priv->resources) {
-        g_object_unref (priv->resources);
-        priv->resources = NULL;
-    }
-
-    if (priv->method) {
-        g_object_unref (priv->method);
-        priv->method = NULL;
-    }
-
-    if (priv->geometry) {
-        g_object_unref (priv->geometry);
-        priv->geometry = NULL;
-    }
-
-    if (priv->projector) {
-        g_object_unref (priv->projector);
-        priv->projector = NULL;
-    }
+    g_clear_object (&priv->resources);
+    g_clear_object (&priv->method);
+    g_clear_object (&priv->geometry);
+    g_clear_object (&priv->projector);
 
     if (priv->prior) {
         g_hash_table_unref (priv->prior);
@@ -317,6 +273,7 @@ ufo_ir_task_dispose (GObject *object)
 static void
 ufo_ir_task_finalize (GObject *object)
 {
+    //UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (object);
     G_OBJECT_CLASS (ufo_ir_task_parent_class)->finalize (object);
 }
 
@@ -330,25 +287,22 @@ ufo_ir_task_class_init (UfoIrTaskClass *klass)
     gobject_class->dispose = ufo_ir_task_dispose;
 
     properties[PROP_METHOD] =
-        g_param_spec_object("method",
-                            "Pointer to the instance of UfoIrMethod.",
-                            "Pointer to the instance of UfoIrMethod.",
-                            UFO_IR_TYPE_METHOD,
-                            G_PARAM_READWRITE);
+        g_param_spec_pointer("method",
+                             "Pointer to the instance of UfoIrMethod.",
+                             "Pointer to the instance of UfoIrMethod.",
+                             G_PARAM_READWRITE);
 
     properties[PROP_GEOMETRY] =
-        g_param_spec_object("geometry",
-                            "Pointer to the instance of UfoGeometry.",
-                            "Pointer to the instance of UfoGeometry.",
-                            UFO_IR_TYPE_GEOMETRY,
-                            G_PARAM_READWRITE);
+        g_param_spec_pointer("geometry",
+                             "Pointer to the instance of UfoGeometry.",
+                             "Pointer to the instance of UfoGeometry.",
+                             G_PARAM_READWRITE);
 
     properties[PROP_PROJECTOR] =
-        g_param_spec_object("projector",
-                            "Pointer to the instance of UfoProjector.",
-                            "Pointer to the instance of UfoProjector.",
-                            UFO_IR_TYPE_PROJECTOR,
-                            G_PARAM_READWRITE);
+        g_param_spec_pointer("projector",
+                             "Pointer to the instance of UfoProjector.",
+                             "Pointer to the instance of UfoProjector.",
+                             G_PARAM_READWRITE);
 
     properties[PROP_PRIOR_KNOWLEDGE] =
         g_param_spec_pointer("prior-knowledge",
