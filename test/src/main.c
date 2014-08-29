@@ -12,7 +12,7 @@ int main(int n_args, char *argv[])
     UfoConfig *config = ufo_config_new();
     UfoGraph *ufo_task_graph = ufo_task_graph_new();
     UfoScheduler *ufo_scheduler = ufo_scheduler_new (config, NULL);
-    g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
+    //g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
     UfoPluginManager *manager = ufo_plugin_manager_new (config);
     UfoNode *reader = UFO_NODE (ufo_plugin_manager_get_task (manager, "reader", NULL));
     UfoNode *writer = UFO_NODE (ufo_plugin_manager_get_task (manager, "writer", NULL));

@@ -104,6 +104,21 @@ ufo_ir_task_setup (UfoTask      *task,
                          error);
 }
 
+UfoNode *
+ufo_ir_task_node_copy (UfoNode *node,
+                       GError **error)
+{
+    g_print ("\n COPY");
+    UfoNode * copy = UFO_NODE_CLASS (ufo_ir_task_parent_class)->copy (node, error);
+
+    if (error) {
+      UfoIrTaskPrivate *priv = UFO_IR_TASK_GET_PRIVATE (node);
+      ufo_task_setup (copy, priv->resources, error);
+    }
+
+    return copy;
+}
+
 static void
 ufo_ir_task_get_requisition (UfoTask        *task,
                              UfoBuffer      **inputs,
@@ -315,6 +330,8 @@ ufo_ir_task_class_init (UfoIrTaskClass *klass)
           g_object_class_install_property (gobject_class, i, properties[i]);
 
       g_type_class_add_private (gobject_class, sizeof(UfoIrTaskPrivate));
+
+      UFO_NODE_GET_CLASS (klass)->copy = ufo_ir_task_node_copy;
 }
 
 static void
