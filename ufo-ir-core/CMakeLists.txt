@@ -42,15 +42,14 @@ endif ()
 #{{{ Dependencies
 set(PKG_GLIB2_MIN_REQUIRED "2.22")
 set(PKG_UFO_MIN_REQUIRED "0.2")
-set(PKG_UFO_METHODS_MIN_REQUIRED "0.1")
 
 find_package(OpenCL REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(GLIB2 glib-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(GOBJECT2 gobject-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
+pkg_check_modules(GIO2 gio-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(UFO ufo>=${PKG_UFO_MIN_REQUIRED} REQUIRED)
-pkg_check_modules(UFO_METHODS ufomethods>=${PKG_UFO_METHODS_MIN_REQUIRED} REQUIRED)
 
 set(UFO_IR_DEPS
     ${OPENCL_LIBRARIES}
@@ -58,20 +57,18 @@ set(UFO_IR_DEPS
     ${GOBJECT2_LIBRARIES}
     ${JSON_GLIB_LIBRARIES}
     ${UFO_LIBRARIES}
-    ${UFO_METHODS_LIBRARIES}
     )
 
-link_directories(${UFO_LIBRARY_DIRS}
-                 ${UFO_LIBRARY_DIRS})
+link_directories(${UFO_LIBRARY_DIRS})
 
 #{{{ Add include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${GLIB2_INCLUDE_DIRS}
+    ${GIO2_INCLUDE_DIRS}
     ${OPENCL_INCLUDE_DIRS}
-    ${UFO_INCLUDE_DIRS}
-    ${UFO_METHODS_INCLUDE_DIRS})
+    ${UFO_INCLUDE_DIRS})
 #}}}
 #}}}
 #{{{ CMake: Add configure-like prefixes and directories

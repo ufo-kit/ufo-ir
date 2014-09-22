@@ -1,4 +1,3 @@
-/*** BEGIN file-header ***/
 /*
  * Copyright (C) 2011-2013 Karlsruhe Institute of Technology
  *
@@ -18,26 +17,17 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UFO_METHODS_ENUMS_H
-#define UFO_METHODS_ENUMS_H
+#ifndef __UFO_IR_H
+#define __UFO_IR_H
 
-#include <glib-object.h>
+#define __UFO_IR_H_INSIDE__
 
-G_BEGIN_DECLS
-/*** END file-header ***/
+#include <ufo/ir/ufo-geometry.h>
+#include <ufo/ir/ufo-ir-method.h>
+#include <ufo/ir/ufo-ir-projector.h>
+#include <ufo/ir/ufo-ir-sparsity.h>
+#include <ufo/ir/ufo-ir-prior-knowledge.h>
 
-/*** BEGIN file-production ***/
+#undef __UFO_IR_H_INSIDE__
 
-/* enumerations from "@filename@" */
-/*** END file-production ***/
-
-/*** BEGIN value-header ***/
-GType @enum_name@_get_type (void) G_GNUC_CONST;
-#define UFO_TYPE_@ENUMSHORT@ (@enum_name@_get_type ())
-/*** END value-header ***/
-
-/*** BEGIN file-tail ***/
-G_END_DECLS
-
-#endif /* !UFO_METHODS_ENUMS_H */
-/*** END file-tail ***/
+#endif

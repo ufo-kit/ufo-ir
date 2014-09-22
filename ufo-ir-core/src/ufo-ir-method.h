@@ -20,9 +20,12 @@
 #ifndef __UFO_IR_METHOD_H
 #define __UFO_IR_METHOD_H
 
+#if !defined (__UFO_IR_H_INSIDE__) && !defined (UFO_IR_COMPILATION)
+#error "Only <ufo/ir/ufo-ir.h> can be included directly."
+#endif
+
 #include <glib-object.h>
-#include <ufo/methods/ufo-method-iface.h>
-#include <ufo/methods/ufo-processor.h>
+#include <ufo/ufo.h>
 
 G_BEGIN_DECLS
 

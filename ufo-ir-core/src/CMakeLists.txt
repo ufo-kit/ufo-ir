@@ -45,6 +45,8 @@ install(TARGETS ufoir
         LIBRARY DESTINATION ${UFO_IR_LIBDIR})
 
 install(FILES ${ufoir_HDRS}
+              ${CMAKE_CURRENT_SOURCE_DIR}/ufo-ir.h
+              ${CMAKE_CURRENT_BINARY_DIR}/ufo-ir-enums.h
         DESTINATION ${UFO_IR_INCLUDE_DIR}/ufo/ir)
 #}}}
 #}}}
@@ -76,8 +78,7 @@ add_custom_command(
 #{{{ g-ir-scanner and g-ir-compiler
 find_program(INTROSPECTION_SCANNER "g-ir-scanner")
 find_program(INTROSPECTION_COMPILER "g-ir-compiler")
-message ("UFO_METHODS_INCLUDE_DIR: ${UFO_METHODS_INCLUDE_DIR}")
-if (0 AND INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
+if (INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
     option(WITH_GIR "Build introspection files" ON)
     if (WITH_GIR)
         set(GIR_PREFIX "UfoIr-${UFO_IR_GIR_VERSION}")

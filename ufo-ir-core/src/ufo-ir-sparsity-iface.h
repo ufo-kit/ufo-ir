@@ -20,6 +20,10 @@
 #ifndef UFO_IR_SPARSITY_IFACE_H
 #define UFO_IR_SPARSITY_IFACE_H
 
+#if !defined (__UFO_IR_H_INSIDE__) && !defined (UFO_IR_COMPILATION)
+#error "Only <ufo/ir/ufo-ir.h> can be included directly."
+#endif
+
 #include <glib-object.h>
 #include <ufo/ufo.h>
 

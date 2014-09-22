@@ -20,6 +20,10 @@
 #ifndef __UFO_IR_GEOMETRY_H
 #define __UFO_IR_GEOMETRY_H
 
+#if !defined (__UFO_IR_H_INSIDE__) && !defined (UFO_IR_COMPILATION)
+#error "Only <ufo/ir/ufo-ir.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <ufo/ufo.h>
 

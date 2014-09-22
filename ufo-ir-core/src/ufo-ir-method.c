@@ -23,8 +23,6 @@
 #include "ufo-ir-prior-knowledge.h"
 #include "ufo-ir-sparsity-iface.h"
 
-#include <ufo/methods/ufo-transform-iface.h>
-
 static void ufo_method_interface_init (UfoMethodIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrMethod, ufo_ir_method, UFO_TYPE_PROCESSOR,

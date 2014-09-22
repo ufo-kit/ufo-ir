@@ -18,7 +18,6 @@
 */
 
 #include "ufo-ir-prior-knowledge.h"
-#include <ufo/methods/ufo-common-routines.h>
 
 UfoIrPriorKnowledge *
 ufo_ir_prior_knowledge_new (void)

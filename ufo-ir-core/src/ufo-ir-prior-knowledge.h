@@ -20,6 +20,10 @@
 #ifndef UFO_IR_PRIOR_KNOWLEDGE_H
 #define UFO_IR_PRIOR_KNOWLEDGE_H
 
+#if !defined (__UFO_IR_H_INSIDE__) && !defined (UFO_IR_COMPILATION)
+#error "Only <ufo/ir/ufo-ir.h> can be included directly."
+#endif
+
 #include <glib.h>
 #include <glib-object.h>
 #include <ufo/ufo.h>
