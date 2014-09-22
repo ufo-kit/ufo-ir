@@ -2,8 +2,7 @@
 #include <glib.h>
 #include <ufo/ufo.h>
 
-#include <ufo/ir/ufo-ir-geometry.h>
-#include <ufo/ir/ufo-ir-prior-knowledge.h>
+#include <ufo/ir/ufo-ir.h>
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
 
 int main(int n_args, char *argv[])
@@ -108,7 +107,7 @@ int main(int n_args, char *argv[])
     ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     g_object_set (ir,
-                  "method", asdpocs,
+                  "method", sart,
                   "geometry", geometry,
                   "projector", projector,
                   "prior-knowledge", prior,
