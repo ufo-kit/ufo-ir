@@ -18,7 +18,6 @@
 */
 
 #include "ufo-ir-cl-projector.h"
-#include <ufo/ir/ufo-ir-geometry.h>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>

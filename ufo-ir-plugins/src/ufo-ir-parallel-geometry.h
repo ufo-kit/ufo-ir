@@ -20,7 +20,7 @@
 #ifndef __UFO_IR_PARALLEL_GEOMETRY_H
 #define __UFO_IR_PARALLEL_GEOMETRY_H
 
-#include <ufo/ir/ufo-ir-geometry.h>
+#include <ufo/ir/ufo-ir.h>
 
 G_BEGIN_DECLS
 

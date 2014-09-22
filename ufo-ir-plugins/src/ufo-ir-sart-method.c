@@ -26,8 +26,6 @@
 #include "ufo-ir-sart-method.h"
 #include <math.h>
 #include <ufo/ufo.h>
-#include <ufo/ir/ufo-ir-geometry.h>
-#include <ufo/ir/ufo-ir-projector.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
 

@@ -1,7 +1,4 @@
 #include "ufo-ir-asdpocs-method.h"
-#include <ufo/ir/ufo-ir-projector.h>
-#include <ufo/ir/ufo-ir-sparsity-iface.h>
-#include <ufo/ir/ufo-ir-prior-knowledge.h>
 #include <ufo/ufo.h>
 #include <math.h>
 #ifdef __APPLE__
@@ -78,7 +75,7 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
                                     GParamSpec   *pspec)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
-    
+
     GObject *value_object;
 
     switch (property_id) {

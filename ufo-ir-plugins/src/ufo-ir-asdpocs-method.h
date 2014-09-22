@@ -21,7 +21,7 @@
 #define __UFO_IR_ASDPOCS_METHOD_H
 
 #include <glib-object.h>
-#include <ufo/ir/ufo-ir-method.h>
+#include <ufo/ir/ufo-ir.h>
 
 G_BEGIN_DECLS
 

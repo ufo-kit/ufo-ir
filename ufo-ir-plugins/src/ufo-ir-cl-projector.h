@@ -22,7 +22,7 @@
 
 #include <glib.h>
 #include <ufo/ufo.h>
-#include <ufo/ir/ufo-ir-projector.h>
+#include <ufo/ir/ufo-ir.h>
 
 G_BEGIN_DECLS
 

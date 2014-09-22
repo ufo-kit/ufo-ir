@@ -2,8 +2,8 @@
 #define __UFO_IR_GRADIENT_SPARSITY_H
 
 #include <glib-object.h>
-#include <ufo/methods/ufo-processor.h>
-#include <ufo/ir/ufo-ir-sparsity-iface.h>
+#include <ufo/ufo.h>
+#include <ufo/ir/ufo-ir.h>
 
 G_BEGIN_DECLS
 
