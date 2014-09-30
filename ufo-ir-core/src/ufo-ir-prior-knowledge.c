@@ -96,3 +96,23 @@ ufo_ir_prior_knowledge_from_json (JsonObject       *object,
 
     return prior;
 }
+
+gpointer
+ufo_ir_prior_knowledge_ref (UfoIrPriorKnowledge *prior)
+{
+
+    return prior ? g_hash_table_ref (prior) : prior;
+}
+
+void
+ufo_ir_prior_knowledge_unref (UfoIrPriorKnowledge *prior)
+{
+    g_hash_table_unref (prior);
+}
+
+gpointer
+ufo_ir_prior_knowledge_copy (UfoIrPriorKnowledge *orig)
+{
+    g_warning ("INCORRECT COPY IMPLEMENTATION FOR PRIOR KNOWLEDGE");
+    return ufo_ir_prior_knowledge_ref (orig);
+}

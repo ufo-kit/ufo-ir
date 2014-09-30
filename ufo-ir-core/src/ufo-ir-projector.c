@@ -20,7 +20,10 @@
 #include "ufo-ir-projector.h"
 #include "ufo-ir-geometry.h"
 
-G_DEFINE_TYPE (UfoIrProjector, ufo_ir_projector, UFO_TYPE_PROCESSOR)
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
+G_DEFINE_TYPE_WITH_CODE (UfoIrProjector, ufo_ir_projector, UFO_TYPE_PROCESSOR,
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_PROJECTOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_PROJECTOR, UfoIrProjectorPrivate))
 gboolean projector_type_error (UfoIrProjector *self, GError **error);
@@ -162,6 +165,31 @@ ufo_ir_projector_configure_real (UfoProcessor *projector)
         priv->full_volume_region.origin[i] = 0;
         priv->full_volume_region.size[i] = req.dims[i];
     }
+}
+
+static UfoCopyable *
+ufo_ir_projector_copy_real (gpointer origin,
+                            gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_projector_new());
+
+    UfoIrProjectorPrivate * priv = UFO_IR_PROJECTOR_GET_PRIVATE (origin);
+    gpointer geom_copy = ufo_copyable_copy (priv->geometry, NULL);
+    if (geom_copy) {
+        g_object_set (G_OBJECT(copy), "geometry", geom_copy, NULL);
+        g_object_unref (geom_copy);
+    }
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_projector_copy_real;
 }
 
 static void

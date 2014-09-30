@@ -26,7 +26,10 @@
 #include <CL/cl.h>
 #endif
 
-G_DEFINE_TYPE (UfoIrGeometry, ufo_ir_geometry, G_TYPE_OBJECT)
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
+G_DEFINE_TYPE_WITH_CODE (UfoIrGeometry, ufo_ir_geometry, G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_GEOMETRY, UfoIrGeometryPrivate))
 
@@ -231,6 +234,36 @@ ufo_ir_geometry_get_spec_real (UfoIrGeometry *geometry,
 {
     g_warning ("%s: `get_spec' not implemented", G_OBJECT_TYPE_NAME (geometry));
     return NULL;
+}
+
+static UfoCopyable *
+ufo_ir_geometry_copy_real (gpointer origin,
+                           gpointer _copy)
+{
+    // TODO: is it optimal to duplicate cl_mem that are constant, or we can
+    // share it among the GPUs?
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_geometry_new());
+
+    g_print ("\n ufo_ir_geometry_copy_real %p  copy: %p  _copy: %p", origin, (gpointer)copy, _copy);
+    UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (origin);
+    g_object_set (G_OBJECT(copy),
+                  "dimensions", &priv->dimensions,
+                  "num-angles", priv->n_angles,
+                  "angle-step", priv->angle_step,
+                  "angle-offset", priv->angle_offset,
+                  NULL);
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    g_print ("\n UFO IR GEOMETRY ufo_copyable_interface_init");
+    iface->copy = ufo_ir_geometry_copy_real;
 }
 
 static void

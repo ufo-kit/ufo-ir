@@ -44,4 +44,7 @@ gpointer ufo_ir_prior_knowledge_pointer     (UfoIrPriorKnowledge *prior,
                                              const gchar         *key);
 gpointer ufo_ir_prior_knowledge_from_json   (JsonObject       *object,
                                              UfoPluginManager *manager);
+gpointer ufo_ir_prior_knowledge_ref         (UfoIrPriorKnowledge *prior);
+void     ufo_ir_prior_knowledge_unref       (UfoIrPriorKnowledge *prior);
+gpointer ufo_ir_prior_knowledge_copy        (UfoIrPriorKnowledge *orig);
 #endif

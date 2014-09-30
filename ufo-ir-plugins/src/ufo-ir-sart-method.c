@@ -28,10 +28,13 @@
 #include <ufo/ufo.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrSartMethod, ufo_ir_sart_method, UFO_IR_TYPE_METHOD,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
-                                                ufo_method_interface_init))
+                                                ufo_method_interface_init)
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_SART_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_SART_METHOD, UfoIrSartMethodPrivate))
 
@@ -187,6 +190,25 @@ static void
 ufo_method_interface_init (UfoMethodIface *iface)
 {
     iface->process = ufo_ir_sart_method_process_real;
+}
+
+static UfoCopyable *
+ufo_ir_sart_method_copy_real (gpointer origin,
+                              gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_sart_method_new());
+
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_sart_method_copy_real;
 }
 
 static void

@@ -25,7 +25,10 @@
 #include <CL/cl.h>
 #endif
 
-G_DEFINE_TYPE (UfoIrClProjector, ufo_ir_cl_projector, UFO_IR_TYPE_PROJECTOR)
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
+G_DEFINE_TYPE_WITH_CODE (UfoIrClProjector, ufo_ir_cl_projector, UFO_IR_TYPE_PROJECTOR,
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_CL_PROJECTOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_CL_PROJECTOR, UfoIrClProjectorPrivate))
 
@@ -272,6 +275,28 @@ ufo_ir_cl_projector_configure_real (UfoProcessor *projector)
         err |= clSetKernelArg (kernel[i], 8, spec_size, spec);
         UFO_RESOURCES_CHECK_CLERR (err);
     }
+}
+
+static UfoCopyable *
+ufo_ir_cl_projector_copy_real (gpointer origin,
+                               gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = _copy;
+    else
+        copy = UFO_COPYABLE (ufo_ir_cl_projector_new());
+    UfoIrClProjectorPrivate * priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (origin);
+    g_object_set (G_OBJECT(copy),
+                  "model", priv->model,
+                  NULL);
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_cl_projector_copy_real;
 }
 
 static void

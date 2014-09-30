@@ -22,7 +22,10 @@
 
 #define BEAM_GEOMETRY "parallel"
 
-G_DEFINE_TYPE (UfoIrParallelGeometry, ufo_ir_parallel_geometry, UFO_IR_TYPE_GEOMETRY)
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
+G_DEFINE_TYPE_WITH_CODE (UfoIrParallelGeometry, ufo_ir_parallel_geometry, UFO_IR_TYPE_GEOMETRY,
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_PARALLEL_GEOMETRY, UfoIrParallelGeometryPrivate))
 
@@ -140,6 +143,30 @@ ufo_ir_parallel_geometry_get_spec_real (UfoIrGeometry *geometry,
     UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
     *data_size = sizeof (UfoIrParallelGeometrySpec);
     return &priv->spec;
+}
+
+static UfoCopyable *
+ufo_ir_parallel_geometry_copy_real (gpointer origin,
+                                    gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_parallel_geometry_new());
+
+    UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (origin);
+    g_object_set (G_OBJECT(copy),
+                  "detector-scale", priv->spec.det_scale,
+                  "detector-offset", priv->spec.det_offset,
+                  NULL);
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_parallel_geometry_copy_real;
 }
 
 static void

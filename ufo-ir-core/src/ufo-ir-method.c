@@ -24,10 +24,13 @@
 #include "ufo-ir-sparsity-iface.h"
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrMethod, ufo_ir_method, UFO_TYPE_PROCESSOR,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
-                                                ufo_method_interface_init))
+                                                ufo_method_interface_init)
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_METHOD, UfoIrMethodPrivate))
 
@@ -162,6 +165,38 @@ static void
 ufo_method_interface_init (UfoMethodIface *iface)
 {
     iface->process = ufo_ir_method_process_real;
+}
+
+static UfoCopyable *
+ufo_ir_method_copy_real (gpointer origin,
+                         gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_method_new());
+
+
+    UfoIrMethodPrivate * priv = UFO_IR_METHOD_GET_PRIVATE (origin);
+    gpointer prj_copy = ufo_copyable_copy (priv->projector, NULL);
+    if (prj_copy) {
+        g_object_set (G_OBJECT(copy), "projection-model", prj_copy, NULL);
+        g_object_unref (G_OBJECT(prj_copy));
+    }
+
+    g_object_set (G_OBJECT(copy),
+                  "relaxation_factor", priv->relaxation_factor,
+                  "max-iterations", priv->max_iterations,
+                  NULL);
+
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_method_copy_real;
 }
 
 static void
