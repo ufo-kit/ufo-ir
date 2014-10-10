@@ -258,8 +258,8 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
                       "relaxation-factor", priv->beta,
                       NULL);
         ufo_method_process (UFO_METHOD (priv->df_minimizer), input, x, NULL);
-
-        ufo_buffer_copy (x, output);
+	ufo_op_POSC (x, x, resources, cmd_queue);
+	ufo_buffer_copy (x, output);
         ufo_buffer_copy (input, b_residual);
 
         ufo_ir_projector_FP (projector, x, b_residual, &complete_set, -1, NULL);
@@ -271,7 +271,7 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
         if (iteration == 0)
           dtgv = priv->alpha * dp;
 
-        ufo_buffer_copy (x, x_prev);
+	ufo_buffer_copy (x, x_prev);
         clFinish(cmd_queue);
         g_object_set (priv->sparsity,
                       "relaxation-factor", dtgv,
@@ -280,6 +280,7 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
 
         ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
         dg = ufo_op_l1_norm (x_residual, resources, cmd_queue);
+	g_print ("\nx - x_prev l1: %f", dg);
 
         if (dg > priv->r_max * dp && dd > 0.001f)
           dtgv *= priv->alpha_red;

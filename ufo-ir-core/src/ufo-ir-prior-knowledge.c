@@ -19,6 +19,21 @@
 
 #include "ufo-ir-prior-knowledge.h"
 
+/**
+* SECTION:ufo-ir-prior-knowledge
+* @Short_description: The #UfoIrPriorKnowledge is used to store a priori
+* knowledge of various type.
+* @Title: UfoIrPriorKnowledge
+*
+*/
+
+/**
+* ufo_ir_prior_knowledge_new:
+*
+* Creates a collection for a priori
+*
+* Returns: (transfer full): (allow-none): #gpointer or %NULL if @type is unknown.
+*/
 UfoIrPriorKnowledge *
 ufo_ir_prior_knowledge_new (void)
 {

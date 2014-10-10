@@ -23,6 +23,15 @@ typedef UfoIrSparsityIface UfoIrSparsityInterface;
 
 G_DEFINE_INTERFACE (UfoIrSparsity, ufo_ir_sparsity, G_TYPE_OBJECT)
 
+/**
+* ufo_ir_sparsity_minimize:
+* @sparsity: A #UfoIrSparsity object
+* @input: A #UfoBuffer object
+* @output: A #UfoBuffer object
+* @pevent: A #gpointer to cl_event that defines the operation end.
+*
+* Miminizes a sparsity of @input and writes the result to @output
+*/
 gboolean
 ufo_ir_sparsity_minimize (UfoIrSparsity *sparsity,
                           UfoBuffer     *input,

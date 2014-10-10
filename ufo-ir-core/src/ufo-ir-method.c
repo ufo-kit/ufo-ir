@@ -23,6 +23,12 @@
 #include "ufo-ir-prior-knowledge.h"
 #include "ufo-ir-sparsity-iface.h"
 
+/**
+* SECTION:ufo-ir-method
+* @Short_description: Base class for an iterative reconstruction method.
+* @Title: UfoIrMethod
+*/
+
 static void ufo_method_interface_init (UfoMethodIface *iface);
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 
@@ -48,6 +54,13 @@ enum {
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
+/**
+* ufo_ir_geometry_new:
+*
+* Create a #UfoIrMethod object.
+*
+* Return value: A new #UfoIrMethod object.
+*/
 UfoMethod *
 ufo_ir_method_new (void)
 {
@@ -244,14 +257,6 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
     UFO_IR_METHOD_CLASS (klass)->set_prior_knowledge =
         ufo_ir_method_set_prior_knowledge_real;
     UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_method_setup_real;
-}
-
-void
-ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
-                                   GHashTable  *prior)
-{
-    g_return_if_fail (UFO_IR_IS_METHOD (method) && prior);
-    UFO_IR_METHOD_GET_CLASS (method)->set_prior_knowledge(method, prior);
 }
 
 static void

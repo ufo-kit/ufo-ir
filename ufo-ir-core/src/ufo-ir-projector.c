@@ -20,6 +20,16 @@
 #include "ufo-ir-projector.h"
 #include "ufo-ir-geometry.h"
 
+/**
+* SECTION:ufo-ir-projector
+* @Short_description: A base class for the projection models.
+* @Title: UfoIrProjector
+*
+* A #UfoIrProjector stores common properties that all projection models use and
+* provide an interface.
+*/
+
+
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 G_DEFINE_TYPE_WITH_CODE (UfoIrProjector, ufo_ir_projector, UFO_TYPE_PROCESSOR,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
@@ -219,6 +229,19 @@ ufo_ir_projector_class_init (UfoIrProjectorClass *klass)
     UFO_PROCESSOR_CLASS (klass)->configure = ufo_ir_projector_configure_real;
 }
 
+/**
+* ufo_ir_projector_FP_ROI:
+* @projector: A #UfoIrProjector.
+* @volume: A #UfoBuffer that describes the volume.
+* @volume_roi: A #UfoRegion. It describes the ROI of the volume.
+* @measurements: A #UfoBuffer that describes the measurement. It will be updated.
+* @subset: A #UfoIrProjectionsSubset describes a projections subset, which
+* should be projected.
+* @scale: A #gfloat is a scaling coefficient.
+* @finish_event: A #gpointer to cl_event that defines the operation end.
+*
+* Performs forward-projection of the ROI region in the volume.
+*/
 void
 ufo_ir_projector_FP_ROI (UfoIrProjector         *projector,
                          UfoBuffer              *volume,
@@ -246,8 +269,21 @@ ufo_ir_projector_FP_ROI (UfoIrProjector         *projector,
                   scale, finish_event);
 }
 
+/**
+* ufo_ir_projector_BP_ROI:
+* @projector: A #UfoIrProjector.
+* @volume: A #UfoBuffer that describes the volume. It will be updated.
+* @volume_roi: A #UfoRegion. It describes the ROI of the volume.
+* @subset: A #UfoIrProjectionsSubset that describes a projections subset, which
+* should be backprojected onto the @volume.
+* @relax_param: A #gfloat is a relaxation parameter.
+* @finish_event: A #gpointer to cl_event that defines the operation end.
+*
+* Performs forward-projection of the ROI region in the @volume and updates
+* @measurements using the scaled result.
+*/
 void
-ufo_ir_projector_BP_ROI (UfoIrProjector         *projector,
+ufo_ir_projector_BP_ROI (UfoIrProjector       *projector,
                          UfoBuffer            *volume,
                          UfoRegion            *volume_roi,
                          UfoBuffer            *measurements,
@@ -274,6 +310,19 @@ ufo_ir_projector_BP_ROI (UfoIrProjector         *projector,
                   finish_event);
 }
 
+/**
+* ufo_ir_projector_FP:
+* @projector: A #UfoIrProjector.
+* @volume: A #UfoBuffer that describes the volume.
+* @measurements: A #UfoBuffer that describes the measurement. It will be updated.
+* @subset: A #UfoIrProjectionsSubset describes a projections subset, which
+* should be projected.
+* @scale: A #gfloat is a scaling coefficient.
+* @finish_event: A #gpointer to cl_event that defines the operation end.
+*
+* Performs forward-projection of the @volume and updates @measurements using
+* the scaled result.
+*/
 void
 ufo_ir_projector_FP (UfoIrProjector         *projector,
                      UfoBuffer              *volume,
@@ -292,6 +341,17 @@ ufo_ir_projector_FP (UfoIrProjector         *projector,
                              finish_event);
 }
 
+/**
+* ufo_ir_projector_BP:
+* @projector: A #UfoIrProjector.
+* @volume: A #UfoBuffer that describes the volume. It will be updated.
+* @subset: A #UfoIrProjectionsSubset that describes a projections subset, which
+* should be backprojected onto the @volume.
+* @relax_param: A #gfloat is a relaxation parameter.
+* @finish_event: A #gpointer to cl_event that defines the operation end.
+*
+* Performs backprojection of the @measurements to the @volume.
+*/
 void
 ufo_ir_projector_BP (UfoIrProjector         *projector,
                      UfoBuffer              *volume,
@@ -318,6 +378,15 @@ ufo_ir_projector_init (UfoIrProjector *self)
     priv->geometry = NULL;
 }
 
+/**
+* ufo_ir_projector_from_json:
+* @object: A #JsonObject object
+* @manager: A #UfoPluginManager
+*
+* Loads a projection model module depending on Json object, initializes it and returns an instance.
+*
+* Returns: (transfer full): (allow-none): #gpointer or %NULL if module cannot be found
+*/
 gpointer
 ufo_ir_projector_from_json (JsonObject       *object,
                             UfoPluginManager *manager)

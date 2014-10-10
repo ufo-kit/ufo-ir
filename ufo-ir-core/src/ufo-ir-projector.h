@@ -48,12 +48,24 @@ typedef enum {
     UFO_IR_PROJECTOR_ERROR_SETUP
 } UfoIrProjectorError;
 
+/**
+* UfoIrProjector:
+*
+* A #UfoIrProjector represents a base class for projection models implementation.
+*/
 struct _UfoIrProjector {
+    /*< private >*/
     UfoProcessor parent_instance;
     UfoIrProjectorPrivate *priv;
 };
 
+/**
+* UfoIrProjectorClass:
+*
+* #UfoIrProjectorClass class
+*/
 struct _UfoIrProjectorClass {
+    /*< private >*/
     UfoProcessorClass parent_class;
 
     void (*FP_ROI) (UfoIrProjector         *projector,
@@ -73,15 +85,29 @@ struct _UfoIrProjectorClass {
                     gpointer               finish_event);
 };
 
+/**
+* UfoIrProjectionDirection:
+* @Horizontal: Horizontal direction (angles from 45 deg to 135, etc.)
+* @Vertical: Horizontal direction (angles from 0 deg to 45, from 135 to 315 etc.)
+*
+* Required for selecting an appropriate kernel or function.
+*/
 typedef enum {
     Horizontal = 0,
     Vertical
-} Direction;
+} UfoIrProjectionDirection;
 
+/**
+* UfoIrProjectionsSubset:
+* @offset: Offset in number of projections
+* @n: Number of projections in subset
+* @direction: The direction of the projections in subset
+* #UfoIrProjectionsSubset structure describing a set of projections in sinogram
+*/
 struct _UfoIrProjectionsSubset {
     guint offset;
     guint n;
-    Direction direction;
+    UfoIrProjectionDirection direction;
 };
 
 UfoIrProjector *ufo_ir_projector_new (void);

@@ -28,6 +28,7 @@
 #include <glib-object.h>
 #include <ufo/ufo.h>
 
+
 typedef GHashTable UfoIrPriorKnowledge;
 
 UfoIrPriorKnowledge * ufo_ir_prior_knowledge_new (void);

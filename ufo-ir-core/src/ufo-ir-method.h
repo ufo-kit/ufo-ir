@@ -46,22 +46,27 @@ enum {
     N_IR_METHOD_VIRTUAL_PROPERTIES
 };
 
+/**
+* UfoIrMethod:
+*
+* A #UfoIrMethod is a base class for an iterative reconstruciton method.
+*/
 struct _UfoIrMethod {
+    /*< private >*/
     UfoProcessor parent_instance;
     UfoIrMethodPrivate *priv;
 };
 
 struct _UfoIrMethodClass {
+    /*< private >*/
     UfoProcessorClass parent_class;
 
     void (*set_prior_knowledge) (UfoIrMethod *method,
                                  GHashTable  *prior);
 };
 
-UfoMethod* ufo_ir_method_new                 (void);
-void       ufo_ir_method_set_prior_knowledge (UfoIrMethod *method,
-                                              GHashTable  *prior);
-GType ufo_ir_method_get_type                 (void);
+UfoMethod* ufo_ir_method_new      (void);
+GType      ufo_ir_method_get_type (void);
 
 G_END_DECLS
 #endif

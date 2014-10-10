@@ -53,12 +53,25 @@ enum {
     N_IR_GEOMETRY_VIRTUAL_PROPERTIES
 };
 
+/**
+* UfoIrGeometry:
+*
+* A #UfoIrGeometry stores the geometry parameters and precalculated sin and
+* cos values for the scan angles.
+*/
 struct _UfoIrGeometry {
+    /*< private >*/
     GObject parent_instance;
     UfoIrGeometryPrivate *priv;
 };
 
+/**
+* UfoIrGeometryClass:
+*
+* #UfoIrGeometryClass class
+*/
 struct _UfoIrGeometryClass {
+    /*< private >*/
     GObjectClass parent_class;
 
     void (*configure)               (UfoIrGeometry  *geometry,
@@ -76,10 +89,18 @@ struct _UfoIrGeometryClass {
                                      GError         **error);
 };
 
+
+/**
+* UfoAnglesType:
+* @SIN_VALUES: Precalculated sin values.
+* @COS_VALUES: Precalculated cos values.
+*
+* Types of precalculated values. Required for OpenCL kernels optimization.
+*/
 typedef enum {
     SIN_VALUES,
     COS_VALUES
-} UfoAnglesType;
+} UfoIrAnglesType;
 
 typedef struct {
   unsigned long height;
@@ -91,12 +112,12 @@ typedef struct {
 } UfoIrGeometryDims;
 
 UfoIrGeometry * ufo_ir_geometry_new              (void);
-gfloat * ufo_ir_geometry_scan_angles_host        (UfoIrGeometry *geometry,
-                                                  UfoAnglesType type);
-gpointer ufo_ir_geometry_scan_angles_device      (UfoIrGeometry *geometry,
-                                                  UfoAnglesType type);
+gfloat * ufo_ir_geometry_scan_angles_host        (UfoIrGeometry   *geometry,
+                                                  UfoIrAnglesType type);
+gpointer ufo_ir_geometry_scan_angles_device      (UfoIrGeometry   *geometry,
+                                                  UfoIrAnglesType type);
 void     ufo_ir_geometry_configure               (UfoIrGeometry  *geometry,
-                                                  UfoRequisition *input_req,
+                                                  UfoRequisition *requisition,
                                                   GError         **error);
 void     ufo_ir_geometry_get_volume_requisitions (UfoIrGeometry  *geometry,
                                                   UfoRequisition *requisition);

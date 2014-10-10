@@ -26,6 +26,16 @@
 #include <CL/cl.h>
 #endif
 
+/**
+* SECTION:ufo-ir-geometry
+* @Short_description: Stores beam geometry properties.
+* @Title: UfoConfig
+*
+* A #UfoIrGeometry object is used to pass the properties related to the beam
+* geometry to the projection model #UfoIrProjector. This class should be used
+* as the base class for more specific geometry classes.
+*/
+
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 G_DEFINE_TYPE_WITH_CODE (UfoIrGeometry, ufo_ir_geometry, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
@@ -89,6 +99,14 @@ create_lut_buffer (UfoIrGeometryPrivate *priv,
     return mem;
 }
 
+
+/**
+* ufo_ir_geometry_new:
+*
+* Create a geometry object.
+*
+* Return value: A new geometry object.
+*/
 UfoIrGeometry *
 ufo_ir_geometry_new (void)
 {
@@ -341,9 +359,19 @@ ufo_ir_geometry_init(UfoIrGeometry *self)
     priv->scan_host_cos_lut = NULL;
 }
 
+/**
+* ufo_ir_geometry_scan_angles_host:
+* @geometry: A #UfoIrGeometry object
+* @type: A #UfoIrAnglesType
+*
+* Method returns a pointer to the array that stores precalculated
+* values of @type for the scan angles.
+*
+* Returns: (transfer full): (allow-none): #gpointer or %NULL if @type is unknown.
+*/
 gfloat *
-ufo_ir_geometry_scan_angles_host (UfoIrGeometry *geometry,
-                                  UfoAnglesType type)
+ufo_ir_geometry_scan_angles_host (UfoIrGeometry   *geometry,
+                                  UfoIrAnglesType type)
 {
     UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
     switch (type) {
@@ -356,9 +384,19 @@ ufo_ir_geometry_scan_angles_host (UfoIrGeometry *geometry,
     }
 }
 
+/**
+* ufo_ir_geometry_scan_angles_device:
+* @geometry: A #UfoIrGeometry object
+* @type: A #UfoIrAnglesType
+*
+* Method returns a pointer to the cl_mem that stores precalculated
+* values of @type for the scan angles.
+*
+* Returns: (transfer full): (allow-none): #gpointer or %NULL if @type is unknown.
+*/
 gpointer
-ufo_ir_geometry_scan_angles_device (UfoIrGeometry *geometry,
-                                    UfoAnglesType type)
+ufo_ir_geometry_scan_angles_device (UfoIrGeometry   *geometry,
+                                    UfoIrAnglesType type)
 {
     UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (geometry);
     switch (type) {
@@ -371,17 +409,33 @@ ufo_ir_geometry_scan_angles_device (UfoIrGeometry *geometry,
     }
 }
 
+/**
+* ufo_ir_geometry_configure:
+* @geometry: A #UfoIrGeometry object
+* @requisition: A pointer to #UfoRequisition object
+* @error: A pointer to the #GError pointer
+*
+* This method set is used to perform a final configuration, e.g. precompute both
+* sin and cos values for the scan angles.
+*/
 void
 ufo_ir_geometry_configure (UfoIrGeometry  *geometry,
-                           UfoRequisition *input_req,
+                           UfoRequisition *requisition,
                            GError         **error)
 {
-    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry) && input_req);
+    g_return_if_fail (UFO_IR_IS_GEOMETRY (geometry) && requisition);
     UFO_IR_GEOMETRY_GET_CLASS (geometry)->configure(geometry,
-                                                    input_req,
+                                                    requisition,
                                                     error);
 }
 
+/**
+* ufo_ir_geometry_get_volume_requisitions:
+* @geometry: A #UfoIrGeometry object
+* @requisition: A pointer to #UfoRequisition object
+*
+* This method set the expected volume size to passed #UfoRequisition object.
+*/
 void
 ufo_ir_geometry_get_volume_requisitions (UfoIrGeometry    *geometry,
                                       UfoRequisition *requisition)
@@ -391,6 +445,14 @@ ufo_ir_geometry_get_volume_requisitions (UfoIrGeometry    *geometry,
                                                                   requisition);
 }
 
+/**
+* ufo_ir_geometry_setup:
+* @geometry: A #UfoIrGeometry object
+* @resources: A pointer to #UfoResources object
+* @error: A pointer to the #GError pointer
+*
+* This method is used to prepare the internal structures.
+*/
 void
 ufo_ir_geometry_setup (UfoIrGeometry *geometry,
                        UfoResources  *resources,
@@ -401,6 +463,19 @@ ufo_ir_geometry_setup (UfoIrGeometry *geometry,
     UFO_IR_GEOMETRY_GET_CLASS (geometry)->setup(geometry, resources, error);
 }
 
+/**
+* ufo_ir_geometry_get_spec:
+* @geometry: A #UfoIrGeometry object
+* @data_size: A pointer to #gsize variable, which describes the size of the
+* structure incapsulating geometry-specific properties.
+*
+* The method is required for generalization of the way of passing the
+* geometry-specific properties to the OpenCL kernel. It returns the respective
+* structure and set the structure size to the @data_size.
+*
+* Returns: (transfer full): A pointer to the structure with the specific properties that should
+* be used in OpenCL kernel.
+*/
 gpointer
 ufo_ir_geometry_get_spec (UfoIrGeometry *geometry,
                           gsize         *data_size)
@@ -409,30 +484,23 @@ ufo_ir_geometry_get_spec (UfoIrGeometry *geometry,
     return UFO_IR_GEOMETRY_GET_CLASS (geometry)->get_spec(geometry, data_size);
 }
 
-static gchar *
-transform_string (const gchar *pattern,
-                  const gchar *s,
-                  const gchar *separator)
-{
-    gchar **sv;
-    gchar *transformed;
-    gchar *result;
-    sv = g_strsplit_set (s, "-_ ", -1);
-    transformed = g_strjoinv (separator, sv);
-    result = g_strdup_printf (pattern, transformed);
-    g_strfreev (sv);
-    g_free (transformed);
-    return result;
-}
-
+/**
+* ufo_ir_geometry_from_json:
+* @object: A #JsonObject object
+* @manager: A #UfoPluginManager
+*
+* Loads a geometry module depending on Json object, initializes it and returns an instance.
+*
+* Returns: (transfer full): (allow-none): #gpointer or %NULL if module cannot be found
+*/
 gpointer
 ufo_ir_geometry_from_json (JsonObject       *object,
                            UfoPluginManager *manager)
 {
     GError *tmp_error = NULL;
     const gchar *plugin_name = json_object_get_string_member (object, "beam-geometry");
-    const gchar *module_name = transform_string ("libufoir_%s_geometry.so", plugin_name, NULL);
-    gchar *func_name = transform_string ("ufo_ir_%s_geometry_new", plugin_name, "_");
+    const gchar *module_name = ufo_transform_string ("libufoir_%s_geometry.so", plugin_name, NULL);
+    gchar *func_name = ufo_transform_string ("ufo_ir_%s_geometry_new", plugin_name, "_");
     gpointer plugin = ufo_plugin_manager_get_plugin (manager,
                                                      func_name,
                                                      module_name,
