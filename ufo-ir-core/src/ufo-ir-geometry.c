@@ -105,7 +105,7 @@ create_lut_buffer (UfoIrGeometryPrivate *priv,
 *
 * Create a geometry object.
 *
-* Return value: A new geometry object.
+* Return value: (transfer full): A new geometry object.
 */
 UfoIrGeometry *
 ufo_ir_geometry_new (void)
