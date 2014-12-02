@@ -100,6 +100,7 @@ if (INTROSPECTION_SCANNER AND INTROSPECTION_COMPILER)
                     --include=GModule-2.0
                     --include=GLib-2.0
                     --include=Json-1.0
+                    --include=Ufo-0.0
                     -I${OPENCL_INCLUDE_DIRS}
                     -I${JSON_GLIB_INCLUDE_DIRS}
                     -I${UFO_METHODS_INCLUDE_DIR}
