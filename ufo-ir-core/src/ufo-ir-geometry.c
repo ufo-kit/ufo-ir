@@ -266,7 +266,6 @@ ufo_ir_geometry_copy_real (gpointer origin,
     else
         copy = UFO_COPYABLE (ufo_ir_geometry_new());
 
-    g_print ("\n ufo_ir_geometry_copy_real %p  copy: %p  _copy: %p", origin, (gpointer)copy, _copy);
     UfoIrGeometryPrivate *priv = UFO_IR_GEOMETRY_GET_PRIVATE (origin);
     g_object_set (G_OBJECT(copy),
                   "dimensions", &priv->dimensions,
@@ -280,7 +279,6 @@ ufo_ir_geometry_copy_real (gpointer origin,
 static void
 ufo_copyable_interface_init (UfoCopyableIface *iface)
 {
-    g_print ("\n UFO IR GEOMETRY ufo_copyable_interface_init");
     iface->copy = ufo_ir_geometry_copy_real;
 }
 
