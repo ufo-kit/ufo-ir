@@ -55,17 +55,16 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 /**
-* ufo_ir_geometry_new:
+* ufo_ir_method_new:
 *
 * Create a #UfoIrMethod object.
 *
-* Return value: A new #UfoIrMethod object.
+* Return value: (transfer full): A new #UfoIrMethod object.
 */
 UfoMethod *
 ufo_ir_method_new (void)
 {
-    return (UfoMethod *) g_object_new (UFO_IR_TYPE_METHOD,
-                                       NULL);
+    return (UfoMethod *) g_object_new (UFO_IR_TYPE_METHOD, NULL);
 }
 
 static void

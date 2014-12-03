@@ -77,6 +77,15 @@ ufo_ir_prior_knowledge_pointer (UfoIrPriorKnowledge *prior,
     return g_hash_table_lookup (prior, key);
 }
 
+/**
+ * ufo_ir_prior_knowledge_from_json:
+ * @object: A JSON object describing prior knowledge
+ * @manager: A #UfoPluginManager
+ *
+ * Create prior knowledge from JSON.
+ *
+ * Returns: (transfer full): A #UfoIrPriorKnowledge object.
+ */
 gpointer
 ufo_ir_prior_knowledge_from_json (JsonObject       *object,
                                   UfoPluginManager *manager)
@@ -112,6 +121,14 @@ ufo_ir_prior_knowledge_from_json (JsonObject       *object,
     return prior;
 }
 
+/**
+ * ufo_ir_prior_knowledge_ref:
+ * @prior: A #UfoIrPriorKnowledge object
+ *
+ * Reference the prior object and return updated reference.
+ *
+ * Returns: (transfer full): A reference #UfoIrPriorKnowledge object.
+ */
 gpointer
 ufo_ir_prior_knowledge_ref (UfoIrPriorKnowledge *prior)
 {
