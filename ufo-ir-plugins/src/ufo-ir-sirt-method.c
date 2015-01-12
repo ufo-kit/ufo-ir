@@ -60,6 +60,13 @@ generate_subsets (UfoIrGeometry *geometry, guint *n_subsets)
 
     // 1. calculate the number of subsets
     *n_subsets = 0;
+    int angleIndex = 0;
+    int *sizes = g_malloc0 (n_angles, sizeof(int));
+    UfoIrProjectionDirection direction = Horizontal;
+    do {
+        direction = fabs(sin_values[i]) <= fabs(cos_values[i]); // vertical == 1
+        if ()
+    } while (angleIndex < n_angles)
 
     UfoIrProjectionsSubset *subsets =
         g_malloc (sizeof (UfoIrProjectionsSubset) * (*n_subsets));
