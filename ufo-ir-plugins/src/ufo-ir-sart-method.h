@@ -37,11 +37,9 @@ GQuark ufo_ir_sart_method_error_quark (void);
 
 typedef struct _UfoIrSartMethod         UfoIrSartMethod;
 typedef struct _UfoIrSartMethodClass    UfoIrSartMethodClass;
-typedef struct _UfoIrSartMethodPrivate  UfoIrSartMethodPrivate;
 
 struct _UfoIrSartMethod {
     UfoIrMethod parent_instance;
-    UfoIrSartMethodPrivate *priv;
 };
 
 struct _UfoIrSartMethodClass {

@@ -36,20 +36,11 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrSartMethod, ufo_ir_sart_method, UFO_IR_TYPE_METHOD
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
                                                 ufo_copyable_interface_init))
 
-#define UFO_IR_SART_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_SART_METHOD, UfoIrSartMethodPrivate))
-
 GQuark
 ufo_ir_sart_method_error_quark (void)
 {
     return g_quark_from_static_string ("ufo-ir-sart-method-error-quark");
 }
-
-struct _UfoIrSartMethodPrivate {
-    UfoBuffer *singular_volume;
-    UfoBuffer *singular_sino;
-    UfoBuffer *ray_weights;
-    UfoBuffer *b_temp;
-};
 
 static UfoIrProjectionsSubset *
 generate_subsets (UfoIrGeometry *geometry, guint *n_subsets)
@@ -81,12 +72,6 @@ ufo_ir_sart_method_new (void)
 static void
 ufo_ir_sart_method_init (UfoIrSartMethod *self)
 {
-    UfoIrSartMethodPrivate *priv = NULL;
-    self->priv = priv = UFO_IR_SART_METHOD_GET_PRIVATE (self);
-    priv->singular_volume = NULL;
-    priv->singular_sino = NULL;
-    priv->ray_weights = NULL;
-    priv->b_temp = NULL;
 }
 
 static gboolean
@@ -95,8 +80,6 @@ ufo_ir_sart_method_process_real (UfoMethod *method,
                                  UfoBuffer *output,
                                  gpointer  pevent)
 {
-    UfoIrSartMethodPrivate *priv = UFO_IR_SART_METHOD_GET_PRIVATE (method);
-
     UfoResources   *resources = NULL;
     UfoIrProjector *projector = NULL;
     gpointer       *cmd_queue = NULL;
@@ -113,61 +96,44 @@ ufo_ir_sart_method_process_real (UfoMethod *method,
     UfoIrGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
 
-    //
-    // resize
-    UfoBuffer **method_buffers[4] = {
-        &priv->singular_volume,
-        &priv->singular_sino,
-        &priv->ray_weights,
-        &priv->b_temp
-    };
-    UfoBuffer *ref_buffers[4] = {
-        output,
-        input,
-        input,
-        input
-    };
-    for (guint i = 0; i < 4; ++i) {
-        UfoRequisition _req;
-        if (*method_buffers[i]) {
-            ufo_buffer_get_requisition (ref_buffers[i], &_req);
-            ufo_buffer_resize (*method_buffers[i], &_req);
-        } else {
-            *method_buffers[i] = ufo_buffer_dup (ref_buffers [i]);
-        }
-    }
-    ufo_op_set (priv->singular_volume, 1.0f, resources, cmd_queue);
-    ufo_op_set (priv->singular_sino, 1.0f, resources, cmd_queue);
-    ufo_op_set (priv->ray_weights, 0, resources, cmd_queue);
+    UfoBuffer *sino_tmp   = ufo_buffer_dup (input);
+    UfoBuffer *volume_tmp = ufo_buffer_dup (output);
+
+    UfoBuffer *ray_weights = ufo_buffer_dup (input);
 
     guint n_subsets = 0;
     UfoIrProjectionsSubset *subset = generate_subsets (geometry, &n_subsets);
 
+    //
+    // calculate the weighting coefficients
+    ufo_op_set (volume_tmp,  1.0f, resources, cmd_queue);
+    ufo_op_set (ray_weights, 0.0f, resources, cmd_queue);
     for (guint i = 0 ; i < n_subsets; ++i) {
         ufo_ir_projector_FP (projector,
-                             priv->singular_volume,
-                             priv->ray_weights,
+                             volume_tmp,
+                             ray_weights,
                              &subset[i],
-                             1.0f,
-                             NULL);
+                             1.0f, NULL);
     }
+    ufo_op_inv (ray_weights, resources, cmd_queue);
 
-    ufo_op_inv (priv->ray_weights, resources, cmd_queue);
-
+    //
+    // do SART
     guint iteration = 0;
     while (iteration < max_iterations) {
-        ufo_buffer_copy (input, priv->b_temp);
+        ufo_buffer_copy (input, sino_tmp);
+
         for (guint i = 0 ; i < n_subsets; i++) {
             ufo_ir_projector_FP (projector,
                                  output,
-                                 priv->b_temp,
+                                 sino_tmp,
                                  &subset[i],
                                  -1.0f,
                                  NULL);
 
-            ufo_op_mul_rows (priv->b_temp,
-                             priv->ray_weights,
-                             priv->b_temp,
+            ufo_op_mul_rows (sino_tmp,
+                             ray_weights,
+                             sino_tmp,
                              subset[i].offset,
                              subset[i].n,
                              resources,
@@ -175,7 +141,7 @@ ufo_ir_sart_method_process_real (UfoMethod *method,
 
             ufo_ir_projector_BP (projector,
                                  output,
-                                 priv->b_temp,
+                                 sino_tmp,
                                  &subset[i],
                                  relaxation_factor,
                                  NULL);
@@ -214,6 +180,4 @@ ufo_copyable_interface_init (UfoCopyableIface *iface)
 static void
 ufo_ir_sart_method_class_init (UfoIrSartMethodClass *klass)
 {
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    g_type_class_add_private (gobject_class, sizeof(UfoIrSartMethodPrivate));
 }
