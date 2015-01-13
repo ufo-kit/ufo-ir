@@ -8,10 +8,13 @@
 #endif
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
+static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrAsdPocsMethod, ufo_ir_asdpocs_method, UFO_IR_TYPE_METHOD,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
-                                                ufo_method_interface_init))
+                                                ufo_method_interface_init)
+                         G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
+                                                ufo_copyable_interface_init))
 
 #define UFO_IR_ASDPOCS_METHOD_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_ASDPOCS_METHOD, UfoIrAsdPocsMethodPrivate))
 
@@ -368,7 +371,7 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
       //
       // save current solution
       ufo_buffer_copy (x, x_prev);
-      clFinish(cmd_queue);
+      clFinish((cl_command_queue)cmd_queue);
 
       //
       //
@@ -398,6 +401,58 @@ static void
 ufo_method_interface_init (UfoMethodIface *iface)
 {
     iface->process = ufo_ir_asdpocs_method_process_real;
+}
+
+static UfoCopyable *
+ufo_ir_asdpocs_method_copy_real (gpointer origin,
+                                 gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_asdpocs_method_new());
+
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (origin);
+
+    //
+    // copy sparsity with wrapping by UfoIrPriorKnowledge
+    gpointer sparsity_copy = ufo_copyable_copy (priv->sparsity, NULL);
+    if (sparsity_copy) {
+      UfoIrPriorKnowledge *prior = ufo_ir_prior_knowledge_new ();
+      ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity_copy);
+      g_object_set (G_OBJECT(copy), "prior-knowledge", prior, NULL);
+    } else {
+      g_error ("Error in copying ASD-POCS method: a prior knowledge was not copied.");
+    }
+
+    //
+    // copy the method that minimizes data fidelity term
+    gpointer df_minimizer_copy = ufo_copyable_copy (priv->df_minimizer, NULL);
+    if (df_minimizer_copy) {
+      g_object_set (G_OBJECT(copy), "df-minimizer", df_minimizer_copy, NULL);
+    } else {
+      g_error ("Error in copying ASD-POCS method: df-minimizer was not copied.");
+    }
+
+    //
+    // copy other parameters
+    g_object_set (G_OBJECT(copy),
+                  "beta", priv->beta,
+                  "beta-red", priv->beta_red,
+                  "ng", priv->ng,
+                  "alpha", priv->alpha,
+                  "alpha-red", priv->alpha_red,
+                  "r-max", priv->r_max,
+                  NULL);
+
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_asdpocs_method_copy_real;
 }
 
 static void
