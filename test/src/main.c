@@ -10,7 +10,7 @@ int main(int n_args, char *argv[])
     GError *error = NULL;
     UfoGraph *ufo_task_graph = ufo_task_graph_new();
     UfoScheduler *ufo_scheduler = ufo_scheduler_new ();
-    //g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
+    g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
     UfoPluginManager *manager = ufo_plugin_manager_new ();
     UfoNode *reader = UFO_NODE (ufo_plugin_manager_get_task (manager, "reader", NULL));
     UfoNode *writer = UFO_NODE (ufo_plugin_manager_get_task (manager, "writer", NULL));
@@ -76,6 +76,21 @@ int main(int n_args, char *argv[])
                   "max-iterations", 10,
                   NULL);
 
+    gpointer sirt = ufo_plugin_manager_get_plugin (manager,
+                                                   "ufo_ir_sirt_method_new",
+                                                   "libufoir_sirt_method.so",
+                                                   &error);
+    g_print ("\nsirt: %p", sart);
+    if (error){
+        printf("\nError: Run was unsuccessful: %s\n", error->message);
+        return 1;
+    }
+
+    g_object_set (sirt,
+                  "relaxation-factor", 1.00f,
+                  "max-iterations", 2000,
+                  NULL);
+
     gpointer asdpocs = ufo_plugin_manager_get_plugin (manager,
                                                      "ufo_ir_asdpocs_method_new",
                                                      "libufoir_asdpocs_method.so",
@@ -106,7 +121,7 @@ int main(int n_args, char *argv[])
     ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     g_object_set (ir,
-                  "method", sart,
+                  "method", sirt,
                   "geometry", geometry,
                   "projector", projector,
                   "prior-knowledge", prior,
