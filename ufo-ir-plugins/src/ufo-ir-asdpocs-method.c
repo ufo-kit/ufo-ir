@@ -52,14 +52,54 @@ set_prior_knowledge (GObject *object,
                      UfoIrPriorKnowledge *prior)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
-    UfoIrSparsity *s = ufo_ir_prior_knowledge_pointer (prior, "image-sparsity");
-    if (s) {
-      g_clear_object(&priv->sparsity);
-      priv->sparsity = g_object_ref(s);
+    UfoIrSparsity *sparsity =
+        ufo_ir_prior_knowledge_pointer (prior, "image-sparsity");
+    if (sparsity) {
+        g_clear_object(&priv->sparsity);
+        priv->sparsity = g_object_ref(sparsity);
     } else {
-      g_error ("%s : received prior knowledge without \"image-sparsity\".",
-               G_OBJECT_TYPE_NAME (object));
+        g_error ("%s : received prior knowledge without \"image-sparsity\".",
+                 G_OBJECT_TYPE_NAME (object));
     }
+}
+
+static UfoIrProjectionsSubset *
+generate_subsets (UfoIrGeometry *geometry, guint *n_subsets)
+{
+    gfloat *sin_values = ufo_ir_geometry_scan_angles_host (geometry, SIN_VALUES);
+    gfloat *cos_values = ufo_ir_geometry_scan_angles_host (geometry, COS_VALUES);
+    guint n_angles = 0;
+    g_object_get (geometry, "num-angles", &n_angles, NULL);
+
+    UfoIrProjectionsSubset *subsets_tmp =
+        g_malloc (sizeof (UfoIrProjectionsSubset) * n_angles);
+
+    guint subset_index = 0;
+    UfoIrProjectionDirection direction;
+    direction = fabs(sin_values[0]) <= fabs(cos_values[0]);
+    subsets_tmp[subset_index].direction = direction;
+    subsets_tmp[subset_index].offset = 0;
+    subsets_tmp[subset_index].n = 1;
+
+    for (guint i = 1; i < n_angles; ++i) {
+        direction = fabs(sin_values[i]) <= fabs(cos_values[i]);
+        if (direction != subsets_tmp[subset_index].direction) {
+            subset_index++;
+            subsets_tmp[subset_index].direction = direction;
+            subsets_tmp[subset_index].offset = i;
+            subsets_tmp[subset_index].n = 1;
+        } else {
+            subsets_tmp[subset_index].n++;
+        }
+    }
+
+    *n_subsets = subset_index + 1;
+    UfoIrProjectionsSubset *subsets =
+        g_memdup (subsets_tmp, sizeof (UfoIrProjectionsSubset) * (*n_subsets));
+
+    g_free (subsets_tmp);
+
+    return subsets;
 }
 
 UfoIrMethod *
@@ -67,6 +107,22 @@ ufo_ir_asdpocs_method_new (void)
 {
     return UFO_IR_METHOD (g_object_new (UFO_IR_TYPE_ASDPOCS_METHOD, NULL));
 }
+
+static void
+ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
+{
+    UfoIrAsdPocsMethodPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (self);
+    priv->df_minimizer = NULL;
+    priv->sparsity = NULL;
+    priv->beta = 1.0f;
+    priv->beta_red = 0.995f;
+    priv->ng = 20;
+    priv->alpha = 0.2f;
+    priv->alpha_red = 0.95f;
+    priv->r_max = 0.95f;
+}
+
 
 static void
 ufo_ir_asdpocs_method_set_property (GObject      *object,
@@ -86,14 +142,15 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
             {
                 value_object = g_value_get_object (value);
 
-                if (priv->df_minimizer)
+                if (priv->df_minimizer) {
                     g_object_unref (priv->df_minimizer);
-
+                }
                 if (value_object != NULL) {
                     priv->df_minimizer = g_object_ref (UFO_IR_METHOD (value_object));
                 }
+
+                break;
             }
-            break;
         case PROP_BETA:
             priv->beta = g_value_get_float (value);
             break;
@@ -221,72 +278,117 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
                                     gpointer  pevent)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (method);
-    UfoBuffer *x_residual = ufo_buffer_dup (output);
-    UfoBuffer *b_residual = ufo_buffer_dup (input);
-    UfoBuffer *x = ufo_buffer_dup (output);
-    UfoBuffer *x_prev = ufo_buffer_dup (output);
-
     UfoResources     *resources = NULL;
     UfoIrProjector   *projector = NULL;
-    cl_command_queue cmd_queue = NULL;
-    guint max_iterations = 0;
+    gpointer         *cmd_queue  = NULL;
+    guint             max_iterations = 0;
+
+    gfloat beta      = 0;
+    gfloat beta_red  = 0;
+    gfloat ng        = 0;
+    gfloat alpha     = 0;
+    gfloat alpha_red = 0;
+    gfloat r_max     = 0;
+
     g_object_get (method,
                   "projection-model", &projector,
                   "command-queue",    &cmd_queue,
                   "ufo-resources",    &resources,
                   "max-iterations",   &max_iterations,
+
+                  // method parameters
+                  "beta",             &beta,
+                  "beta-red",         &beta_red,
+                  "ng",               &ng,
+                  "alpha",            &alpha,
+                  "alpha-red",        &alpha_red,
+                  "r-max",            &r_max,
                   NULL);
 
-    UfoRequisition b_req;
-    ufo_buffer_get_requisition (input, &b_req);
-    UfoIrProjectionsSubset complete_set;
-    complete_set.offset = 0;
-    complete_set.n = b_req.dims[1];
-    complete_set.direction = Vertical;
+    UfoIrGeometry *geometry = NULL;
+    g_object_get (projector, "geometry", &geometry, NULL);
 
     // parameters
     gfloat dp = 1.0f, dd = 1.0f, dg = 1.0f, dtgv = 1.0f;
-    guint iteration = 0;
+
+    UfoBuffer *x      = ufo_buffer_dup (output);
+    UfoBuffer *x_prev = ufo_buffer_dup (output);
 
     ufo_op_set (x, 0, resources, cmd_queue);
     ufo_op_set (x_prev, 0, resources, cmd_queue);
 
+    UfoBuffer *x_residual = ufo_buffer_dup (output);
+    UfoBuffer *b_residual = ufo_buffer_dup (input);
+
+    guint n_subsets = 0;
+    UfoIrProjectionsSubset *subset = generate_subsets (geometry, &n_subsets);
+
+    guint iteration = 0;
     while (iteration < max_iterations)
     {
-        clFinish(cmd_queue);
-        g_object_set (priv->df_minimizer,
-                      "relaxation-factor", priv->beta,
-                      NULL);
-        ufo_method_process (UFO_METHOD (priv->df_minimizer), input, x, NULL);
-	ufo_op_POSC (x, x, resources, cmd_queue);
-	ufo_buffer_copy (x, output);
-        ufo_buffer_copy (input, b_residual);
+      //
+      // run method to minimize data fidelity term
+      g_object_set (priv->df_minimizer, "relaxation-factor", beta, NULL);
+      ufo_method_process (UFO_METHOD (priv->df_minimizer), input, x, NULL);
 
-        ufo_ir_projector_FP (projector, x, b_residual, &complete_set, -1, NULL);
-        dd = ufo_op_l1_norm (b_residual, resources, cmd_queue);
+      //
+      // impose positive constraint: if x_i < 0 then x_i = 0
+      ufo_op_POSC (x, x, resources, cmd_queue);
 
-        ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
-        dp = ufo_op_l1_norm (x_residual, resources, cmd_queue);
+      //
+      // save result as an result
+      ufo_buffer_copy (x, output);
 
-        if (iteration == 0)
+      //
+      // Find residual between the simulated and real measurements
+      ufo_buffer_copy (input, b_residual);
+      for (guint i = 0 ; i < n_subsets; ++i) {
+          ufo_ir_projector_FP (projector,
+                               x,
+                               b_residual,
+                               &subset[i],
+                               -1.0f, NULL);
+      }
+
+      //
+      // compute L1-norm of the residual of measurements
+      dd = ufo_op_l1_norm (b_residual, resources, cmd_queue);
+
+      //
+      // compute L1-norm of the residual of reconstructions
+      ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
+      dp = ufo_op_l1_norm (x_residual, resources, cmd_queue);
+
+      //
+      // compute relaxation factor for minimizing regularization term
+      if (iteration == 0) {
           dtgv = priv->alpha * dp;
+      }
 
-	ufo_buffer_copy (x, x_prev);
-        clFinish(cmd_queue);
-        g_object_set (priv->sparsity,
-                      "relaxation-factor", dtgv,
-                      NULL);
-        ufo_ir_sparsity_minimize (priv->sparsity, x, x, NULL);
+      //
+      // save current solution
+      ufo_buffer_copy (x, x_prev);
+      clFinish(cmd_queue);
 
-        ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
-        dg = ufo_op_l1_norm (x_residual, resources, cmd_queue);
-	g_print ("\nx - x_prev l1: %f", dg);
+      //
+      //
+      g_object_set (priv->sparsity, "relaxation-factor", dtgv, NULL);
+      ufo_ir_sparsity_minimize (priv->sparsity, x, x, NULL);
 
-        if (dg > priv->r_max * dp && dd > 0.001f)
+      //
+      // compute new regularization coefficient
+      const gfloat epsilon = 0.001f;
+      ufo_op_deduction (x, x_prev, x_residual, resources, cmd_queue);
+      dg = ufo_op_l1_norm (x_residual, resources, cmd_queue);
+      priv->beta *= priv->beta_red;
+
+      //
+      // compute relaxation factor for minimizing regularization term
+      if (dg > priv->r_max * dp && dd > epsilon) {
           dtgv *= priv->alpha_red;
+      }
 
-        priv->beta *= priv->beta_red;
-        iteration++;
+      iteration++;
     }
 
     return TRUE;
@@ -365,19 +467,4 @@ ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
     g_type_class_add_private (gobject_class, sizeof(UfoIrAsdPocsMethodPrivate));
 
     UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_asdpocs_method_setup_real;
-}
-
-static void
-ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
-{
-    UfoIrAsdPocsMethodPrivate *priv = NULL;
-    self->priv = priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (self);
-    priv->df_minimizer = NULL;
-    priv->sparsity = NULL;
-    priv->beta = 1.0f;
-    priv->beta_red = 0.995f;
-    priv->ng = 20;
-    priv->alpha = 0.2f;
-    priv->alpha_red = 0.95f;
-    priv->r_max = 0.95f;
 }
