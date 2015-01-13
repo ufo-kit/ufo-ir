@@ -7,6 +7,7 @@ set(ufoirplugins_SRCS
     ufo-ir-custom-sparsity.c
     ufo-ir-gradient-sparsity.c
     ufo-ir-sart-method.c
+    ufo-ir-sirt-method.c
     ufo-ir-asdpocs-method.c
 )
 
