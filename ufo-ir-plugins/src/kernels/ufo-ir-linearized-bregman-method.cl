@@ -17,7 +17,7 @@ void gradient (__read_only  image2d_t input,
     coord.x++;
     float4 v_next = read_imagef(input, nb_clamp_sampler, coord);
 
-    float4 res = v_nex - v_cur;
+    float4 res = v_next - v_cur;
 
     coord.x--;
     write_imagef(output, coord, res);
@@ -62,7 +62,7 @@ void transBx (__read_only  image2d_t input,
     coord.x+=1;
     float4 v_next = read_imagef(input, nb_clamp_sampler, coord);
 
-    float4 res = v_nex - v_cur;
+    float4 res = v_next - v_cur;
 
     if (coord.x == coord.y)
       res -= v_cur;
@@ -96,7 +96,7 @@ void transBx (__read_only  image2d_t input,
 
   coord.x += 1;
   if (coord.x == coord.y) {
-      loat4 v_cur = read_imagef(input, nb_clamp_sampler, coord);
+      float4 v_cur = read_imagef(input, nb_clamp_sampler, coord);
       res -= v_cur;
   }
 
