@@ -9,6 +9,7 @@ set(ufoirplugins_SRCS
     ufo-ir-sart-method.c
     ufo-ir-sirt-method.c
     ufo-ir-asdpocs-method.c
+    ufo-ir-linearized-bregman-method.c
 )
 
 set(ufoirplugins_LIBS

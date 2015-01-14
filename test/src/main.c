@@ -120,8 +120,28 @@ int main(int n_args, char *argv[])
     UfoIrPriorKnowledge *prior = ufo_ir_prior_knowledge_new ();
     ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
+
+    gpointer bregman = ufo_plugin_manager_get_plugin (manager,
+                                                     "ufo_ir_linearized_bregman_method_new",
+                                                     "libufoir_linearized_bregman_method.so",
+                                                     &error);
+    g_print ("\n bregman: %p", bregman);
+    if (error){
+        printf("\nError: Run was unsuccessful: %s\n", error->message);
+        return 1;
+    }
+    g_object_set (bregman,
+                  "df-minimizer", sart,
+                  "max-iterations", 1,
+                  NULL);
+/*
     g_object_set (ir,
-                  "method", sirt,
+                  "method", bregman,
+                  NULL);
+*/
+
+    g_object_set (ir,
+                  "method", bregman,
                   "geometry", geometry,
                   "projector", projector,
                   "prior-knowledge", prior,
