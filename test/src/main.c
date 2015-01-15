@@ -3,7 +3,16 @@
 #include <ufo/ufo.h>
 
 #include <ufo/ir/ufo-ir.h>
+/*
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
+#define N_ANGLES   287
+#define ANGLE_STEP 0.6229f
+#define AXIS_POS   0.0f
+*/
+#define IN_FILE_NAME "/pdv/home/ashkarin/Data/Bug/bug_sino_2_88(quadro).tif"
+#define N_ANGLES   75
+#define ANGLE_STEP 2.8820f
+#define AXIS_POS   413.0f
 
 int main(int n_args, char *argv[])
 {
@@ -38,11 +47,11 @@ int main(int n_args, char *argv[])
     }
 
     g_object_set (geometry,
-                  "num-angles", 287,
+                  "num-angles", N_ANGLES,
                   "angle-offset", 0.0,
-                  "angle-step", 0.6288,
+                  "angle-step", ANGLE_STEP,
                   "detector-scale", 1.0,
-                  //"axis-pos", 0,
+                  //"axis-pos", AXIS_POS,
                   NULL);
 
 
@@ -72,7 +81,7 @@ int main(int n_args, char *argv[])
 
     g_object_set (sart,
                   "relaxation-factor", 0.25,
-                  "max-iterations", 10,
+                  "max-iterations", 20,
                   NULL);
 
     gpointer sirt = ufo_plugin_manager_get_plugin (manager,
@@ -120,7 +129,7 @@ int main(int n_args, char *argv[])
     ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     g_object_set (ir,
-                  "method", sirt,
+                  "method", sart,
                   "geometry", geometry,
                   "projector", projector,
                   "prior-knowledge", prior,

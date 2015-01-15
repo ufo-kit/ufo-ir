@@ -146,20 +146,29 @@ void BP(__read_only  image2d_t           r_volume,
     __const int2 vol_coord;
     vol_coord.x = get_global_id(0);
     vol_coord.y = get_global_id(1);
+    __const float f_axis_pos = geom_spec.axis_pos;
+    __const float fX = convert_float(vol_coord.x) + 0.5f - f_axis_pos;
+    __const float fY = convert_float(vol_coord.y) + 0.5f - f_axis_pos;
 
-    __const float fX = convert_float(vol_coord.x) + 0.5f - 0.5f * dimensions.width;
-    __const float fY = convert_float(vol_coord.y) + 0.5f - 0.5f * dimensions.height;
+    /*if (fX > f_axis_pos || fY > f_axis_pos)
+        return;*/
 
     float4 value = 0.0f;
     float2 sino_coord;
     sino_coord.y = part.offset + 0.5f;
-    __const float f_axis_pos = geom_spec.axis_pos;
 
     for (int i = 0; i < part.n; ++i) {
         float sin_theta = sin_val[i + part.offset];
         float cos_theta = cos_val[i + part.offset];
 
         sino_coord.x = f_axis_pos + fX * cos_theta - fY * sin_theta;
+
+        // the difference of ufo fbp and this fbp in sampling
+        // if I will use linear_clamp_sampler instead linear_clamp_edge_sampler,
+        // then I will got a circle on the reconstruction.
+        // Otherwise application of this backprojection in FBP will lead to
+        // the intensity increasing on the borders.
+
         value += read_imagef(sinogram, linear_clamp_edge_sampler, sino_coord);
         sino_coord.y += 1.0f;
 

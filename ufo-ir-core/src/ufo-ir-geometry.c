@@ -86,7 +86,7 @@ create_lut_buffer (UfoIrGeometryPrivate *priv,
     *host_mem = g_malloc0 (size);
     gdouble rad_angle = 0;
     for (guint i = 0; i < n_entries; i++) {
-        rad_angle = priv->angle_offset + i * priv->angle_step * G_PI / 180.0f;
+        rad_angle = priv->angle_offset + i * priv->angle_step;
         (*host_mem)[i] = (gfloat) func (rad_angle);
     }
 
