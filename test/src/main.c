@@ -32,7 +32,6 @@ int main(int n_args, char *argv[])
                                                        "libufoir_parallel_geometry.so",
                                                        &error);
 
-    g_print ("\ngeometry: %p %d %p", geometry, UFO_IR_IS_GEOMETRY (geometry), error);
     if (error){
         printf("\nError: Run was unsuccessful: %s\n", error->message);
         return 1;
@@ -43,7 +42,7 @@ int main(int n_args, char *argv[])
                   "angle-offset", 0.0,
                   "angle-step", 0.6288,
                   "detector-scale", 1.0,
-                  "detector-offset", 0,
+                  //"axis-pos", 0,
                   NULL);
 
 
@@ -131,7 +130,7 @@ int main(int n_args, char *argv[])
     //ufo_graph_connect_nodes (ufo_task_graph, generator, writer, NULL);
     ufo_graph_connect_nodes (ufo_task_graph, reader, ir, NULL);
     ufo_graph_connect_nodes (ufo_task_graph, ir, writer, NULL);
-    ufo_base_scheduler_run (ufo_scheduler, UFO_TASK_GRAPH (ufo_task_graph), &error);
+    ufo_base_scheduler_run (UFO_BASE_SCHEDULER(ufo_scheduler), UFO_TASK_GRAPH (ufo_task_graph), &error);
     if (error){
         printf("\nError: Run was unsuccessful: %s\n", error->message);
         return 1;

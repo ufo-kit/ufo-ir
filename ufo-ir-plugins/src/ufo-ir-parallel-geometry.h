@@ -47,7 +47,7 @@ struct _UfoIrParallelGeometryClass {
 
 typedef struct {
     float det_scale;
-    float det_offset;
+    float axis_pos;
 } UfoIrParallelGeometrySpec;
 
 UfoIrGeometry   *ufo_ir_parallel_geometry_new       (void);

@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     float det_scale;
-    float det_offset;
+    float axis_pos;
 } UfoParallelGeometrySpec;
 
 typedef enum {
@@ -56,13 +56,14 @@ void FP_hor(__read_only     image2d_t               volume,
             float fSliceStep = cos_val[sino_coord.y] / sin_val[sino_coord.y];
 
     __const float fDistCorr  = (sin_val[sino_coord.y] > 0.0f ? -fDetStep : fDetStep) * output_scale;
+    __const float f_axis_pos = geom_spec.axis_pos;
 
     float4 detected_value = 0.0f;
 
     float2 volume_coord;
     volume_coord.x = 0.5f;
     volume_coord.y = (sino_coord.x + 0.5f - 0.5f * dimensions.n_dets) * fDetStep +
-                     (0.5f - 0.5f * dimensions.width) * fSliceStep + 0.5f * dimensions.height;
+                     (0.5f - f_axis_pos/*0.5f * dimensions.width*/) * fSliceStep + 0.5f * dimensions.height;
 
     // split up the calculation by parts to increse percision
     int    n_blocks  = ceil(convert_float(dimensions.width) / BLOCK_SIZE);
@@ -102,13 +103,13 @@ void FP_vert(__read_only     image2d_t               volume,
             float fSliceStep = sin_val[sino_coord.y] / cos_val[sino_coord.y];
 
     __const float fDistCorr  = (cos_val[sino_coord.y] < 0.0f ? -fDetStep : fDetStep) * output_scale;
-
+    __const float f_axis_pos = geom_spec.axis_pos;
     float4 detected_value = 0.0f;
 
     float2 volume_coord;
     volume_coord.y = 0.5f;
     volume_coord.x = (0.5f + sino_coord.x - 0.5f * dimensions.n_dets) * fDetStep + // shift on X because of detector
-                     (0.5f - 0.5f * dimensions.height) * fSliceStep + // shift on X because of Y
+                     (0.5f - f_axis_pos/*0.5f * dimensions.height*/) * fSliceStep + // shift on X because of Y
                      0.5f * dimensions.width;
 
     // split up the calculation by parts to increse percision
@@ -152,13 +153,13 @@ void BP(__read_only  image2d_t           r_volume,
     float4 value = 0.0f;
     float2 sino_coord;
     sino_coord.y = part.offset + 0.5f;
-    __const float f_coord_shift = 0.5f * dimensions.n_dets;
+    __const float f_axis_pos = geom_spec.axis_pos;
 
     for (int i = 0; i < part.n; ++i) {
         float sin_theta = sin_val[i + part.offset];
         float cos_theta = cos_val[i + part.offset];
 
-        sino_coord.x = f_coord_shift + fX * cos_theta - fY * sin_theta;
+        sino_coord.x = f_axis_pos + fX * cos_theta - fY * sin_theta;
         value += read_imagef(sinogram, linear_clamp_edge_sampler, sino_coord);
         sino_coord.y += 1.0f;
 

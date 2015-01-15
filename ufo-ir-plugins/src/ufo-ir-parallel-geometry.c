@@ -36,7 +36,7 @@ struct _UfoIrParallelGeometryPrivate {
 enum {
     PROP_0 = N_IR_GEOMETRY_VIRTUAL_PROPERTIES,
     PROP_DETECTOR_SCALE,
-    PROP_DETECTOR_OFFSET,
+    PROP_AXIS_POS,
     N_PROPERTIES
 };
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
@@ -59,8 +59,8 @@ ufo_ir_parallel_geometry_set_property (GObject      *object,
         case PROP_DETECTOR_SCALE:
             priv->spec.det_scale = g_value_get_float(value);
             break;
-        case PROP_DETECTOR_OFFSET:
-            priv->spec.det_offset = g_value_get_float(value);
+        case PROP_AXIS_POS:
+            priv->spec.axis_pos = g_value_get_float(value);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -83,8 +83,8 @@ ufo_ir_parallel_geometry_get_property (GObject    *object,
         case PROP_DETECTOR_SCALE:
             g_value_set_float (value, priv->spec.det_scale);
             break;
-        case PROP_DETECTOR_OFFSET:
-            g_value_set_float (value, priv->spec.det_offset);
+        case PROP_AXIS_POS:
+            g_value_set_float (value, priv->spec.axis_pos);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -104,6 +104,8 @@ ufo_ir_parallel_geometry_configure_real (UfoIrGeometry  *geometry,
     if (error && *error)
       return;
 
+    UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (geometry);
+
     UfoIrGeometryDims *dims = NULL;
     gfloat det_scale = 1.0;
     g_object_get (geometry,
@@ -116,6 +118,10 @@ ufo_ir_parallel_geometry_configure_real (UfoIrGeometry  *geometry,
 
     if (input_req->n_dims == 3) {
         dims->depth = (unsigned long) ceil ((gfloat)dims->n_dets * det_scale);
+    }
+
+    if (priv->spec.axis_pos < 0) {
+        priv->spec.axis_pos = (float)dims->n_dets / 2.0f;
     }
 }
 
@@ -158,7 +164,7 @@ ufo_ir_parallel_geometry_copy_real (gpointer origin,
     UfoIrParallelGeometryPrivate *priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE (origin);
     g_object_set (G_OBJECT(copy),
                   "detector-scale", priv->spec.det_scale,
-                  "detector-offset", priv->spec.det_offset,
+                  "axis-pos", priv->spec.axis_pos,
                   NULL);
     return copy;
 }
@@ -176,8 +182,6 @@ ufo_ir_parallel_geometry_class_init (UfoIrParallelGeometryClass *klass)
     gobject_class->set_property = ufo_ir_parallel_geometry_set_property;
     gobject_class->get_property = ufo_ir_parallel_geometry_get_property;
 
-    const gfloat limit = (gfloat) (4.0 * G_PI);
-
     g_object_class_override_property(gobject_class,
                                      PROP_BEAM_GEOMETRY,
                                      "beam-geometry");
@@ -189,11 +193,11 @@ ufo_ir_parallel_geometry_class_init (UfoIrParallelGeometryClass *klass)
                             0.1f, 4.0f, 1.0f,
                             G_PARAM_READWRITE);
 
-    properties[PROP_DETECTOR_OFFSET] =
-        g_param_spec_float ("detector-offset",
-                            "Shift of the detectors respect to the center of the volume.",
-                            "Shift of the detectors respect to the center of the volume.",
-                            -limit, +limit, 0.0f,
+    properties[PROP_AXIS_POS] =
+        g_param_spec_float ("axis-pos",
+                            "Position of rotation axis",
+                            "Position of rotation axis",
+                            -1.0, +8192.0, 0.0,
                             G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
@@ -213,5 +217,5 @@ ufo_ir_parallel_geometry_init(UfoIrParallelGeometry *self)
     UfoIrParallelGeometryPrivate *priv = NULL;
     self->priv = priv = UFO_IR_PARALLEL_GEOMETRY_GET_PRIVATE(self);
     priv->spec.det_scale = 1.0f;
-    priv->spec.det_offset = 0.0f;
+    priv->spec.axis_pos = -1.0f;
 }
