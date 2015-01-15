@@ -48,7 +48,7 @@ struct _UfoIrLinearizedBregmanMethodPrivate {
     UfoMethod *shrinkage;
 
     gpointer  gradient_kernel;
-    gpointer  transBx_kernel;
+    gpointer  Ix_kernel;
 
     guint  n_lb_iterations;
     gfloat shrinkage_psi;
@@ -77,7 +77,7 @@ ufo_ir_linearized_bregman_method_init (UfoIrLinearizedBregmanMethod *self)
     self->priv = priv = UFO_IR_LINEARIZED_BREGMAN_METHOD_GET_PRIVATE (self);
     priv->df_minimizer = NULL;
     priv->gradient_kernel = NULL;
-    priv->transBx_kernel = NULL;
+    priv->Ix_kernel = NULL;
     priv->shrinkage_psi = 0.5;
     priv->n_lb_iterations = 20;
 
@@ -193,7 +193,7 @@ ufo_ir_linearized_bregman_method_setup_real (UfoProcessor *processor,
     const gchar *filename = "ufo-ir-linearized-bregman-method.cl";
     priv->gradient_kernel = ufo_resources_get_kernel (resources, filename, "gradient", error);
     if (*error) return;
-    priv->transBx_kernel = ufo_resources_get_kernel (resources, filename, "transBx", error);
+    priv->Ix_kernel = ufo_resources_get_kernel (resources, filename, "computeIx", error);
     if (*error) return;
 
     if (priv->df_minimizer == NULL) {
@@ -203,10 +203,17 @@ ufo_ir_linearized_bregman_method_setup_real (UfoProcessor *processor,
         return;
     }
 
-    UfoProfiler  *profiler = NULL;
-    gpointer cmd_queue = NULL;
+    UfoIrProjector *projector = NULL;
+    UfoProfiler    *profiler = NULL;
+    gpointer        cmd_queue = NULL;
+    g_object_get (processor,
+                  "projection-model", &projector,
+                  "command-queue", &cmd_queue,
+                  "ufo-profiler", &profiler,
+                  NULL);
 
     g_object_set (priv->df_minimizer,
+                  "projection-model", projector,
                   "command-queue", cmd_queue,
                   NULL);
 
@@ -219,9 +226,9 @@ ufo_ir_linearized_bregman_method_setup_real (UfoProcessor *processor,
     ufo_processor_setup (UFO_PROCESSOR (priv->shrinkage), resources, error);
 }
 
-static void compute_transpB (UfoMethod *method,
-                             UfoBuffer *input,
-                             UfoBuffer *output)
+static void compute_Ix (UfoMethod *method,
+                        UfoBuffer *input,
+                        UfoBuffer *output)
 {
   UfoIrLinearizedBregmanMethodPrivate *priv =
         UFO_IR_LINEARIZED_BREGMAN_METHOD_GET_PRIVATE (method);
@@ -236,7 +243,7 @@ static void compute_transpB (UfoMethod *method,
   cl_mem d_input = ufo_buffer_get_device_image (input, cmd_queue);
   cl_mem d_output = ufo_buffer_get_device_image (output, cmd_queue);
 
-  gpointer kernel = priv->transBx_kernel;
+  gpointer kernel = priv->Ix_kernel;
   UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 0, sizeof (cl_mem), &d_input));
   UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 1, sizeof (cl_mem), &d_output));
 
@@ -246,6 +253,7 @@ static void compute_transpB (UfoMethod *method,
                      requisitions.n_dims,
                      requisitions.dims, NULL);
 }
+
 
 static void compute_grad (UfoMethod *method,
                           UfoBuffer *input,
@@ -298,6 +306,13 @@ ufo_ir_linearized_bregman_method_process_real (UfoMethod *method,
                                                UfoBuffer *output,
                                                gpointer  pevent)
 {
+  //
+  // Article: http://arxiv.org/pdf/1403.7543.pdf
+  // Issues:
+  //   - in LB-loop we do copying v to u, but it leads to changing the image
+  //     by it's gradient. So I added an additional condition in the inner loop
+  //   - t does not computed. It requires computing largest SVD for [bw_v bwt_q]^t
+  //
   UfoIrLinearizedBregmanMethodPrivate *priv =
         UFO_IR_LINEARIZED_BREGMAN_METHOD_GET_PRIVATE (method);
 
@@ -316,55 +331,58 @@ ufo_ir_linearized_bregman_method_process_real (UfoMethod *method,
   ufo_op_set (u, 0, resources, cmd_queue);
 
   UfoBuffer *v   = ufo_buffer_dup (output);
-  ufo_op_set (v, 0, resources, cmd_queue);
+  UfoBuffer *q   = ufo_buffer_dup (output);
 
   UfoBuffer *w   = ufo_buffer_dup (output);
   UfoBuffer *p   = ufo_buffer_dup (output);
-  UfoBuffer *btw = ufo_buffer_dup (output);
-  gfloat    t = 0.0f;
-
+  UfoBuffer *btw_v   = ufo_buffer_dup (output);
+  UfoBuffer *btw_q   = ufo_buffer_dup (output);
+  gfloat    t = 0.001f;
 
   guint iteration = 0;
-  while (iteration < max_iterations) {
+  while (iteration < 100) {
       // compute u
-      ufo_method_process (priv->df_minimizer, input, u, NULL);
+      ufo_method_process (UFO_METHOD (priv->df_minimizer), input, u, NULL);
 
-      //
-      // iteration 0, p = 0
-      // w = compute_grad (u);
-      compute_grad (method, u, w);
-
-      // btw = compute_transpB(w)
-      compute_transpB (method, w, btw);
-
-      t = l2pow2(method, w);
-      t = t / l2pow2 (method, btw);
-
-      guint lb_iteration = 1;
-      while (lb_iteration < priv->n_lb_iterations) {
-          // w = compute_grad (u);
-          // w = w - p;
+      ufo_op_set (v, 0, resources, cmd_queue);
+      //ufo_buffer_copy (u, v);
+      ufo_op_set (q, 0, resources, cmd_queue);
+      guint lb_iteration = 0;
+      while (lb_iteration < 10 && iteration < 100-1) {
           compute_grad (method, u, w);
-          ufo_op_deduction (w, p, w, resources, cmd_queue);
+          if (lb_iteration > 0) {
+            // p = 0 at iteration = 0
+            // w = [grad   -I] [u    p]^t ==> w = grad(u) - Ip
+            compute_Ix (method, p, p);
+            ufo_op_deduction (w, p, w, resources, cmd_queue);
+          }
 
-          // btw = compute_transpB(w)
-          compute_transpB (method, w, btw);
-          t = l2pow2(method, w);
-          t = t / l2pow2 (method, btw);
+          // compute transp(B) * w = transp([grad   -I]) * w = transp([grad(w)  -Iw])
+          compute_grad (method, w, btw_v);
+          compute_Ix   (method, w, btw_q);
 
-          // v = v - t*btw
-          ufo_op_deduction2 (v, btw, t, v, resources, cmd_queue);
+          // compute t
+          //t = l2pow2(method, w);
+          //t = t / l2pow2 (method, largest SVD of matrix [grad(w) -I(w)]);
+
+          // v_k+1 = v_k - tk * btw_v
+          ufo_op_deduction2 (v, btw_v, t, v, resources, cmd_queue);
+
+          // q_k+1 = q_k - (tk * -1 * btw_q) = q_k + tk * btw_q
+          ufo_op_add2 (q, btw_q, t, q, resources, cmd_queue);
 
           // copy v to u
           ufo_buffer_copy (v, u);
 
           // do shrinkage
-          ufo_method_process (priv->shrinkage, v, p, NULL);
+          ufo_method_process (priv->shrinkage, q, p, NULL);
+
           lb_iteration ++;
       }
+
       iteration++;
   }
-
+  ufo_buffer_copy (u, output);
 
   return TRUE;
 }
