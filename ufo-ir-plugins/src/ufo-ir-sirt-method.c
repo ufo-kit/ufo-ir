@@ -101,13 +101,13 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
     UfoResources   *resources = NULL;
     UfoIrProjector *projector = NULL;
     gpointer       *cmd_queue = NULL;
-    gfloat         relax_fact = 0;
+    gfloat         relaxation_factor = 0;
     guint          max_iterations = 0;
     g_object_get (method,
                   "ufo-resources",     &resources,
                   "command-queue",     &cmd_queue,
                   "projection-model",  &projector,
-                  "relaxation-factor", &relax_fact,
+                  "relaxation-factor", &relaxation_factor,
                   "max-iterations",    &max_iterations,
                   NULL);
 
@@ -143,7 +143,7 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
                              pixel_weights,
                              sino_tmp,
                              &subset[i],
-                             relax_fact, NULL);
+                             1.0f, NULL);
     }
     ufo_op_inv (pixel_weights, resources, cmd_queue);
 
@@ -170,7 +170,7 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
                                  volume_tmp,
                                  sino_tmp,
                                  &subset[i],
-                                 1.0f,
+                                 relaxation_factor,
                                  NULL);
         }
         ufo_op_mul (volume_tmp, pixel_weights, volume_tmp, resources, cmd_queue);

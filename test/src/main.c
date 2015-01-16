@@ -3,23 +3,24 @@
 #include <ufo/ufo.h>
 
 #include <ufo/ir/ufo-ir.h>
-/*
+
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
 #define N_ANGLES   287
-#define ANGLE_STEP 0.6229f
-#define AXIS_POS   0.0f
-*/
+#define ANGLE_STEP 0.01094f
+#define AXIS_POS   -1.0f
+
+/*
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/Bug/bug_sino_2_88(quadro).tif"
 #define N_ANGLES   75
-#define ANGLE_STEP 2.8820f
-#define AXIS_POS   413.0f
-
+#define ANGLE_STEP 0.0504f
+#define AXIS_POS   416.0f
+*/
 int main(int n_args, char *argv[])
 {
     GError *error = NULL;
     UfoGraph *ufo_task_graph = ufo_task_graph_new();
     UfoScheduler *ufo_scheduler = ufo_scheduler_new ();
-    g_object_set (ufo_scheduler, "enable-tracing", TRUE, NULL);
+    g_object_set (ufo_scheduler, "enable-tracing", FALSE, NULL);
     UfoPluginManager *manager = ufo_plugin_manager_new ();
     UfoNode *reader = UFO_NODE (ufo_plugin_manager_get_task (manager, "reader", NULL));
     UfoNode *writer = UFO_NODE (ufo_plugin_manager_get_task (manager, "writer", NULL));
@@ -51,7 +52,7 @@ int main(int n_args, char *argv[])
                   "angle-offset", 0.0,
                   "angle-step", ANGLE_STEP,
                   "detector-scale", 1.0,
-                  //"axis-pos", AXIS_POS,
+                  "axis-pos", AXIS_POS,
                   NULL);
 
 
@@ -81,7 +82,7 @@ int main(int n_args, char *argv[])
 
     g_object_set (sart,
                   "relaxation-factor", 0.25,
-                  "max-iterations", 20,
+                  "max-iterations", 10,
                   NULL);
 
     gpointer sirt = ufo_plugin_manager_get_plugin (manager,
@@ -95,7 +96,7 @@ int main(int n_args, char *argv[])
     }
 
     g_object_set (sirt,
-                  "relaxation-factor", 1.00f,
+                  "relaxation-factor", 0.25,
                   "max-iterations", 2000,
                   NULL);
 
@@ -111,7 +112,7 @@ int main(int n_args, char *argv[])
 
     g_object_set (asdpocs,
                   "df-minimizer", sart,
-                  "max-iterations", 10,
+                  "max-iterations", 200,
                   NULL);
 
     gpointer sparsity = ufo_plugin_manager_get_plugin (manager,
@@ -129,7 +130,7 @@ int main(int n_args, char *argv[])
     ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     g_object_set (ir,
-                  "method", sart,
+                  "method", asdpocs,
                   "geometry", geometry,
                   "projector", projector,
                   "prior-knowledge", prior,
