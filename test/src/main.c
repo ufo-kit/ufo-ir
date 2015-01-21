@@ -3,11 +3,17 @@
 #include <ufo/ufo.h>
 
 #include <ufo/ir/ufo-ir.h>
-
+/*
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino12575.tif"
 #define N_ANGLES   144
 #define ANGLE_STEP 0.02195f
 #define AXIS_POS   -1.0f
+*/
+
+#define IN_FILE_NAME "/pdv/home/ashkarin/Data/ForbildPhantom/forbild512_sino06288.tif"
+#define N_ANGLES 287
+#define ANGLE_STEP 0.010975f
+#define AXIS_POS  -1.0f
 
 /*
 #define IN_FILE_NAME "/pdv/home/ashkarin/Data/Bug/bug_sino_2_88(quadro).tif"
@@ -82,7 +88,7 @@ int main(int n_args, char *argv[])
 
     g_object_set (sart,
                   "relaxation-factor", 0.25,
-                  "max-iterations", 200,
+                  "max-iterations", 10,
                   NULL);
 
     gpointer sirt = ufo_plugin_manager_get_plugin (manager,
@@ -115,25 +121,11 @@ int main(int n_args, char *argv[])
                   "max-iterations", 200,
                   NULL);
 
-    gpointer sparsity = ufo_plugin_manager_get_plugin (manager,
-                                                       "ufo_ir_gradient_sparsity_new",
-                                                       "libufoir_gradient_sparsity.so",
-                                                       &error);
-
-    g_print ("\nsparsity: %p", sparsity);
-    if (error){
-        printf("\nError: Run was unsuccessful: %s\n", error->message);
-        return 1;
-    }
-
-    UfoIrPriorKnowledge *prior = ufo_ir_prior_knowledge_new ();
-    ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity);
 
     g_object_set (ir,
-                  "method", sart,
+            "method", asdpocs,
                   "geometry", geometry,
                   "projector", projector,
-                  "prior-knowledge", prior,
                   NULL);
 
     //ufo_graph_connect_nodes (ufo_task_graph, reader, null, NULL);

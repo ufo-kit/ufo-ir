@@ -39,16 +39,6 @@
                             }
                         }
                     }
-                },
-                "prior-knowledge" : {
-                    "image-sparsity" : {
-                        "namespace" : "ir",
-                        "type"   : "sparsity",
-                        "name"   : "gradient",
-                        "properties" : {
-                            "num-iterations": 1
-                        }
-                    }
                 }
             }
         },

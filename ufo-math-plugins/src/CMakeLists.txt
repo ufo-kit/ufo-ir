@@ -1,22 +1,18 @@
 cmake_minimum_required(VERSION 2.6)
 
 #{{{ Sources
-set(ufoirplugins_SRCS
-    ufo-ir-parallel-geometry.c
-    ufo-ir-cl-projector.c
-    ufo-ir-sart-method.c
-    ufo-ir-sirt-method.c
-    ufo-ir-asdpocs-method.c
+set(ufo_math_plugins_SRCS
+    ufo-math-shrinkage-method.c
+    ufo-math-tvstd-method.c
 )
 
-set(ufoirplugins_LIBS
-    ${UFO_IR_LIBRARIES}
+set(ufo_math_plugins_LIBS
     ${GLIB2_LIBRARIES}
     ${GOBJECT2_LIBRARIES}
     ${OPENCL_LIBRARIES}
 )
 
-file(GLOB ufoirplugins_KERNELS "kernels/*.cl")
+file(GLOB ufo_math_plugins_KERNELS "kernels/*.cl")
 #}}}
 #{{{ Variables
 
@@ -31,11 +27,11 @@ endif()
 include_directories(${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${OPENCL_INCLUDE_DIRS}
-                    ${UFO_IR_INCLUDE_DIRS})
+                    ${UFO_INCLUDE_DIRS})
 
-foreach(_src ${ufoirplugins_SRCS})
+foreach(_src ${ufo_math_plugins_SRCS})
     # find plugin suffix
-    string(REGEX REPLACE "ufo-ir-?([^ \\.]+).*" "\\1" plugin "${_src}")
+    string(REGEX REPLACE "ufo-math-?([^ \\.]+).*" "\\1" plugin "${_src}")
 
     # build string to get miscalleanous sources
     string(REPLACE "-" "_" target ${plugin})
@@ -47,7 +43,7 @@ foreach(_src ${ufoirplugins_SRCS})
 
     if (${target_option})
         set(_misc "${target}_misc_SRCS")
-        set(target "ufoir_${target}")
+        set(target "ufo_math_${target}")
 
         # build single shared library per filter
         if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -56,18 +52,18 @@ foreach(_src ${ufoirplugins_SRCS})
             add_library(${target} SHARED ${_src} ${${_misc}})
         endif()
 
-        target_link_libraries(${target} ${ufoirplugins_LIBS})
+        target_link_libraries(${target} ${ufo_math_plugins_LIBS})
 
         list(APPEND all_targets ${target})
 
         install(TARGETS ${target}
-                ARCHIVE DESTINATION ${UFO_IR_PLUGINS_PLUGINDIR}
-                LIBRARY DESTINATION ${UFO_IR_PLUGINS_PLUGINDIR})
+                ARCHIVE DESTINATION ${UFO_MATH_PLUGINS_PLUGINDIR}
+                LIBRARY DESTINATION ${UFO_MATH_PLUGINS_PLUGINDIR})
     endif()
 endforeach()
 
 # copy kernels
-foreach(_kernel ${ufoirplugins_KERNELS})
-    install(FILES ${_kernel} DESTINATION ${UFO_IR_PLUGINS_KERNELDIR})
+foreach(_kernel ${ufo_math_plugins_KERNELS})
+    install(FILES ${_kernel} DESTINATION ${UFO_MATH_PLUGINS_KERNELDIR})
 endforeach()
 #}}}

@@ -25,8 +25,6 @@
 #include <ufo/ir/ufo-ir-geometry.h>
 #include <ufo/ir/ufo-ir-method.h>
 #include <ufo/ir/ufo-ir-projector.h>
-#include <ufo/ir/ufo-ir-sparsity-iface.h>
-#include <ufo/ir/ufo-ir-prior-knowledge.h>
 
 #undef __UFO_IR_H_INSIDE__
 

@@ -40,12 +40,6 @@ typedef struct _UfoIrMethod         UfoIrMethod;
 typedef struct _UfoIrMethodClass    UfoIrMethodClass;
 typedef struct _UfoIrMethodPrivate  UfoIrMethodPrivate;
 
-enum {
-    IR_METHOD_PROP_0 = 0,
-    IR_METHOD_PROP_PRIOR_KNOWLEDGE,
-    N_IR_METHOD_VIRTUAL_PROPERTIES
-};
-
 /**
 * UfoIrMethod:
 *
@@ -60,9 +54,6 @@ struct _UfoIrMethod {
 struct _UfoIrMethodClass {
     /*< private >*/
     UfoProcessorClass parent_class;
-
-    void (*set_prior_knowledge) (UfoIrMethod *method,
-                                 GHashTable  *prior);
 };
 
 UfoMethod* ufo_ir_method_new      (void);
