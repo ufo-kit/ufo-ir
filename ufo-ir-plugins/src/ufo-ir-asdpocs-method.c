@@ -26,7 +26,7 @@ ufo_ir_asdpocs_method_error_quark (void)
 
 struct _UfoIrAsdPocsMethodPrivate {
     UfoIrMethod   *df_minimizer;
-    UfoIrSparsity *sparsity;
+    UfoMethod     *tv_stdesc;
 
     gfloat beta;
     gfloat beta_red;
@@ -37,7 +37,7 @@ struct _UfoIrAsdPocsMethodPrivate {
 };
 
 enum {
-    PROP_0 = N_IR_METHOD_VIRTUAL_PROPERTIES,
+    PROP_0 = 0,
     PROP_DF_MINIMIZER,
     PROP_BETA,
     PROP_BETA_RED,
@@ -49,22 +49,6 @@ enum {
 };
 
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
-
-static void
-set_prior_knowledge (GObject *object,
-                     UfoIrPriorKnowledge *prior)
-{
-    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
-    UfoIrSparsity *sparsity =
-        ufo_ir_prior_knowledge_pointer (prior, "image-sparsity");
-    if (sparsity) {
-        g_clear_object(&priv->sparsity);
-        priv->sparsity = g_object_ref(sparsity);
-    } else {
-        g_error ("%s : received prior knowledge without \"image-sparsity\".",
-                 G_OBJECT_TYPE_NAME (object));
-    }
-}
 
 static UfoIrProjectionsSubset *
 generate_subsets (UfoIrGeometry *geometry, guint *n_subsets)
@@ -117,7 +101,7 @@ ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
     UfoIrAsdPocsMethodPrivate *priv = NULL;
     self->priv = priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (self);
     priv->df_minimizer = NULL;
-    priv->sparsity = NULL;
+    priv->tv_stdesc = NULL;
     priv->beta = 1.0f;
     priv->beta_red = 0.995f;
     priv->ng = 20;
@@ -138,9 +122,6 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
     GObject *value_object;
 
     switch (property_id) {
-        case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
-            set_prior_knowledge (object, g_value_get_pointer(value));
-            break;
         case PROP_DF_MINIMIZER:
             {
                 value_object = g_value_get_object (value);
@@ -246,10 +227,16 @@ ufo_ir_asdpocs_method_setup_real (UfoProcessor *processor,
         return;
     }
 
-    if (priv->sparsity == NULL) {
+    UfoPluginManager *plugin_manager = ufo_plugin_manager_new ();
+    priv->tv_stdesc = UFO_METHOD (ufo_plugin_manager_get_plugin (plugin_manager,
+                                                  "ufo_math_tvstd_method_new",
+                                                  "libufo_math_tvstd_method.so",
+                                                   error));
+
+    if (priv->tv_stdesc == NULL) {
         g_set_error (error, UFO_IR_ASDPOCS_METHOD_ERROR,
                      UFO_IR_ASDPOCS_METHOD_ERROR_SETUP,
-                     "Sparsity does not set.");
+                     "TV-steepest descent methods was not loaded.");
         return;
     }
 
@@ -265,13 +252,14 @@ ufo_ir_asdpocs_method_setup_real (UfoProcessor *processor,
                   "projection-model", projector,
                   "command-queue", cmd_queue,
                   NULL);
-    g_object_set (priv->sparsity,
+
+    g_object_set (priv->tv_stdesc,
                   "ufo-profiler", profiler,
                   "command-queue", cmd_queue,
                   NULL);
 
     ufo_processor_setup (UFO_PROCESSOR (priv->df_minimizer), resources, error);
-    ufo_processor_setup (UFO_PROCESSOR (priv->sparsity), resources, error);
+    ufo_processor_setup (UFO_PROCESSOR (priv->tv_stdesc), resources, error);
 }
 
 static gboolean
@@ -375,8 +363,8 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
 
       //
       //
-      g_object_set (priv->sparsity, "relaxation-factor", dtgv, NULL);
-      ufo_ir_sparsity_minimize (priv->sparsity, x, x, NULL);
+      g_object_set (priv->tv_stdesc, "relaxation-factor", dtgv, NULL);
+      ufo_method_process (UFO_METHOD (priv->tv_stdesc), x, x, NULL);
 
       //
       // compute new regularization coefficient
@@ -416,17 +404,6 @@ ufo_ir_asdpocs_method_copy_real (gpointer origin,
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (origin);
 
     //
-    // copy sparsity with wrapping by UfoIrPriorKnowledge
-    gpointer sparsity_copy = ufo_copyable_copy (priv->sparsity, NULL);
-    if (sparsity_copy) {
-      UfoIrPriorKnowledge *prior = ufo_ir_prior_knowledge_new ();
-      ufo_ir_prior_knowledge_set_pointer (prior, "image-sparsity", sparsity_copy);
-      g_object_set (G_OBJECT(copy), "prior-knowledge", prior, NULL);
-    } else {
-      g_error ("Error in copying ASD-POCS method: a prior knowledge was not copied.");
-    }
-
-    //
     // copy the method that minimizes data fidelity term
     gpointer df_minimizer_copy = ufo_copyable_copy (priv->df_minimizer, NULL);
     if (df_minimizer_copy) {
@@ -463,9 +440,6 @@ ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
     gobject_class->set_property = ufo_ir_asdpocs_method_set_property;
     gobject_class->get_property = ufo_ir_asdpocs_method_get_property;
 
-    g_object_class_override_property(gobject_class,
-                                     IR_METHOD_PROP_PRIOR_KNOWLEDGE,
-                                     "prior-knowledge");
 
     properties[PROP_DF_MINIMIZER] =
         g_param_spec_object("df-minimizer",

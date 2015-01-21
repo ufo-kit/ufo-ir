@@ -20,8 +20,6 @@
 #include "ufo-ir-method.h"
 #include "ufo-ir-projector.h"
 #include "ufo-ir-geometry.h"
-#include "ufo-ir-prior-knowledge.h"
-#include "ufo-ir-sparsity-iface.h"
 
 /**
 * SECTION:ufo-ir-method
@@ -47,7 +45,8 @@ struct _UfoIrMethodPrivate {
 };
 
 enum {
-    PROP_PROJECTION_MODEL = N_IR_METHOD_VIRTUAL_PROPERTIES,
+    PROP_0 = 0,
+    PROP_PROJECTION_MODEL,
     PROP_RELAXATION_FACTOR,
     PROP_MAX_ITERATIONS,
     N_PROPERTIES
@@ -78,9 +77,6 @@ ufo_ir_method_set_property (GObject      *object,
     GObject *value_object;
 
     switch (property_id) {
-        case IR_METHOD_PROP_PRIOR_KNOWLEDGE:
-            g_warning ("%s : does not use a prior knowledge", G_OBJECT_TYPE_NAME (object));
-            break;
         case PROP_PROJECTION_MODEL:
             {
                 value_object = g_value_get_object (value);
@@ -156,13 +152,6 @@ ufo_ir_method_setup_real (UfoProcessor *processor,
     UFO_PROCESSOR_CLASS (ufo_ir_method_parent_class)->setup (processor, resources, error);
 }
 
-static void
-ufo_ir_method_set_prior_knowledge_real (UfoIrMethod *method,
-                                        GHashTable  *prior)
-{
-    g_warning ("Selected method does not work with any prior knowledge.");
-}
-
 static gboolean
 ufo_ir_method_process_real (UfoMethod *method,
                             UfoBuffer *input,
@@ -220,12 +209,6 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
     gobject_class->set_property = ufo_ir_method_set_property;
     gobject_class->get_property = ufo_ir_method_get_property;
 
-    properties[IR_METHOD_PROP_PRIOR_KNOWLEDGE] =
-        g_param_spec_pointer("prior-knowledge",
-                             "Pointer to the instance of UfoPriorKnowledge.",
-                             "Pointer to the instance of UfoPriorKnowledge.",
-                             G_PARAM_WRITABLE);
-
     properties[PROP_PROJECTION_MODEL] =
         g_param_spec_object("projection-model",
                             "Pointer to the instance of UfoIrProjector.",
@@ -247,14 +230,12 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
                           0, G_MAXUINT, 1,
                           G_PARAM_READWRITE);
 
-    for (guint i = IR_METHOD_PROP_0 + 1; i < N_PROPERTIES; i++)
+    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);
 
 
     g_type_class_add_private (gobject_class, sizeof (UfoIrMethodPrivate));
 
-    UFO_IR_METHOD_CLASS (klass)->set_prior_knowledge =
-        ufo_ir_method_set_prior_knowledge_real;
     UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_method_setup_real;
 }
 
