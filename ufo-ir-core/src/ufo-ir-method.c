@@ -172,6 +172,7 @@ static UfoCopyable *
 ufo_ir_method_copy_real (gpointer origin,
                          gpointer _copy)
 {
+    g_print ("\nufo_ir_method_copy_real (%p %p", origin, _copy);
     UfoCopyable *copy;
     if (_copy)
         copy = UFO_COPYABLE(_copy);
