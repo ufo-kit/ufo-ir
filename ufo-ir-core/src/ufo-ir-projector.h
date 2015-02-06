@@ -111,6 +111,10 @@ struct _UfoIrProjectionsSubset {
 };
 
 UfoIrProjector *ufo_ir_projector_new (void);
+void      ufo_ir_projector_set_geometry (UfoIrProjector *projector,
+                                         gpointer      geometry);
+gpointer  ufo_ir_projector_get_geometry (UfoIrProjector *projector);
+
 void      ufo_ir_projector_FP_ROI     (UfoIrProjector         *projector,
                                        UfoBuffer              *volume,
                                        UfoRegion              *volume_roi,

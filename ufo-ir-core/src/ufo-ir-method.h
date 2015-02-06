@@ -58,6 +58,10 @@ struct _UfoIrMethodClass {
 
 UfoMethod* ufo_ir_method_new      (void);
 GType      ufo_ir_method_get_type (void);
+void       ufo_ir_method_set_projection_model (UfoIrMethod *method,
+                                               gpointer    projector);
+gpointer   ufo_ir_method_get_projection_model (UfoIrMethod *method);
+
 
 G_END_DECLS
 #endif

@@ -98,21 +98,21 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
                                  UfoBuffer *output,
                                  gpointer  pevent)
 {
-    UfoResources   *resources = NULL;
-    UfoIrProjector *projector = NULL;
-    gpointer       *cmd_queue = NULL;
+    GTimer *timer = g_timer_new ();
+    g_timer_reset(timer);
+    g_timer_start(timer);
+
+    UfoResources   *resources = ufo_processor_get_resources (UFO_PROCESSOR (method));
+    UfoIrProjector *projector = ufo_ir_method_get_projection_model (UFO_IR_METHOD (method));
+    gpointer       cmd_queue = ufo_processor_get_command_queue (UFO_PROCESSOR (method));
     gfloat         relaxation_factor = 0;
     guint          max_iterations = 0;
     g_object_get (method,
-                  "ufo-resources",     &resources,
-                  "command-queue",     &cmd_queue,
-                  "projection-model",  &projector,
                   "relaxation-factor", &relaxation_factor,
-                  "max-iterations",    &max_iterations,
+                  "max-iterations", &max_iterations,
                   NULL);
 
-    UfoIrGeometry *geometry = NULL;
-    g_object_get (projector, "geometry", &geometry, NULL);
+    UfoIrGeometry *geometry = ufo_ir_projector_get_geometry (projector);
 
     UfoBuffer *sino_tmp   = ufo_buffer_dup (input);
     UfoBuffer *volume_tmp = ufo_buffer_dup (output);
@@ -177,7 +177,11 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
         ufo_op_add (volume_tmp, output, output, resources, cmd_queue);
         iteration++;
     }
-
+    clFinish (cmd_queue);
+    g_timer_stop(timer);
+    gdouble _time = g_timer_elapsed (timer, NULL);
+    g_print("\nSIRT time: %3.5fs\n", _time);
+ 
     return TRUE;
 }
 

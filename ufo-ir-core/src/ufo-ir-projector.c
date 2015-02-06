@@ -49,18 +49,32 @@ struct _UfoIrProjectorPrivate {
     UfoRegion     full_volume_region;
 };
 
-enum {
-    PROP_0,
-    PROP_GEOMETRY,
-    N_PROPERTIES
-};
-
-static GParamSpec *properties[N_PROPERTIES] = { NULL, };
-
 UfoIrProjector *
 ufo_ir_projector_new (void)
 {
     return UFO_IR_PROJECTOR (g_object_new (UFO_IR_TYPE_PROJECTOR, NULL));
+}
+
+void
+ufo_ir_projector_set_geometry (UfoIrProjector *projector,
+                               gpointer      geometry)
+{
+    if (geometry == NULL || !UFO_IR_IS_GEOMETRY (geometry))
+        return;
+    
+    UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (projector);
+
+    if (priv->geometry)
+        g_object_unref (priv->geometry);
+
+    priv->geometry = g_object_ref (UFO_IR_GEOMETRY (geometry)); 
+}
+
+gpointer
+ufo_ir_projector_get_geometry (UfoIrProjector *projector)
+{
+    UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (projector);
+    return priv->geometry;
 }
 
 static void
@@ -77,53 +91,6 @@ ufo_ir_projector_setup_real (UfoProcessor *projector,
         g_set_error (error, UFO_IR_PROJECTOR_ERROR, UFO_IR_PROJECTOR_ERROR_SETUP,
                      "%s : property \"geometry\" is not specified.",
                      G_OBJECT_TYPE_NAME (projector));
-    }
-}
-
-static void
-ufo_ir_projector_set_property (GObject      *object,
-                               guint        property_id,
-                               const GValue *value,
-                               GParamSpec   *pspec)
-{
-    UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (object);
-
-    GObject *value_object;
-
-    switch (property_id) {
-        case PROP_GEOMETRY:
-            {
-                value_object = g_value_get_object (value);
-
-                if (priv->geometry)
-                    g_object_unref (priv->geometry);
-
-                if (value_object != NULL) {
-                    priv->geometry = g_object_ref (UFO_IR_GEOMETRY (value_object));
-                }
-            }
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-            break;
-    }
-}
-
-static void
-ufo_ir_projector_get_property (GObject    *object,
-                               guint      property_id,
-                               GValue     *value,
-                               GParamSpec *pspec)
-{
-    UfoIrProjectorPrivate *priv = UFO_IR_PROJECTOR_GET_PRIVATE (object);
-
-    switch (property_id) {
-        case PROP_GEOMETRY:
-            g_value_set_object (value, priv->geometry);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-            break;
     }
 }
 
@@ -190,7 +157,7 @@ ufo_ir_projector_copy_real (gpointer origin,
     UfoIrProjectorPrivate * priv = UFO_IR_PROJECTOR_GET_PRIVATE (origin);
     gpointer geom_copy = ufo_copyable_copy (priv->geometry, NULL);
     if (geom_copy) {
-        g_object_set (G_OBJECT(copy), "geometry", geom_copy, NULL);
+        ufo_ir_projector_set_geometry (UFO_IR_PROJECTOR (copy), geom_copy);
         g_object_unref (geom_copy);
     }
     return copy;
@@ -207,19 +174,6 @@ ufo_ir_projector_class_init (UfoIrProjectorClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     gobject_class->dispose = ufo_ir_projector_dispose;
-    gobject_class->set_property = ufo_ir_projector_set_property;
-    gobject_class->get_property = ufo_ir_projector_get_property;
-
-    properties[PROP_GEOMETRY] =
-        g_param_spec_object ("geometry",
-                             "Pointer to the instance of UfoIrGeometry structure",
-                             "Pointer to the instance of UfoIrGeometry structure",
-                             UFO_IR_TYPE_GEOMETRY,
-                             G_PARAM_READWRITE);
-
-    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
-        g_object_class_install_property (gobject_class, i, properties[i]);
-
 
     g_type_class_add_private (gobject_class, sizeof(UfoIrProjectorPrivate));
 

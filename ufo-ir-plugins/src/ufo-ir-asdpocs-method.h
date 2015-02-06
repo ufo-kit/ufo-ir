@@ -53,6 +53,9 @@ struct _UfoIrAsdPocsMethodClass {
 };
 
 UfoIrMethod    *ufo_ir_asdpocs_method_new       (void);
+void          ufo_ir_asdpocs_method_set_minimizer (UfoIrAsdPocsMethod *method,
+                                                   UfoIrMethod *minimizer);
+UfoIrMethod * ufo_ir_asdpocs_method_get_minimizer (UfoIrAsdPocsMethod *method);
 GType           ufo_ir_asdpocs_method_get_type  (void);
 G_END_DECLS
 #endif

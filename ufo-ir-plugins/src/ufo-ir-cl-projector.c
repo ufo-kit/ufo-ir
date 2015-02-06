@@ -17,6 +17,7 @@
 * License along with this library. If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include "ufo-ir-cl-projector.h"
 
 #ifdef __APPLE__
@@ -69,10 +70,10 @@ ufo_ir_cl_projector_setup_real (UfoProcessor  *projector,
       return;
 
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
-    UfoIrGeometry *geometry = NULL;
+    UfoIrGeometry *geometry = UFO_IR_GEOMETRY (ufo_ir_projector_get_geometry (UFO_IR_PROJECTOR (projector)));
     gchar *model = NULL;
     gchar *geom = NULL;
-    g_object_get (projector, "geometry", &geometry, "model", &model, NULL);
+    g_object_get (projector, "model", &model, NULL);
     g_object_get (geometry, "beam-geometry", &geom, NULL);
 
     gchar *filename = g_strconcat("projector-", geom, "-", model, ".cl", NULL);
@@ -161,12 +162,8 @@ ufo_ir_cl_projector_FP_ROI_real (UfoIrProjector         *projector,
 {
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->fp_kernel[subset->direction];
-    cl_command_queue cmd_queue = NULL;
-    UfoProfiler      *profiler = NULL;
-    g_object_get (projector,
-                  "ufo-profiler", &profiler,
-                  "command-queue", &cmd_queue,
-                  NULL);
+    cl_command_queue cmd_queue = ufo_processor_get_command_queue (UFO_PROCESSOR (projector));
+    UfoProfiler *profiler = ufo_processor_get_profiler (UFO_PROCESSOR (projector));
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -210,12 +207,8 @@ ufo_ir_cl_projector_BP_ROI_real (UfoIrProjector         *projector,
 {
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->bp_kernel;
-    cl_command_queue cmd_queue = NULL;
-    UfoProfiler *profiler = NULL;
-    g_object_get (projector,
-                  "ufo-profiler", &profiler,
-                  "command-queue", &cmd_queue,
-                  NULL);
+    cl_command_queue cmd_queue = ufo_procesor_get_command_queue (UFO_PROCESSOR (projector));
+    UfoProfiler *profiler = ufo_processor_get_profiler (UFO_PROCESSOR (projector));
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_measurements = ufo_buffer_get_device_image (measurements, cmd_queue);
@@ -252,8 +245,7 @@ ufo_ir_cl_projector_configure_real (UfoProcessor *projector)
     UFO_PROCESSOR_CLASS (ufo_ir_cl_projector_parent_class)->configure (projector);
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
 
-    UfoIrGeometry *geometry = NULL;
-    g_object_get (projector, "geometry", &geometry, NULL);
+    UfoIrGeometry *geometry = ufo_ir_projector_get_geometry (projector);
 
     cl_mem d_sin_vals = ufo_ir_geometry_scan_angles_device (geometry, SIN_VALUES);
     cl_mem d_cos_vals = ufo_ir_geometry_scan_angles_device (geometry, COS_VALUES);

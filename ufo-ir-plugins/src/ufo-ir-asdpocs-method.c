@@ -34,17 +34,18 @@ struct _UfoIrAsdPocsMethodPrivate {
     gfloat alpha;
     gfloat alpha_red;
     gfloat r_max;
+    gboolean positive_constraint;
 };
 
 enum {
     PROP_0 = 0,
-    PROP_DF_MINIMIZER,
     PROP_BETA,
     PROP_BETA_RED,
     PROP_NG,
     PROP_ALPHA,
     PROP_R_MAX,
     PROP_ALPHA_RED,
+    PROP_POSITIVE_CONSTRAINT,
     N_PROPERTIES
 };
 
@@ -95,6 +96,33 @@ ufo_ir_asdpocs_method_new (void)
     return UFO_IR_METHOD (g_object_new (UFO_IR_TYPE_ASDPOCS_METHOD, NULL));
 }
 
+void
+ufo_ir_asdpocs_method_set_minimizer (UfoIrAsdPocsMethod *method,
+                                     UfoIrMethod *minimizer)
+{
+    if (minimizer == NULL || method == NULL)
+        return;
+
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (method);
+    if (priv->df_minimizer) {
+        g_object_unref (priv->df_minimizer);
+    }
+    priv->df_minimizer = g_object_ref (minimizer);
+}
+
+/**
+ * ufo_ir_asdpocs_method_get_minimizer:
+ * @method: A #UfoIrAsdPocsMethod
+ * 
+ * Returns: #UfoIrMethod
+ */
+UfoIrMethod *
+ufo_ir_asdpocs_method_get_minimizer (UfoIrAsdPocsMethod *method)
+{
+    UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (method);
+    return priv->df_minimizer;
+}
+
 static void
 ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
 {
@@ -108,6 +136,7 @@ ufo_ir_asdpocs_method_init (UfoIrAsdPocsMethod *self)
     priv->alpha = 0.2f;
     priv->alpha_red = 0.95f;
     priv->r_max = 0.95f;
+    priv->positive_constraint = TRUE;
 }
 
 
@@ -119,22 +148,7 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
 
-    GObject *value_object;
-
     switch (property_id) {
-        case PROP_DF_MINIMIZER:
-            {
-                value_object = g_value_get_object (value);
-
-                if (priv->df_minimizer) {
-                    g_object_unref (priv->df_minimizer);
-                }
-                if (value_object != NULL) {
-                    priv->df_minimizer = g_object_ref (UFO_IR_METHOD (value_object));
-                }
-
-                break;
-            }
         case PROP_BETA:
             priv->beta = g_value_get_float (value);
             break;
@@ -153,6 +167,9 @@ ufo_ir_asdpocs_method_set_property (GObject      *object,
         case PROP_R_MAX:
             priv->r_max = g_value_get_float (value);
             break;
+        case PROP_POSITIVE_CONSTRAINT:
+            priv->positive_constraint = g_value_get_boolean (value);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -168,9 +185,6 @@ ufo_ir_asdpocs_method_get_property (GObject    *object,
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_DF_MINIMIZER:
-            g_value_set_object (value, priv->df_minimizer);
-            break;
         case PROP_BETA:
             g_value_set_float (value, priv->beta);
             break;
@@ -188,6 +202,9 @@ ufo_ir_asdpocs_method_get_property (GObject    *object,
             break;
         case PROP_R_MAX:
             g_value_set_float (value, priv->r_max);
+            break;
+        case PROP_POSITIVE_CONSTRAINT:
+            g_value_set_boolean (value, priv->positive_constraint);
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -240,23 +257,17 @@ ufo_ir_asdpocs_method_setup_real (UfoProcessor *processor,
         return;
     }
 
-    UfoIrProjector *projector = NULL;
-    UfoProfiler  *profiler = NULL;
-    gpointer cmd_queue = NULL;
-    g_object_get (processor,
-                  "projection-model", &projector,
-                  "command-queue", &cmd_queue,
-                  "ufo-profiler", &profiler,
-                  NULL);
-    g_object_set (priv->df_minimizer,
-                  "projection-model", projector,
-                  "command-queue", cmd_queue,
-                  NULL);
-
-    g_object_set (priv->tv_stdesc,
-                  "ufo-profiler", profiler,
-                  "command-queue", cmd_queue,
-                  NULL);
+    UfoIrProjector *projector = ufo_ir_method_get_projection_model (UFO_IR_METHOD (processor));
+    gpointer       cmd_queue = ufo_processor_get_command_queue (processor);
+    gpointer       profiler  = ufo_processor_get_profiler (processor);
+ 
+   
+    ufo_ir_method_set_projection_model (priv->df_minimizer, projector);
+    ufo_processor_set_profiler      (UFO_PROCESSOR (priv->df_minimizer), profiler);
+    ufo_processor_set_command_queue (UFO_PROCESSOR (priv->df_minimizer), cmd_queue);
+   
+    ufo_processor_set_profiler      (UFO_PROCESSOR (priv->tv_stdesc), profiler);
+    ufo_processor_set_command_queue (UFO_PROCESSOR (priv->tv_stdesc), cmd_queue);
 
     ufo_processor_setup (UFO_PROCESSOR (priv->df_minimizer), resources, error);
     ufo_processor_setup (UFO_PROCESSOR (priv->tv_stdesc), resources, error);
@@ -269,9 +280,10 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
                                     gpointer  pevent)
 {
     UfoIrAsdPocsMethodPrivate *priv = UFO_IR_ASDPOCS_METHOD_GET_PRIVATE (method);
-    UfoResources     *resources = NULL;
-    UfoIrProjector   *projector = NULL;
-    gpointer         *cmd_queue  = NULL;
+    UfoResources   *resources = ufo_processor_get_resources (UFO_PROCESSOR (method));
+    UfoIrProjector *projector = ufo_ir_method_get_projection_model (UFO_IR_METHOD (method));
+    gpointer       cmd_queue = ufo_processor_get_command_queue (UFO_PROCESSOR (method));
+ 
     guint             max_iterations = 0;
 
     gfloat beta      = 0;
@@ -282,10 +294,7 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
     gfloat r_max     = 0;
 
     g_object_get (method,
-                  "projection-model", &projector,
-                  "command-queue",    &cmd_queue,
-                  "ufo-resources",    &resources,
-                  "max-iterations",   &max_iterations,
+                 "max-iterations",   &max_iterations,
 
                   // method parameters
                   "beta",             &beta,
@@ -324,7 +333,8 @@ ufo_ir_asdpocs_method_process_real (UfoMethod *method,
 
       //
       // impose positive constraint: if x_i < 0 then x_i = 0
-      ufo_op_POSC (x, x, resources, cmd_queue);
+      if (priv->positive_constraint)
+          ufo_op_POSC (x, x, resources, cmd_queue);
 
       //
       // save result as an result
@@ -407,7 +417,7 @@ ufo_ir_asdpocs_method_copy_real (gpointer origin,
     // copy the method that minimizes data fidelity term
     gpointer df_minimizer_copy = ufo_copyable_copy (priv->df_minimizer, NULL);
     if (df_minimizer_copy) {
-      g_object_set (G_OBJECT(copy), "df-minimizer", df_minimizer_copy, NULL);
+      ufo_ir_asdpocs_method_set_minimizer (UFO_IR_ASDPOCS_METHOD (copy), df_minimizer_copy);
     } else {
       g_error ("Error in copying ASD-POCS method: df-minimizer was not copied.");
     }
@@ -421,6 +431,7 @@ ufo_ir_asdpocs_method_copy_real (gpointer origin,
                   "alpha", priv->alpha,
                   "alpha-red", priv->alpha_red,
                   "r-max", priv->r_max,
+                  "positive-constraint", priv->positive_constraint,
                   NULL);
 
     return copy;
@@ -439,14 +450,6 @@ ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
     gobject_class->dispose = ufo_ir_asdpocs_method_dispose;
     gobject_class->set_property = ufo_ir_asdpocs_method_set_property;
     gobject_class->get_property = ufo_ir_asdpocs_method_get_property;
-
-
-    properties[PROP_DF_MINIMIZER] =
-        g_param_spec_object("df-minimizer",
-                            "Pointer to the instance of UfoIrMethod.",
-                            "Pointer to the instance of UfoIrMethod",
-                            UFO_IR_TYPE_METHOD,
-                            G_PARAM_READWRITE);
 
     properties[PROP_BETA] =
         g_param_spec_float("beta",
@@ -489,6 +492,14 @@ ufo_ir_asdpocs_method_class_init (UfoIrAsdPocsMethodClass *klass)
                            "R-max",
                            0.0f, G_MAXFLOAT, 0.95f,
                            G_PARAM_READWRITE);
+
+    properties[PROP_POSITIVE_CONSTRAINT] =
+        g_param_spec_boolean("positive-constraint",
+                             "Impose positive constraint",
+                             "Impose positive constraint",
+                             TRUE,
+                             G_PARAM_READWRITE);
+
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (gobject_class, i, properties[i]);

@@ -19,7 +19,7 @@
 
 #include "ufo-ir-method.h"
 #include "ufo-ir-projector.h"
-#include "ufo-ir-geometry.h"
+#include "ufo-ir-geometry.h" 
 
 /**
 * SECTION:ufo-ir-method
@@ -46,7 +46,6 @@ struct _UfoIrMethodPrivate {
 
 enum {
     PROP_0 = 0,
-    PROP_PROJECTION_MODEL,
     PROP_RELAXATION_FACTOR,
     PROP_MAX_ITERATIONS,
     N_PROPERTIES
@@ -66,6 +65,35 @@ ufo_ir_method_new (void)
     return (UfoMethod *) g_object_new (UFO_IR_TYPE_METHOD, NULL);
 }
 
+
+void
+ufo_ir_method_set_projection_model (UfoIrMethod *method,
+                                    gpointer    projector)
+{
+    if (projector == NULL || !UFO_IR_IS_PROJECTOR (projector))
+        return;
+
+    UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (method);
+    if (priv->projector)
+        g_object_unref (priv->projector);
+    
+    priv->projector = g_object_ref (projector);
+}
+
+
+/**
+ * ufo_ir_method_get_projection_model:
+ * @method: A #UfoIrMethod
+ * 
+ * Returns: A pointer on #UfoIrProjector
+ */
+gpointer
+ufo_ir_method_get_projection_model (UfoIrMethod *method)
+{
+    UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (method);
+    return priv->projector;
+}
+
 static void
 ufo_ir_method_set_property (GObject      *object,
                             guint        property_id,
@@ -74,22 +102,8 @@ ufo_ir_method_set_property (GObject      *object,
 {
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
 
-    GObject *value_object;
-
     switch (property_id) {
-        case PROP_PROJECTION_MODEL:
-            {
-                value_object = g_value_get_object (value);
-
-                if (priv->projector)
-                    g_object_unref (priv->projector);
-
-                if (value_object != NULL) {
-                    priv->projector = g_object_ref (UFO_IR_PROJECTOR (value_object));
-                }
-            }
-            break;
-        case PROP_RELAXATION_FACTOR:
+       case PROP_RELAXATION_FACTOR:
             priv->relaxation_factor = g_value_get_float (value);
             break;
         case PROP_MAX_ITERATIONS:
@@ -110,10 +124,7 @@ ufo_ir_method_get_property (GObject    *object,
     UfoIrMethodPrivate *priv = UFO_IR_METHOD_GET_PRIVATE (object);
 
     switch (property_id) {
-        case PROP_PROJECTION_MODEL:
-            g_value_set_object (value, priv->projector);
-            break;
-        case PROP_RELAXATION_FACTOR:
+       case PROP_RELAXATION_FACTOR:
             g_value_set_float (value, priv->relaxation_factor);
             break;
         case PROP_MAX_ITERATIONS:
@@ -183,7 +194,7 @@ ufo_ir_method_copy_real (gpointer origin,
     UfoIrMethodPrivate * priv = UFO_IR_METHOD_GET_PRIVATE (origin);
     gpointer prj_copy = ufo_copyable_copy (priv->projector, NULL);
     if (prj_copy) {
-        g_object_set (G_OBJECT(copy), "projection-model", prj_copy, NULL);
+        ufo_ir_method_set_projection_model (UFO_IR_METHOD(copy), prj_copy);
         g_object_unref (G_OBJECT(prj_copy));
     }
 
@@ -209,13 +220,6 @@ ufo_ir_method_class_init (UfoIrMethodClass *klass)
     gobject_class->dispose = ufo_ir_method_dispose;
     gobject_class->set_property = ufo_ir_method_set_property;
     gobject_class->get_property = ufo_ir_method_get_property;
-
-    properties[PROP_PROJECTION_MODEL] =
-        g_param_spec_object("projection-model",
-                            "Pointer to the instance of UfoIrProjector.",
-                            "Pointer to the instance of UfoIrProjector.",
-                            UFO_IR_TYPE_PROJECTOR,
-                            G_PARAM_READWRITE);
 
     properties[PROP_RELAXATION_FACTOR] =
         g_param_spec_float("relaxation-factor",
