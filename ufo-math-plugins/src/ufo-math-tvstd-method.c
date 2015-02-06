@@ -153,16 +153,11 @@ ufo_math_tvstd_method_process_real (UfoMethod *method,
                                     gpointer  pevent)
 {
     UfoMathTvStdMethodPrivate *priv = UFO_MATH_TVSTD_METHOD_GET_PRIVATE (method);
-    UfoResources *resources = NULL;
-    UfoProfiler  *profiler = NULL;
-    gpointer     *cmd_queue = NULL;
     gpointer     kernel = priv->kernel;
-    g_object_get (method,
-                  "command-queue", &cmd_queue,
-                  "ufo-resources", &resources,
-                  "ufo-profiler", &profiler,
-                  NULL);
 
+    UfoResources *resources = ufo_processor_get_resources (UFO_PROCESSOR (method));
+    gpointer cmd_queue = ufo_processor_get_command_queue (UFO_PROCESSOR (method));
+    gpointer profiler  = ufo_processor_get_profiler (UFO_PROCESSOR (method)); 
     if (priv->grad) {
         UfoRequisition requisition;
         ufo_buffer_get_requisition (input, &requisition);
