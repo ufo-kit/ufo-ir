@@ -207,7 +207,7 @@ ufo_ir_cl_projector_BP_ROI_real (UfoIrProjector         *projector,
 {
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
     cl_kernel kernel = priv->bp_kernel;
-    cl_command_queue cmd_queue = ufo_procesor_get_command_queue (UFO_PROCESSOR (projector));
+    cl_command_queue cmd_queue = ufo_processor_get_command_queue (UFO_PROCESSOR (projector));
     UfoProfiler *profiler = ufo_processor_get_profiler (UFO_PROCESSOR (projector));
 
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
@@ -245,7 +245,7 @@ ufo_ir_cl_projector_configure_real (UfoProcessor *projector)
     UFO_PROCESSOR_CLASS (ufo_ir_cl_projector_parent_class)->configure (projector);
     UfoIrClProjectorPrivate *priv = UFO_IR_CL_PROJECTOR_GET_PRIVATE (projector);
 
-    UfoIrGeometry *geometry = ufo_ir_projector_get_geometry (projector);
+    UfoIrGeometry *geometry = ufo_ir_projector_get_geometry (UFO_IR_PROJECTOR(projector));
 
     cl_mem d_sin_vals = ufo_ir_geometry_scan_angles_device (geometry, SIN_VALUES);
     cl_mem d_cos_vals = ufo_ir_geometry_scan_angles_device (geometry, COS_VALUES);
