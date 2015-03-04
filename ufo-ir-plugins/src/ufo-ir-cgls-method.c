@@ -23,23 +23,49 @@
 #include <CL/cl.h>
 #endif
 
-#include "ufo-ir-sirt-method.h"
+#include "ufo-ir-cgls-method.h"
 #include <math.h>
 #include <ufo/ufo.h>
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (UfoIrSirtMethod, ufo_ir_sirt_method, UFO_IR_TYPE_METHOD,
+G_DEFINE_TYPE_WITH_CODE (UfoIrCglsMethod, ufo_ir_cgls_method, UFO_IR_TYPE_METHOD,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
                                                 ufo_method_interface_init)
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_COPYABLE,
                                                 ufo_copyable_interface_init))
 
 GQuark
-ufo_ir_sirt_method_error_quark (void)
+ufo_ir_cgls_method_error_quark (void)
 {
-    return g_quark_from_static_string ("ufo-ir-sirt-method-error-quark");
+    return g_quark_from_static_string ("ufo-ir-cgls-method-error-quark");
+}
+
+static gfloat
+l2_norm(UfoBuffer *arg,
+        UfoResources *resources,
+        gpointer command_queue)
+{
+    UfoRequisition arg_requisition;
+    ufo_buffer_get_requisition (arg, &arg_requisition);
+
+    gfloat *values = ufo_buffer_get_host_array (arg, command_queue);
+
+    guint length = 0;
+    for(guint dimension = 0; dimension < arg_requisition.n_dims; dimension++)
+    {
+        length += (guint)arg_requisition.dims[dimension];
+    }
+
+    gfloat norm = 0;
+    for (guint i = 0; i < length; ++i)
+    {
+        norm += powf (values[i], 2);
+    }
+
+    norm = sqrtf(norm);
+    return norm;
 }
 
 static UfoIrProjectionsSubset *
@@ -82,18 +108,18 @@ generate_subsets (UfoIrGeometry *geometry, guint *n_subsets)
 }
 
 UfoIrMethod *
-ufo_ir_sirt_method_new (void)
+ufo_ir_cgls_method_new (void)
 {
-    return UFO_IR_METHOD (g_object_new (UFO_IR_TYPE_SIRT_METHOD, NULL));
+    return UFO_IR_METHOD (g_object_new (UFO_IR_TYPE_CGLS_METHOD, NULL));
 }
 
 static void
-ufo_ir_sirt_method_init (UfoIrSirtMethod *self)
+ufo_ir_cgls_method_init (UfoIrCglsMethod *self)
 {
 }
 
 static gboolean
-ufo_ir_sirt_method_process_real (UfoMethod *method,
+ufo_ir_cgls_method_process_real (UfoMethod *method,
                                  UfoBuffer *input,
                                  UfoBuffer *output,
                                  gpointer  pevent)
@@ -101,81 +127,98 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
     UfoResources   *resources = NULL;
     UfoIrProjector *projector = NULL;
     gpointer       *cmd_queue = NULL;
-    gfloat         relaxation_factor = 0;
+    gfloat         shift = 0;
     guint          max_iterations = 0;
     g_object_get (method,
                   "ufo-resources",     &resources,
                   "command-queue",     &cmd_queue,
                   "projection-model",  &projector,
-                  "relaxation-factor", &relaxation_factor,
                   "max-iterations",    &max_iterations,
                   NULL);
 
     UfoIrGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
 
-    UfoBuffer *sino_tmp   = ufo_buffer_dup (input);
-    UfoBuffer *volume_tmp = ufo_buffer_dup (output);
-
-    UfoBuffer *pixel_weights = ufo_buffer_dup (output);
-    UfoBuffer *ray_weights   = ufo_buffer_dup (input);
-
     guint n_subsets = 0;
     UfoIrProjectionsSubset *subset = generate_subsets (geometry, &n_subsets);
 
-    //
-    // calculate the weighting coefficients
-    ufo_op_set (volume_tmp,  1.0f, resources, cmd_queue);
-    ufo_op_set (ray_weights, 0.0f, resources, cmd_queue);
-    for (guint i = 0 ; i < n_subsets; ++i) {
-        ufo_ir_projector_FP (projector,
-                             volume_tmp,
-                             ray_weights,
-                             &subset[i],
-                             1.0f, NULL);
+    // x = zeros(n, 1)
+    ufo_op_set(output, 0.0f, resources, cmd_queue);
+
+    // r = b - A * x
+    UfoBuffer *r = ufo_buffer_dup(input);
+    ufo_buffer_copy(input, r);
+    for (guint i = 0 ; i < n_subsets; i++)
+    {
+        ufo_ir_projector_FP (projector, output, r, &subset[i], -1.0f,NULL);
     }
-    ufo_op_inv (ray_weights, resources, cmd_queue);
 
-    ufo_op_set (sino_tmp,      1.0f, resources, cmd_queue);
-    ufo_op_set (pixel_weights, 0.0f, resources, cmd_queue);
-    for (guint i = 0 ; i < n_subsets; ++i) {
-        ufo_ir_projector_BP (projector,
-                             pixel_weights,
-                             sino_tmp,
-                             &subset[i],
-                             1.0f, NULL);
+    // s = A' * r - shift * x
+    UfoBuffer *s = ufo_buffer_dup(output);
+    UfoBuffer *tempBp = ufo_buffer_dup(output); // tempBp will be used in main loop too
+    ufo_op_set(tempBp, 0.0f, resources, cmd_queue);
+    ufo_op_set(s, 0.0f, resources, cmd_queue);
+    for (guint i = 0 ; i < n_subsets; i++)
+    {
+        ufo_ir_projector_BP (projector, tempBp, r, &subset[i], 1.0f, NULL);
     }
-    ufo_op_inv (pixel_weights, resources, cmd_queue);
+    ufo_op_add2(tempBp, output, -1.0f * shift, s, resources, cmd_queue);
 
-    //
-    // do SIRT
-    guint iteration = 0;
-    while (iteration < max_iterations) {
-        ufo_buffer_copy (input, sino_tmp);
+    // Initialize
 
-        for (guint i = 0 ; i < n_subsets; i++) {
-            ufo_ir_projector_FP (projector,
-                                 output,
-                                 sino_tmp,
-                                 &subset[i],
-                                 -1.0f,
-                                 NULL);
+    // p = s
+    UfoBuffer * p = ufo_buffer_dup(s);
+    ufo_buffer_copy(s, p);
+
+    // norms0 = norm(s)
+    gfloat norms0 = l2_norm(s, resources, cmd_queue);
+
+    // gamma = normso^2
+    gfloat gamma = norms0 * norms0;
+
+    // Main loop
+    for(guint iterationNum = 0; iterationNum < max_iterations; ++iterationNum)
+    {
+        // q = A * p
+        UfoBuffer *q = ufo_buffer_dup(output);
+        ufo_op_set(q, 0.0f, resources, cmd_queue);
+        for (guint i = 0 ; i < n_subsets; i++)
+        {
+            ufo_ir_projector_FP (projector, p, q, &subset[i], 1.0f,NULL);
         }
 
-        ufo_op_mul (sino_tmp, ray_weights, sino_tmp, resources, cmd_queue);
-        ufo_op_set (volume_tmp, 0, resources, cmd_queue);
-
-        for (guint i = 0 ; i < n_subsets; i++) {
-            ufo_ir_projector_BP (projector,
-                                 volume_tmp,
-                                 sino_tmp,
-                                 &subset[i],
-                                 relaxation_factor,
-                                 NULL);
+        // delta = norm(q)^2 + shift * norm(p) ^ 2
+        gfloat normq = l2_norm(q, resources, cmd_queue);
+        gfloat normp = l2_norm(p, resources, cmd_queue);
+        gfloat delta = normq * normq + shift * normp * normp;
+        if(delta == 0)
+        {
+            delta = 1E-06;
         }
-        ufo_op_mul (volume_tmp, pixel_weights, volume_tmp, resources, cmd_queue);
-        ufo_op_add (volume_tmp, output, output, resources, cmd_queue);
-        iteration++;
+
+        // alpha = gamma / delta
+        gfloat alpha = gamma / delta;
+
+        // x = x + alpha * p;
+        ufo_op_add2(output, p, alpha, output, resources, cmd_queue);
+
+        // r = r - alpha * q
+        ufo_op_add2(r, q, -1.0f * alpha, r, resources, cmd_queue);
+
+        // s = A' * r - shift * x;
+        ufo_op_set(tempBp, 0.0f, resources, cmd_queue);
+        ufo_op_set(s, 0.0f, resources, cmd_queue);
+        for (guint i = 0 ; i < n_subsets; i++)
+        {
+            ufo_ir_projector_BP (projector, tempBp, r, &subset[i],1.0f,NULL);
+        }
+        ufo_op_add2(tempBp, output, -1.0f * shift, s, resources, cmd_queue);
+
+        gfloat norms = l2_norm(s, resources, cmd_queue);
+        gfloat gamma1 = gamma;
+        gamma = norms * norms;
+        gfloat beta = gamma / gamma1;
+        ufo_op_add2(s, p, beta, p, resources, cmd_queue);
     }
 
     return TRUE;
@@ -184,18 +227,18 @@ ufo_ir_sirt_method_process_real (UfoMethod *method,
 static void
 ufo_method_interface_init (UfoMethodIface *iface)
 {
-    iface->process = ufo_ir_sirt_method_process_real;
+    iface->process = ufo_ir_cgls_method_process_real;
 }
 
 static UfoCopyable *
-ufo_ir_sirt_method_copy_real (gpointer origin,
+ufo_ir_cgls_method_copy_real (gpointer origin,
                               gpointer _copy)
 {
     UfoCopyable *copy;
     if (_copy)
         copy = UFO_COPYABLE(_copy);
     else
-        copy = UFO_COPYABLE (ufo_ir_sirt_method_new());
+        copy = UFO_COPYABLE (ufo_ir_cgls_method_new());
 
     return copy;
 }
@@ -203,10 +246,10 @@ ufo_ir_sirt_method_copy_real (gpointer origin,
 static void
 ufo_copyable_interface_init (UfoCopyableIface *iface)
 {
-    iface->copy = ufo_ir_sirt_method_copy_real;
+    iface->copy = ufo_ir_cgls_method_copy_real;
 }
 
 static void
-ufo_ir_sirt_method_class_init (UfoIrSirtMethodClass *klass)
+ufo_ir_cgls_method_class_init (UfoIrCglsMethodClass *klass)
 {
 }
