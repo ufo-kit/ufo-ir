@@ -43,7 +43,7 @@ ufo_ir_cgls_method_error_quark (void)
 }
 
 static gfloat
-l2_norm(UfoBuffer *arg,
+l2_norm2(UfoBuffer *arg,
         UfoResources *resources,
         gpointer command_queue)
 {
@@ -52,19 +52,27 @@ l2_norm(UfoBuffer *arg,
 
     gfloat *values = ufo_buffer_get_host_array (arg, command_queue);
 
-    guint length = 0;
+    guint length = 1;
     for(guint dimension = 0; dimension < arg_requisition.n_dims; dimension++)
     {
-        length += (guint)arg_requisition.dims[dimension];
+        length *= (guint)arg_requisition.dims[dimension];
     }
+
+    guint partsCnt = (guint)arg_requisition.dims[arg_requisition.n_dims -1];
+    guint partLen = length / partsCnt;
 
     gfloat norm = 0;
-    for (guint i = 0; i < length; ++i)
+    for(guint partNum = 0; partNum < partsCnt; partNum++)
     {
-        norm += powf (values[i], 2);
+        gfloat partNorm = 0;
+        for(guint i = 0; i < partLen; i++)
+        {
+            guint index = partNum * i;
+            partNorm += values[index] * values[index];
+        }
+        norm += partNorm;
     }
 
-    norm = sqrtf(norm);
     return norm;
 }
 
@@ -177,10 +185,8 @@ ufo_ir_cgls_method_process_real (UfoMethod *method,
     ufo_buffer_copy(s, p);
 
     // norms0 = norm(s)
-    gfloat norms0 = l2_norm(s, resources, cmd_queue);
-
-    // gamma = normso^2
-    gfloat gamma = norms0 * norms0;
+    // gamma = norms0^2
+    gfloat gamma = l2_norm2(s, resources, cmd_queue);
 
     // Main loop
     for(guint iterationNum = 0; iterationNum < max_iterations; ++iterationNum)
@@ -194,9 +200,7 @@ ufo_ir_cgls_method_process_real (UfoMethod *method,
         }
 
         // delta = norm(q)^2 + shift * norm(p) ^ 2
-        gfloat normq = l2_norm(q, resources, cmd_queue);
-        gfloat normp = l2_norm(p, resources, cmd_queue);
-        gfloat delta = normq * normq + shift * normp * normp;
+        gfloat delta = l2_norm2(q, resources, cmd_queue); + shift * l2_norm2(p, resources, cmd_queue);
         if(delta == 0)
         {
             delta = 1E-06;
@@ -220,10 +224,9 @@ ufo_ir_cgls_method_process_real (UfoMethod *method,
         }
         ufo_op_add2(tempBp, x, -1.0f * shift, s, resources, cmd_queue);
 
-        gfloat norms = l2_norm(s, resources, cmd_queue);
-        gfloat gamma1 = gamma;
-        gamma = norms * norms;
-        gfloat beta = gamma / gamma1;
+        gfloat beta = 1.0f / gamma;
+        gamma = l2_norm2(s, resources, cmd_queue);
+        beta *= gamma;
         ufo_op_add2(s, p, beta, p, resources, cmd_queue);
     }
 
