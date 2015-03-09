@@ -37,9 +37,11 @@ GQuark ufo_ir_sbtv_method_error_quark (void);
 
 typedef struct _UfoIrSbtvMethod         UfoIrSbtvMethod;
 typedef struct _UfoIrSbtvMethodClass    UfoIrSbtvMethodClass;
+typedef struct _UfoIrSbtvMethodPrivate  UfoIrSbtvMethodPrivate;
 
 struct _UfoIrSbtvMethod {
     UfoIrMethod parent_instance;
+    UfoIrSbtvMethodPrivate *priv;
 };
 
 struct _UfoIrSbtvMethodClass {
@@ -48,5 +50,6 @@ struct _UfoIrSbtvMethodClass {
 
 UfoIrMethod *    ufo_ir_sbtv_method_new      (void);
 GType            ufo_ir_sbtv_method_get_type (void);
+
 G_END_DECLS
 #endif
