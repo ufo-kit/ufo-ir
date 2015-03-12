@@ -15,7 +15,7 @@ void Dx(
 __kernel
 void Dxt(
     __global float *input, 
-    int stopInd,
+    __const int stopInd,
     __global float *output
     )
 {
@@ -30,7 +30,7 @@ void Dxt(
 __kernel
 void Dy(
     __global float *input, 
-    int lastOffset, 
+    __const int lastOffset, 
     __global float *output
     )
 {
@@ -45,8 +45,8 @@ void Dy(
 __kernel
 void Dyt(
     __global float *input, 
-    int lastOffset, 
-    int stopInd, 
+    __const int lastOffset, 
+    __const int stopInd, 
     __global float *output
     )
 {
