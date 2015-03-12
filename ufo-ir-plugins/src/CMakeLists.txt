@@ -6,6 +6,8 @@ set(ufoirplugins_SRCS
     ufo-ir-cl-projector.c
     ufo-ir-sart-method.c
     ufo-ir-sirt-method.c
+    ufo-ir-cgls-method.c
+    ufo-ir-sbtv-method.c
     ufo-ir-asdpocs-method.c
 )
 
