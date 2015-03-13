@@ -50,11 +50,11 @@ static gpointer dyt_op (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, 
 static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output, gpointer command_queue, void (*operation)(const float *, const float *, float *));
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
-                UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoMethod *method,
+                UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoBuffer *pixel_weights, UfoBuffer *ray_weights, UfoMethod *method,
                 UfoResources *resources, gpointer *cmd_queue);
 
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
-                     UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
+                     UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
                      UfoResources *resources, gpointer *cmd_queue);
 
 
@@ -193,16 +193,71 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
     // Rename
     UfoBuffer *f = input;
 
+    UfoBuffer *sino_tmp   = ufo_buffer_dup (input);
+    UfoBuffer *volume_tmp = ufo_buffer_dup (output);
+    UfoBuffer *pixel_weights = ufo_buffer_dup (output);
+    UfoBuffer *ray_weights   = ufo_buffer_dup (input);
+
+    //
+    // calculate the weighting coefficients
+    ufo_op_set (volume_tmp,  1.0f, resources, cmd_queue);
+    ufo_op_set (ray_weights, 0.0f, resources, cmd_queue);
+    for (guint i = 0 ; i < n_subsets; ++i) {
+        ufo_ir_projector_FP (projector,
+                             volume_tmp,
+                             ray_weights,
+                             &subsets[i],
+                             1.0f, NULL);
+    }
+    ufo_op_inv (ray_weights, resources, cmd_queue);
+
+    ufo_op_set (sino_tmp,      1.0f, resources, cmd_queue);
+    ufo_op_set (pixel_weights, 0.0f, resources, cmd_queue);
+
+    for (guint i = 0 ; i < n_subsets; ++i) {
+        ufo_ir_projector_BP (projector,
+                             pixel_weights,
+                             sino_tmp,
+                             &subsets[i],
+                             1.0f, NULL);
+    }
+    ufo_op_inv (pixel_weights, resources, cmd_queue);
+
+
+
+
     // precompute At(f)
     UfoBuffer *fbp = ufo_buffer_dup(output);
+    UfoBuffer *tempfbp = ufo_buffer_dup(output);
     ufo_op_set(fbp, 0.0f, resources, cmd_queue);
-    for (guint i = 0 ; i < n_subsets; i++)
+    ufo_op_set(tempfbp, 0.0f, resources, cmd_queue);
+
+    for(int j =1;j<1000;j++)
     {
-        ufo_ir_projector_BP (projector, fbp, f, &subsets[i], 1.0f,NULL);
+        ufo_buffer_copy(f, sino_tmp);
+
+        for (guint i = 0 ; i < n_subsets; i++)
+        {
+            ufo_ir_projector_FP (projector, fbp, sino_tmp, &subsets[i], -1.0f,NULL);
+        }
+        ufo_op_mul (sino_tmp, ray_weights, sino_tmp, resources, cmd_queue);
+
+        ufo_op_set(tempfbp, 0.0f, resources, cmd_queue);
+        for (guint i = 0 ; i < n_subsets; i++)
+        {
+            ufo_ir_projector_BP (projector, tempfbp, sino_tmp, &subsets[i], 1.0f,NULL);
+        }
+        ufo_op_mul (tempfbp, pixel_weights, tempfbp, resources, cmd_queue);
+
+        ufo_op_add(tempfbp, fbp, fbp, resources, cmd_queue);
+
+
+
+
     }
 
     // u = At(f)
-    UfoBuffer *u = ufo_buffer_dup(fbp);
+    UfoBuffer *u = output;
     ufo_buffer_copy(fbp, u);
 
     UfoBuffer *up = ufo_buffer_dup(fbp);
@@ -246,7 +301,7 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
 
 
     // fbp = fbp * mu
-    mult(fbp, MU, cmd_queue);
+    //mult(fbp, MU, cmd_queue);
 
     gfloat dLambda = 1 / LAMBDA;
 
@@ -257,11 +312,11 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
         ufo_buffer_copy(u, up);
 
         // tmpx = DXT(dx - bx);
-        ufo_op_add2(dx, bx, -1.0f, tmpDifx, resources, cmd_queue);
+        ufo_op_deduction(dx, bx, tmpDifx, resources, cmd_queue);
         dxt_op(method, tmpDifx, tmpx, cmd_queue);
 
         // tmpx = DYT(dy - by);
-        ufo_op_add2(dy, by, -1.0f, tmpDify, resources, cmd_queue);
+        ufo_op_deduction(dy, by, tmpDify, resources, cmd_queue);
         dyt_op(method, tmpDify, tmpy, cmd_queue);
 
         // b = mu * At(f) + lambda * (tmpx + tmpy)
@@ -269,9 +324,19 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
         mult(b, LAMBDA, cmd_queue);
         ufo_op_add(fbp, b, b, resources, cmd_queue);
 
-        cgs(b, u, up, 30, f, projector, subsets, n_subsets, method, resources, cmd_queue);
+//        if(iterationNum == 0)
+//        {
+//            ufo_buffer_copy(fbp, output);
+//            return;
+//        }
+        cgs(b, u, up, 30, f, projector, subsets, n_subsets, pixel_weights, ray_weights, method, resources, cmd_queue);
+
+        return;
+
 
         dx_op(method, u, tmpx, cmd_queue);
+
+
         ufo_op_add(tmpx, bx, tmpx, resources, cmd_queue);
         elementsMult(tmpx, tmpx, tempDub, cmd_queue);
 
@@ -454,6 +519,7 @@ static void mult(UfoBuffer *buffer, gfloat mult, gpointer command_queue)
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
                 UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
+                UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
                 UfoMethod *method, UfoResources *resources, gpointer *cmd_queue)
 {
     gfloat tol = 1E-06;
@@ -473,11 +539,14 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
     // r = b - A * x
     UfoBuffer *r = ufo_buffer_dup(b);
-    ufo_buffer_copy(b, r);
-    for (guint i = 0 ; i < subsetsCnt; i++)
-    {
-        ufo_ir_projector_FP (projector, x, r, &subsets[i], -1.0f,NULL);
-    }
+
+    processA(method, x, r, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
+
+
+    ufo_buffer_copy(r,x);
+    return;
+
+    ufo_op_deduction(b, r, r, resources,cmd_queue);
 
     gfloat normr = l2_norm(r, cmd_queue);
     gfloat normAct = normr;
@@ -516,6 +585,7 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
     UfoBuffer *qh = ufo_buffer_dup(u);
     guint maxstagsteps = 3;
     guint iterationNum;
+
     for(iterationNum = 0; iterationNum < maxIter; ++iterationNum)
     {
         gfloat rho1 = rho;
@@ -547,7 +617,7 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
         ufo_buffer_copy(p, ph);
 
-        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
+        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
 
         gfloat rtvh = dotProduct(rt, vh, cmd_queue);
         gfloat alpha = 0;
@@ -583,7 +653,7 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
         ufo_op_add2(x, uh, alpha, x, resources, cmd_queue);
 
-        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
+        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
 
         ufo_op_add2(r, qh, -alpha, r, resources, cmd_queue);
         normr = l2_norm(r, cmd_queue);
@@ -608,42 +678,76 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
 }
 
+void dummyCopy(const float *in1, const float *in2, float *out)
+{
+    *out = *in1;
+}
+
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
                      UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
+                     UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
                      UfoResources *resources, gpointer *cmd_queue)
 {
     ufo_op_set(out, 0.0f, resources, cmd_queue);
-
     // mu * At(A(z))
     UfoBuffer *tempA = ufo_buffer_dup(sino);
     ufo_op_set(tempA, 0.0f, resources, cmd_queue);
-
     UfoBuffer *tempAt = ufo_buffer_dup(in);
     ufo_op_set(tempAt, 0.0f, resources, cmd_queue);
 
     for (guint i = 0 ; i < subsetsCnt; i++)
     {
-        ufo_ir_projector_FP (projector, in, tempA, &subsets[i], -1.0f,NULL);
+        ufo_ir_projector_FP (projector, in, tempA, &subsets[i], 1.0f,NULL);
     }
-    for (guint i = 0 ; i < subsetsCnt; i++)
+    ufo_op_mul (tempA, ray_weights, tempA, resources, cmd_queue);
+//    for (guint i = 0 ; i < subsetsCnt; i++)
+//    {
+//        ufo_ir_projector_BP (projector, tempAt, tempA, &subsets[i], 1.0f,NULL);
+//    }
+//    ufo_op_mul (tempAt, pixel_weights, tempAt, resources, cmd_queue);
+
+    UfoBuffer *temp_sino = ufo_buffer_dup(sino);
+    UfoBuffer *temp_img = ufo_buffer_dup(in);
+    ufo_buffer_copy(tempA, temp_sino);
+    ufo_op_set(temp_img, 0.0, resources, cmd_queue);
+
+    for(int i=0;i<1000;i++)
     {
-        ufo_ir_projector_BP (projector, tempAt, tempA, &subsets[i], -1.0f,NULL);
+        ufo_buffer_copy(tempA, temp_sino);
+
+        for (guint i = 0 ; i < subsetsCnt; i++)
+        {
+            ufo_ir_projector_FP (projector, tempAt, temp_sino, &subsets[i], -1.0f,NULL);
+        }
+        ufo_op_mul (temp_sino, ray_weights, temp_sino, resources, cmd_queue);
+
+        ufo_op_set(temp_img, 0.0, resources, cmd_queue);
+
+        for (guint i = 0 ; i < subsetsCnt; i++)
+        {
+            ufo_ir_projector_BP (projector, temp_img, temp_sino, &subsets[i], 0.25f,NULL);
+        }
+        ufo_op_mul (temp_img, pixel_weights, temp_img, resources, cmd_queue);
+
+        ufo_op_add(temp_img, tempAt, tempAt, resources, cmd_queue);
     }
+
+ufo_buffer_copy(tempAt, out);
+return;
 
     mult(tempAt, MU, cmd_queue);
-
     // DYT(DY(z))
     UfoBuffer *tempD = ufo_buffer_dup(in);
     dy_op(method, in, tempD, cmd_queue);
     dyt_op(method, tempD, out, cmd_queue);
-
     // DXT(DX(z))
     dx_op(method, in, tempD, cmd_queue);
     UfoBuffer *tempDxt = ufo_buffer_dup(in);
     dxt_op(method, tempD, tempDxt, cmd_queue);
-
     ufo_op_add(out, tempDxt, out, resources, cmd_queue); // DYT + DXT
+
     mult(out, LAMBDA, cmd_queue);
+
     ufo_op_add(out, tempAt, out, resources, cmd_queue);
 
     g_object_unref(tempA);
@@ -823,7 +927,7 @@ static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output
     if(arg1_requisition.n_dims != arg2_requisition.n_dims)
     {
         g_print("Buffers are not equal\n");
-        return;
+        //return;
     }
 
     if(length1 == length2)
@@ -832,7 +936,7 @@ static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output
     }
     else
     {
-        g_print("Buffers are not equal\n");
+        //g_print("Buffers are not equal\n");
         return;
     }
 
