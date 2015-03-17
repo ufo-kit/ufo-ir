@@ -34,6 +34,7 @@
 
 static void ufo_method_interface_init (UfoMethodIface *iface);
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
+static gboolean ufo_ir_sbtv_method_process_real (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer  pevent);
 
 static void mult(UfoBuffer *buffer, gfloat mult, gpointer command_queue);
 static gfloat l2_norm(UfoBuffer *arg, gpointer command_queue);
@@ -50,11 +51,11 @@ static gpointer dyt_op (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, 
 static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output, gpointer command_queue, void (*operation)(const float *, const float *, float *));
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
-                UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoBuffer *pixel_weights, UfoBuffer *ray_weights, UfoMethod *method,
+                UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoMethod *method,
                 UfoResources *resources, gpointer *cmd_queue);
 
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
-                     UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
+                     UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
                      UfoResources *resources, gpointer *cmd_queue);
 
 
@@ -166,12 +167,49 @@ ufo_ir_sbtv_method_init (UfoIrSbtvMethod *self)
 {
 }
 
+
+static void
+ufo_method_interface_init (UfoMethodIface *iface)
+{
+    iface->process = ufo_ir_sbtv_method_process_real;
+}
+
+static UfoCopyable *
+ufo_ir_sbtv_method_copy_real (gpointer origin,
+                              gpointer _copy)
+{
+    UfoCopyable *copy;
+    if (_copy)
+        copy = UFO_COPYABLE(_copy);
+    else
+        copy = UFO_COPYABLE (ufo_ir_sbtv_method_new());
+
+    return copy;
+}
+
+static void
+ufo_copyable_interface_init (UfoCopyableIface *iface)
+{
+    iface->copy = ufo_ir_sbtv_method_copy_real;
+}
+
+static void
+ufo_ir_sbtv_method_class_init (UfoIrSbtvMethodClass *klass)
+{
+    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_sbtv_method_setup_real;
+    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+    g_type_class_add_private (gobject_class, sizeof(UfoIrSbtvMethodPrivate));
+}
+
+
 static gboolean
 ufo_ir_sbtv_method_process_real (UfoMethod *method,
                                  UfoBuffer *input,
                                  UfoBuffer *output,
                                  gpointer  pevent)
 {
+    UfoPluginManager *manager = ufo_plugin_manager_new ();
+
     UfoResources   *resources = NULL;
     UfoIrProjector *projector = NULL;
     gpointer       *cmd_queue = NULL;
@@ -184,76 +222,89 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
                   "max-iterations",    &max_iterations,
                   NULL);
 
+    // Load and setup UFO tasks
+    UfoBuffer *inputs[1]; // temp arrey for invocing get_requisition method
+    GError *error = NULL;
+
+    // Creating FFT task
+    UfoTask *fft = UFO_TASK(ufo_plugin_manager_get_task (manager, "fft", NULL));
+    UfoNode *node = ufo_task_node_get_proc_node(method);
+    ufo_task_node_set_proc_node(fft, node);
+    ufo_task_setup(fft, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV fft setup: %s\n", error->message);
+        return 1;
+    }
+    g_object_set(fft,
+                 "dimensions", 1,
+                 "command-queue", &cmd_queue,
+                 NULL);
+    inputs[0] = input;
+    UfoRequisition sinoFftReq;
+    ufo_task_get_requisition(fft, inputs, &sinoFftReq); // Get requisition of fft output
+    UfoBuffer *sinoFftTempBuffer = ufo_buffer_new(&sinoFftReq, ufo_resources_get_context(resources)); // Creating temp buffer for FFT result
+
+    // Creating filter task
+    UfoTask *filter = UFO_TASK(ufo_plugin_manager_get_task (manager, "filter", NULL));
+    g_object_set(filter,
+                 "command-queue", &cmd_queue,
+                 NULL);
+    ufo_task_setup(filter, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV filter setup: %s\n", error->message);
+        return 1;
+    }
+    inputs[0] = sinoFftTempBuffer;
+    UfoRequisition filteredSinoReq;
+    ufo_task_get_requisition(filter, inputs, &filteredSinoReq); // Requisition for filter result
+    UfoBuffer *filteredSinoTempBuffer = ufo_buffer_new(&filteredSinoReq, ufo_resources_get_context(resources)); // temp array for filter result
+
+    // Creating IFFT
+    UfoTask *ifft = UFO_TASK(ufo_plugin_manager_get_task (manager, "ifft", NULL));
+    ufo_task_setup(ifft, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV ifft setup: %s\n", error->message);
+        return 1;
+    }
+    g_object_set(ifft,
+                 "dimensions", 1,
+                 "command-queue", &cmd_queue,
+                 NULL);
+    inputs[0] = filteredSinoTempBuffer;
+    UfoRequisition sinoIfftReq;
+    ufo_task_get_requisition(fft, inputs, &sinoIfftReq); // Get requisition of fft output
+    UfoBuffer *sinoIfftTempBuffer = ufo_buffer_new(&sinoIfftReq, ufo_resources_get_context(resources)); // Creating temp buffer for FFT result
+    // --Load and setup UFO tasks--
+
+
     UfoIrGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
 
     guint n_subsets = 0;
     UfoIrProjectionsSubset *subsets = generate_subsets (geometry, &n_subsets);
 
-    // Rename
-    UfoBuffer *f = input;
+    UfoBuffer *f = ufo_buffer_dup(input);
+    ufo_buffer_copy(input, f);
 
-    UfoBuffer *sino_tmp   = ufo_buffer_dup (input);
-    UfoBuffer *volume_tmp = ufo_buffer_dup (output);
-    UfoBuffer *pixel_weights = ufo_buffer_dup (output);
-    UfoBuffer *ray_weights   = ufo_buffer_dup (input);
+    inputs[1] = f;
+    ufo_task_process(fft, inputs, sinoFftTempBuffer, &sinoFftReq);
 
-    //
-    // calculate the weighting coefficients
-    ufo_op_set (volume_tmp,  1.0f, resources, cmd_queue);
-    ufo_op_set (ray_weights, 0.0f, resources, cmd_queue);
-    for (guint i = 0 ; i < n_subsets; ++i) {
-        ufo_ir_projector_FP (projector,
-                             volume_tmp,
-                             ray_weights,
-                             &subsets[i],
-                             1.0f, NULL);
-    }
-    ufo_op_inv (ray_weights, resources, cmd_queue);
+    inputs[1] = sinoFftTempBuffer;
+    ufo_task_process(filter, inputs, filteredSinoTempBuffer, &filteredSinoReq);
 
-    ufo_op_set (sino_tmp,      1.0f, resources, cmd_queue);
-    ufo_op_set (pixel_weights, 0.0f, resources, cmd_queue);
-
-    for (guint i = 0 ; i < n_subsets; ++i) {
-        ufo_ir_projector_BP (projector,
-                             pixel_weights,
-                             sino_tmp,
-                             &subsets[i],
-                             1.0f, NULL);
-    }
-    ufo_op_inv (pixel_weights, resources, cmd_queue);
-
-
+    inputs[1] = filteredSinoTempBuffer;
+    ufo_task_process(ifft, inputs, f, &sinoIfftReq);
 
 
     // precompute At(f)
     UfoBuffer *fbp = ufo_buffer_dup(output);
-    UfoBuffer *tempfbp = ufo_buffer_dup(output);
     ufo_op_set(fbp, 0.0f, resources, cmd_queue);
-    ufo_op_set(tempfbp, 0.0f, resources, cmd_queue);
-
-    for(int j =1;j<1000;j++)
+    for (guint i = 0 ; i < n_subsets; i++)
     {
-        ufo_buffer_copy(f, sino_tmp);
-
-        for (guint i = 0 ; i < n_subsets; i++)
-        {
-            ufo_ir_projector_FP (projector, fbp, sino_tmp, &subsets[i], -1.0f,NULL);
-        }
-        ufo_op_mul (sino_tmp, ray_weights, sino_tmp, resources, cmd_queue);
-
-        ufo_op_set(tempfbp, 0.0f, resources, cmd_queue);
-        for (guint i = 0 ; i < n_subsets; i++)
-        {
-            ufo_ir_projector_BP (projector, tempfbp, sino_tmp, &subsets[i], 1.0f,NULL);
-        }
-        ufo_op_mul (tempfbp, pixel_weights, tempfbp, resources, cmd_queue);
-
-        ufo_op_add(tempfbp, fbp, fbp, resources, cmd_queue);
-
-
-
-
+        ufo_ir_projector_BP (projector, fbp, f, &subsets[i], 1.0f,NULL);
     }
 
     // u = At(f)
@@ -324,14 +375,7 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
         mult(b, LAMBDA, cmd_queue);
         ufo_op_add(fbp, b, b, resources, cmd_queue);
 
-//        if(iterationNum == 0)
-//        {
-//            ufo_buffer_copy(fbp, output);
-//            return;
-//        }
-        cgs(b, u, up, 30, f, projector, subsets, n_subsets, pixel_weights, ray_weights, method, resources, cmd_queue);
-
-        return;
+        cgs(b, u, up, 30, f, projector, subsets, n_subsets, method, resources, cmd_queue);
 
 
         dx_op(method, u, tmpx, cmd_queue);
@@ -367,41 +411,6 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
 
     return TRUE;
 }
-
-static void
-ufo_method_interface_init (UfoMethodIface *iface)
-{
-    iface->process = ufo_ir_sbtv_method_process_real;
-}
-
-static UfoCopyable *
-ufo_ir_sbtv_method_copy_real (gpointer origin,
-                              gpointer _copy)
-{
-    UfoCopyable *copy;
-    if (_copy)
-        copy = UFO_COPYABLE(_copy);
-    else
-        copy = UFO_COPYABLE (ufo_ir_sbtv_method_new());
-
-    return copy;
-}
-
-static void
-ufo_copyable_interface_init (UfoCopyableIface *iface)
-{
-    iface->copy = ufo_ir_sbtv_method_copy_real;
-}
-
-static void
-ufo_ir_sbtv_method_class_init (UfoIrSbtvMethodClass *klass)
-{
-    UFO_PROCESSOR_CLASS (klass)->setup = ufo_ir_sbtv_method_setup_real;
-    GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    g_type_class_add_private (gobject_class, sizeof(UfoIrSbtvMethodPrivate));
-}
-
-
 
 static gpointer dx_op (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer command_queue)
 {
@@ -519,7 +528,6 @@ static void mult(UfoBuffer *buffer, gfloat mult, gpointer command_queue)
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
                 UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
-                UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
                 UfoMethod *method, UfoResources *resources, gpointer *cmd_queue)
 {
     gfloat tol = 1E-06;
@@ -534,13 +542,12 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
     xmin = ufo_buffer_dup(x);
     ufo_buffer_copy(x, xmin);
 
-    guint imin = 0;
     gfloat tolb = tol * n2b;
 
     // r = b - A * x
     UfoBuffer *r = ufo_buffer_dup(b);
 
-    processA(method, x, r, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
+    processA(method, x, r, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
 
 
     ufo_buffer_copy(r,x);
@@ -549,7 +556,6 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
     ufo_op_deduction(b, r, r, resources,cmd_queue);
 
     gfloat normr = l2_norm(r, cmd_queue);
-    gfloat normAct = normr;
 
     if(normr <= tolb)
     {
@@ -560,8 +566,6 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
     UfoBuffer *rt = ufo_buffer_dup(r);
     ufo_buffer_copy(r, rt);
-
-    gfloat normMin = normr;
 
     gfloat rho = 1.0f;
     gfloat stag = 0.0f;
@@ -617,7 +621,7 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
         ufo_buffer_copy(p, ph);
 
-        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
+        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
 
         gfloat rtvh = dotProduct(rt, vh, cmd_queue);
         gfloat alpha = 0;
@@ -653,7 +657,7 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
         ufo_op_add2(x, uh, alpha, x, resources, cmd_queue);
 
-        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, pixel_weights, ray_weights, resources, cmd_queue);
+        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
 
         ufo_op_add2(r, qh, -alpha, r, resources, cmd_queue);
         normr = l2_norm(r, cmd_queue);
@@ -678,20 +682,15 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
 }
 
-void dummyCopy(const float *in1, const float *in2, float *out)
-{
-    *out = *in1;
-}
-
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
                      UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
-                     UfoBuffer *pixel_weights, UfoBuffer *ray_weights,
                      UfoResources *resources, gpointer *cmd_queue)
 {
     ufo_op_set(out, 0.0f, resources, cmd_queue);
     // mu * At(A(z))
     UfoBuffer *tempA = ufo_buffer_dup(sino);
     ufo_op_set(tempA, 0.0f, resources, cmd_queue);
+
     UfoBuffer *tempAt = ufo_buffer_dup(in);
     ufo_op_set(tempAt, 0.0f, resources, cmd_queue);
 
@@ -699,41 +698,10 @@ static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer
     {
         ufo_ir_projector_FP (projector, in, tempA, &subsets[i], 1.0f,NULL);
     }
-    ufo_op_mul (tempA, ray_weights, tempA, resources, cmd_queue);
-//    for (guint i = 0 ; i < subsetsCnt; i++)
-//    {
-//        ufo_ir_projector_BP (projector, tempAt, tempA, &subsets[i], 1.0f,NULL);
-//    }
-//    ufo_op_mul (tempAt, pixel_weights, tempAt, resources, cmd_queue);
-
-    UfoBuffer *temp_sino = ufo_buffer_dup(sino);
-    UfoBuffer *temp_img = ufo_buffer_dup(in);
-    ufo_buffer_copy(tempA, temp_sino);
-    ufo_op_set(temp_img, 0.0, resources, cmd_queue);
-
-    for(int i=0;i<1000;i++)
+    for (guint i = 0 ; i < subsetsCnt; i++)
     {
-        ufo_buffer_copy(tempA, temp_sino);
-
-        for (guint i = 0 ; i < subsetsCnt; i++)
-        {
-            ufo_ir_projector_FP (projector, tempAt, temp_sino, &subsets[i], -1.0f,NULL);
-        }
-        ufo_op_mul (temp_sino, ray_weights, temp_sino, resources, cmd_queue);
-
-        ufo_op_set(temp_img, 0.0, resources, cmd_queue);
-
-        for (guint i = 0 ; i < subsetsCnt; i++)
-        {
-            ufo_ir_projector_BP (projector, temp_img, temp_sino, &subsets[i], 0.25f,NULL);
-        }
-        ufo_op_mul (temp_img, pixel_weights, temp_img, resources, cmd_queue);
-
-        ufo_op_add(temp_img, tempAt, tempAt, resources, cmd_queue);
+        ufo_ir_projector_BP (projector, tempAt, tempA, &subsets[i], 1.0f,NULL);
     }
-
-ufo_buffer_copy(tempAt, out);
-return;
 
     mult(tempAt, MU, cmd_queue);
     // DYT(DY(z))
