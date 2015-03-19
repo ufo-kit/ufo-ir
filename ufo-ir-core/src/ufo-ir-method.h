@@ -58,6 +58,8 @@ struct _UfoIrMethodClass {
 
 UfoMethod* ufo_ir_method_new      (void);
 GType      ufo_ir_method_get_type (void);
+void       ufo_ir_method_set_proc_node (UfoIrMethod *method, UfoNode *proc_node);
+UfoNode*   ufo_ir_method_get_proc_node (UfoIrMethod *method);
 
 G_END_DECLS
 #endif

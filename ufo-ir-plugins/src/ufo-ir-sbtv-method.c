@@ -32,6 +32,23 @@
 #define LAMBDA 1E-01
 #define EPS 2.2204E-16
 
+typedef struct _FilterWorkSet FilterWorkSet;
+
+struct _FilterWorkSet
+{
+    UfoTask *fft_task;
+    UfoTask *filter_task;
+    UfoTask *ifft_task;
+
+    UfoBuffer *fft_result;
+    UfoBuffer *filter_result;
+    UfoBuffer *ifft_result;
+
+    UfoRequisition fft_result_req;
+    UfoRequisition filter_result_req;
+    UfoRequisition ifft_result_req;
+};
+
 static void ufo_method_interface_init (UfoMethodIface *iface);
 static void ufo_copyable_interface_init (UfoCopyableIface *iface);
 static gboolean ufo_ir_sbtv_method_process_real (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer  pevent);
@@ -47,17 +64,21 @@ static gpointer dx_op  (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, 
 static gpointer dxt_op (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer command_queue);
 static gpointer dy_op  (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer command_queue);
 static gpointer dyt_op (UfoMethod *method, UfoBuffer *input, UfoBuffer *output, gpointer command_queue);
-
+static FilterWorkSet CreateFilterWorkSet(UfoBuffer *input, UfoIrMethod *method);
+static void Filter(UfoBuffer *buffer, FilterWorkSet *work_set, gpointer *cmd_queue);
+static void DebugWrite(UfoBuffer *buffer, const char *file_name);
+static void update_db(UfoBuffer *u, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoMethod *method, gpointer cmd_queue, UfoResources *resources);
+static void calculate_b(UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoBuffer *b, UfoMethod *method, gpointer cmd_queue, UfoResources *resources);
 static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output, gpointer command_queue, void (*operation)(const float *, const float *, float *));
+static void normalize(UfoBuffer *to_norm, gfloat mult, gpointer cmd_queue);
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
                 UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt, UfoMethod *method,
-                UfoResources *resources, gpointer *cmd_queue);
+                UfoResources *resources, gpointer *cmd_queue, FilterWorkSet *filter_work_set);
 
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
                      UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
-                     UfoResources *resources, gpointer *cmd_queue);
-
+                     UfoResources *resources, gpointer *cmd_queue, FilterWorkSet *filter_work_set);
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrSbtvMethod, ufo_ir_sbtv_method, UFO_IR_TYPE_METHOD,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_METHOD,
@@ -208,12 +229,12 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
                                  UfoBuffer *output,
                                  gpointer  pevent)
 {
-    UfoPluginManager *manager = ufo_plugin_manager_new ();
+    UfoRequisition sinogramReq;
+    ufo_buffer_get_requisition(input, &sinogramReq);
 
     UfoResources   *resources = NULL;
     UfoIrProjector *projector = NULL;
     gpointer       *cmd_queue = NULL;
-
     guint          max_iterations = 0;
     g_object_get (method,
                   "ufo-resources",     &resources,
@@ -222,63 +243,7 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
                   "max-iterations",    &max_iterations,
                   NULL);
 
-    // Load and setup UFO tasks
-    UfoBuffer *inputs[1]; // temp arrey for invocing get_requisition method
-    GError *error = NULL;
-
-    // Creating FFT task
-    UfoTask *fft = UFO_TASK(ufo_plugin_manager_get_task (manager, "fft", NULL));
-    UfoNode *node = ufo_task_node_get_proc_node(method);
-    ufo_task_node_set_proc_node(fft, node);
-    ufo_task_setup(fft, resources, &error);
-    if (error)
-    {
-        g_printerr("\nError: SBTV fft setup: %s\n", error->message);
-        return 1;
-    }
-    g_object_set(fft,
-                 "dimensions", 1,
-                 "command-queue", &cmd_queue,
-                 NULL);
-    inputs[0] = input;
-    UfoRequisition sinoFftReq;
-    ufo_task_get_requisition(fft, inputs, &sinoFftReq); // Get requisition of fft output
-    UfoBuffer *sinoFftTempBuffer = ufo_buffer_new(&sinoFftReq, ufo_resources_get_context(resources)); // Creating temp buffer for FFT result
-
-    // Creating filter task
-    UfoTask *filter = UFO_TASK(ufo_plugin_manager_get_task (manager, "filter", NULL));
-    g_object_set(filter,
-                 "command-queue", &cmd_queue,
-                 NULL);
-    ufo_task_setup(filter, resources, &error);
-    if (error)
-    {
-        g_printerr("\nError: SBTV filter setup: %s\n", error->message);
-        return 1;
-    }
-    inputs[0] = sinoFftTempBuffer;
-    UfoRequisition filteredSinoReq;
-    ufo_task_get_requisition(filter, inputs, &filteredSinoReq); // Requisition for filter result
-    UfoBuffer *filteredSinoTempBuffer = ufo_buffer_new(&filteredSinoReq, ufo_resources_get_context(resources)); // temp array for filter result
-
-    // Creating IFFT
-    UfoTask *ifft = UFO_TASK(ufo_plugin_manager_get_task (manager, "ifft", NULL));
-    ufo_task_setup(ifft, resources, &error);
-    if (error)
-    {
-        g_printerr("\nError: SBTV ifft setup: %s\n", error->message);
-        return 1;
-    }
-    g_object_set(ifft,
-                 "dimensions", 1,
-                 "command-queue", &cmd_queue,
-                 NULL);
-    inputs[0] = filteredSinoTempBuffer;
-    UfoRequisition sinoIfftReq;
-    ufo_task_get_requisition(fft, inputs, &sinoIfftReq); // Get requisition of fft output
-    UfoBuffer *sinoIfftTempBuffer = ufo_buffer_new(&sinoIfftReq, ufo_resources_get_context(resources)); // Creating temp buffer for FFT result
-    // --Load and setup UFO tasks--
-
+    FilterWorkSet filter_work_set = CreateFilterWorkSet(input, UFO_IR_METHOD(method));
 
     UfoIrGeometry *geometry = NULL;
     g_object_get (projector, "geometry", &geometry, NULL);
@@ -288,16 +253,14 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
 
     UfoBuffer *f = ufo_buffer_dup(input);
     ufo_buffer_copy(input, f);
+    DebugWrite(f, "debug/befoNorm.tiff");
+    normalize(f, 1.0f, cmd_queue);
 
-    inputs[1] = f;
-    ufo_task_process(fft, inputs, sinoFftTempBuffer, &sinoFftReq);
+    DebugWrite(f, "debug/afterNorm.tiff");
+    Filter(f, &filter_work_set, cmd_queue);
 
-    inputs[1] = sinoFftTempBuffer;
-    ufo_task_process(filter, inputs, filteredSinoTempBuffer, &filteredSinoReq);
 
-    inputs[1] = filteredSinoTempBuffer;
-    ufo_task_process(ifft, inputs, f, &sinoIfftReq);
-
+//    DebugWrite(f, "debug/afterFilterSino.tiff");
 
     // precompute At(f)
     UfoBuffer *fbp = ufo_buffer_dup(output);
@@ -330,82 +293,23 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
     UfoBuffer *dy = ufo_buffer_dup(fbp);
     ufo_op_set(dy, 0.0f, resources, cmd_queue);
 
-    UfoBuffer *tmpf = ufo_buffer_dup(fbp);
-    ufo_op_set(tmpf, 0.0f, resources, cmd_queue);
-
-    UfoBuffer *tmpx = ufo_buffer_dup(fbp);
-    UfoBuffer *tmpy = ufo_buffer_dup(fbp);
-
-    UfoBuffer *tmpDifx = ufo_buffer_dup(fbp);
-    UfoBuffer *tmpDify = ufo_buffer_dup(fbp);
-
-    UfoBuffer *tmpw = ufo_buffer_dup(fbp);
-    ufo_op_set(tmpw, 0.0f, resources, cmd_queue);
-
-    UfoBuffer *tempDub = ufo_buffer_dup(fbp);
-    UfoBuffer *s = ufo_buffer_dup(fbp);
-    UfoBuffer *smone = ufo_buffer_dup(fbp);
-    UfoBuffer *e12 = ufo_buffer_dup(fbp);
-    ufo_op_set(e12, 1E-12, resources, cmd_queue);
-    UfoBuffer *e12max = ufo_buffer_dup(fbp);
-    UfoBuffer *tresh = ufo_buffer_dup(fbp);
-
-
     // fbp = fbp * mu
-    //mult(fbp, MU, cmd_queue);
-
-    gfloat dLambda = 1 / LAMBDA;
+    mult(fbp, MU, cmd_queue);
 
     // Main loop
     for(guint iterationNum = 0; iterationNum < max_iterations; ++iterationNum)
     {
         g_print("SBTV iteration: %d\n", iterationNum);
         ufo_buffer_copy(u, up);
+        DebugWrite(up, "debug/up-%02i.tif");
 
-        // tmpx = DXT(dx - bx);
-        ufo_op_deduction(dx, bx, tmpDifx, resources, cmd_queue);
-        dxt_op(method, tmpDifx, tmpx, cmd_queue);
+        calculate_b(fbp, dx, dy, bx, by, b, method, cmd_queue, resources);
+        DebugWrite(b, "debug/b-%02i.tif");
 
-        // tmpx = DYT(dy - by);
-        ufo_op_deduction(dy, by, tmpDify, resources, cmd_queue);
-        dyt_op(method, tmpDify, tmpy, cmd_queue);
+        cgs(b, u, up, 30, f, projector, subsets, n_subsets, method, resources, cmd_queue, &filter_work_set);
+        DebugWrite(up, "debug/up-bp-%02i.tif");
 
-        // b = mu * At(f) + lambda * (tmpx + tmpy)
-        ufo_op_add(tmpDifx, tmpDify, b, resources, cmd_queue);
-        mult(b, LAMBDA, cmd_queue);
-        ufo_op_add(fbp, b, b, resources, cmd_queue);
-
-        cgs(b, u, up, 30, f, projector, subsets, n_subsets, method, resources, cmd_queue);
-
-
-        dx_op(method, u, tmpx, cmd_queue);
-
-
-        ufo_op_add(tmpx, bx, tmpx, resources, cmd_queue);
-        elementsMult(tmpx, tmpx, tempDub, cmd_queue);
-
-        ufo_buffer_copy(tempDub, s);
-
-        dy_op(method, u, tmpy, cmd_queue);
-        ufo_op_add(tmpy, by, tmpy, resources, cmd_queue);
-        elementsMult(tmpy, tmpy, tempDub, cmd_queue);
-
-        ufo_op_add(s, tempDub, s, resources, cmd_queue);
-        matrixSqrt(s, cmd_queue);
-
-        ufo_op_set(smone, -dLambda, resources, cmd_queue);
-        ufo_op_add(smone, s, smone, resources, cmd_queue);
-
-        elementsMax(smone, Z, smone, cmd_queue);
-        elementsMax(s, e12, e12max, cmd_queue);
-
-        elementsDiv(smone, e12max, tresh, cmd_queue);
-
-        elementsMult(tresh, tmpx, dx, cmd_queue);
-        elementsMult(tresh, tmpy, dy, cmd_queue);
-
-        ufo_op_deduction(tmpx, dx, bx, resources, cmd_queue);
-        ufo_op_deduction(tmpy, dy, by, resources, cmd_queue);
+        update_db(u, dx, dy, bx, by, method, cmd_queue, resources);
 
     }
 
@@ -528,8 +432,11 @@ static void mult(UfoBuffer *buffer, gfloat mult, gpointer command_queue)
 
 static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino,
                 UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
-                UfoMethod *method, UfoResources *resources, gpointer *cmd_queue)
+                UfoMethod *method, UfoResources *resources, gpointer *cmd_queue, FilterWorkSet *filter_work_set)
 {
+//    DebugWrite(b,"debug/cgs/b.tiff");
+//    DebugWrite(x,"debug/cgs/x.tiff");
+//    DebugWrite(x0,"debug/cgs/x0.tiff");
     gfloat tol = 1E-06;
 
     gfloat n2b = l2_norm(b, cmd_queue);
@@ -547,13 +454,10 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
     // r = b - A * x
     UfoBuffer *r = ufo_buffer_dup(b);
 
-    processA(method, x, r, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
-
-
-    ufo_buffer_copy(r,x);
-    return;
+    processA(method, x, r, sino, projector, subsets, subsetsCnt, resources, cmd_queue, filter_work_set);
 
     ufo_op_deduction(b, r, r, resources,cmd_queue);
+//    DebugWrite(r, "debug/cgs/r.tiff");
 
     gfloat normr = l2_norm(r, cmd_queue);
 
@@ -621,8 +525,8 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
         ufo_buffer_copy(p, ph);
 
-        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
-
+        processA(method, ph, vh, sino, projector, subsets, subsetsCnt, resources, cmd_queue, filter_work_set);
+//        DebugWrite(vh, "debug/cgs/vh.tiff");
         gfloat rtvh = dotProduct(rt, vh, cmd_queue);
         gfloat alpha = 0;
         if(rtvh == 0)
@@ -656,12 +560,12 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
         }
 
         ufo_op_add2(x, uh, alpha, x, resources, cmd_queue);
-
-        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, resources, cmd_queue);
+//        DebugWrite(x, "debug/cgs/afterItX.tiff");
+        processA(method, uh, qh, sino, projector, subsets, subsetsCnt, resources, cmd_queue, filter_work_set);
 
         ufo_op_add2(r, qh, -alpha, r, resources, cmd_queue);
         normr = l2_norm(r, cmd_queue);
-
+//        DebugWrite(r, "debug/cgs/afterItR.tiff");
         if(normr <= tolb || stag >= maxstagsteps)
         {
             break;
@@ -684,8 +588,9 @@ static void cgs(UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuf
 
 static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino,
                      UfoIrProjector *projector, UfoIrProjectionsSubset *subsets, guint subsetsCnt,
-                     UfoResources *resources, gpointer *cmd_queue)
+                     UfoResources *resources, gpointer *cmd_queue, FilterWorkSet *filter_work_set)
 {
+//    DebugWrite(in, "debug/processA.tiff");
     ufo_op_set(out, 0.0f, resources, cmd_queue);
     // mu * At(A(z))
     UfoBuffer *tempA = ufo_buffer_dup(sino);
@@ -698,6 +603,7 @@ static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer
     {
         ufo_ir_projector_FP (projector, in, tempA, &subsets[i], 1.0f,NULL);
     }
+    Filter(tempA, filter_work_set, cmd_queue);
     for (guint i = 0 ; i < subsetsCnt; i++)
     {
         ufo_ir_projector_BP (projector, tempAt, tempA, &subsets[i], 1.0f,NULL);
@@ -716,6 +622,8 @@ static void processA(UfoMethod *method, UfoBuffer *in, UfoBuffer *out, UfoBuffer
 
     mult(out, LAMBDA, cmd_queue);
 
+//    DebugWrite(tempAt, "debug/tempAt.tiff");
+//    DebugWrite(out, "debug/inGrad.tiff");
     ufo_op_add(out, tempAt, out, resources, cmd_queue);
 
     g_object_unref(tempA);
@@ -880,7 +788,7 @@ static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output
     }
 
     UfoRequisition arg2_requisition;
-    ufo_buffer_get_requisition (arg1, &arg2_requisition);
+    ufo_buffer_get_requisition (arg2, &arg2_requisition);
 
     gfloat *values2 = ufo_buffer_get_host_array (arg2, command_queue);
 
@@ -898,19 +806,250 @@ static void twoAraysIterator(UfoBuffer *arg1, UfoBuffer *arg2, UfoBuffer *output
         //return;
     }
 
-    if(length1 == length2)
+    length = length1;
+
+    if(length1 != length2)
     {
-        length = length1;
-    }
-    else
-    {
-        //g_print("Buffers are not equal\n");
-        return;
+        g_print("Buffers are not equal\n");
     }
 
     gfloat *outputs = ufo_buffer_get_host_array (output, command_queue);
     for(guint i = 0; i < length; i++)
     {
         operation(&values1[i], &values2[i], &outputs[i]);
+    }
+}
+
+static FilterWorkSet CreateFilterWorkSet(UfoBuffer *input, UfoIrMethod *method)
+{
+    FilterWorkSet work_set;
+    UfoPluginManager *manager = ufo_plugin_manager_new();
+    UfoResources *resources = NULL;
+    g_object_get (method,
+                  "ufo-resources",     &resources,
+//                  "command-queue",     &cmd_queue,
+//                  "projection-model",  &projector,
+//                  "max-iterations",    &max_iterations,
+                  NULL);
+    gpointer context = ufo_resources_get_context(resources);
+
+    UfoNode *proc_node  = ufo_ir_method_get_proc_node(UFO_IR_METHOD(method));
+    UfoBuffer *inputs[1]; // temp arrey for invocing get_requisition method
+    GError *error = NULL;
+
+    // Creating FFT task
+    work_set.fft_task = UFO_TASK(ufo_plugin_manager_get_task (manager, "fft", NULL));
+    ufo_task_node_set_proc_node(UFO_TASK_NODE(work_set.fft_task), UFO_NODE(proc_node));
+    g_object_set(work_set.fft_task, "dimensions", 1, NULL);
+    ufo_task_setup(work_set.fft_task, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV fft setup: %s\n", error->message);
+    }
+
+    inputs[0] = input;
+    ufo_task_get_requisition(work_set.fft_task, inputs, &work_set.fft_result_req); // Get requisition of fft output
+    work_set.fft_result = ufo_buffer_new(&work_set.fft_result_req, context); // Creating temp buffer for FFT result
+
+    // Creating filter task
+    work_set.filter_task = UFO_TASK(ufo_plugin_manager_get_task (manager, "filter", NULL));
+    ufo_task_node_set_proc_node(UFO_TASK_NODE(work_set.filter_task), proc_node);
+    ufo_task_setup(work_set.filter_task, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV filter setup: %s\n", error->message);
+    }
+    inputs[0] = work_set.fft_result;
+    ufo_task_get_requisition(work_set.filter_task, inputs, &work_set.filter_result_req); // Requisition for filter result
+    work_set.filter_result = ufo_buffer_new(&work_set.filter_result_req, context); // temp array for filter result
+
+    // Creating IFFT
+    work_set.ifft_task = UFO_TASK(ufo_plugin_manager_get_task (manager, "ifft", NULL));
+    ufo_task_node_set_proc_node(UFO_TASK_NODE(work_set.ifft_task), proc_node);
+    g_object_set(work_set.ifft_task, "dimensions", 1, NULL);
+    ufo_task_setup(work_set.ifft_task, resources, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV ifft setup: %s\n", error->message);
+    }
+    inputs[0] = work_set.filter_result;
+    ufo_task_get_requisition(work_set.ifft_task, inputs, &work_set.ifft_result_req); // Get requisition of fft output
+    work_set.ifft_result = ufo_buffer_new(&work_set.ifft_result_req, context); // Creating temp buffer for FFT result
+    // --Load and setup UFO tasks--
+
+    g_object_unref(manager);
+    g_object_unref(resources);
+    return work_set;
+}
+
+static void Filter(UfoBuffer *buffer, FilterWorkSet *work_set, gpointer *cmd_queue)
+{
+    UfoBuffer *inputs[1];
+
+    inputs[0] = buffer;
+    ufo_task_process(work_set->fft_task, inputs, work_set->fft_result, &work_set->fft_result_req);
+
+    inputs[0] = work_set->fft_result;
+    ufo_task_process(work_set->filter_task, inputs, work_set->filter_result, &work_set->filter_result_req);
+
+    inputs[0] = work_set->filter_result;
+    ufo_task_process(work_set->ifft_task, inputs, work_set->ifft_result, &work_set->ifft_result_req);
+
+    // Cut buffer
+    gfloat *ifft_result_array = ufo_buffer_get_host_array (work_set->ifft_result, cmd_queue);
+    gfloat *buffer_array = ufo_buffer_get_host_array (buffer, cmd_queue);
+
+    UfoRequisition buffer_requisition;
+    ufo_buffer_get_requisition (buffer, &buffer_requisition);
+
+    guint height = buffer_requisition.dims[1];
+    guint width = buffer_requisition.dims[0];
+    guint big_width = work_set->ifft_result_req.dims[0];
+
+    for(guint i = 0; i < height; i++)
+    {
+        for(guint j = 0; j < width; j++)
+        {
+            buffer_array[i * width + j] = ifft_result_array[i * big_width + j];
+        }
+    }
+}
+
+static void DebugWrite(UfoBuffer *buffer, const char *file_name)
+{
+    //return;
+    UfoPluginManager *manager = ufo_plugin_manager_new();
+    UfoTask *writer = UFO_TASK(ufo_plugin_manager_get_task (manager, "writer", NULL));
+    //ufo_task_node_set_proc_node(UFO_TASK_NODE(writer), proc_node);
+    g_object_set (G_OBJECT (writer), "filename", file_name, NULL);
+    GError *error = NULL;
+    ufo_task_setup(writer, NULL, &error);
+    if (error)
+    {
+        g_printerr("\nError: SBTV ifft setup: %s\n", error->message);
+        return;
+    }
+
+    UfoBuffer *inputs[1]; // temp arrey for invocing get_requisition method
+    inputs[0] = buffer;
+    ufo_task_process(writer, inputs, NULL, NULL);
+
+    g_object_unref(manager);
+    g_object_unref(writer);
+}
+
+static void update_db(UfoBuffer *u, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoMethod *method, gpointer cmd_queue, UfoResources *resources)
+{
+    // Mem allocation
+    UfoBuffer *tmpx = ufo_buffer_dup(u);
+    UfoBuffer *tmpy = ufo_buffer_dup(u);
+    UfoBuffer *s = ufo_buffer_dup(u);
+    UfoBuffer *temp_pow = ufo_buffer_dup(u);
+    UfoBuffer *tresh = ufo_buffer_dup(u);
+    UfoBuffer *temp_s_top = ufo_buffer_dup(u);
+    UfoBuffer *Z = ufo_buffer_dup(u);
+    ufo_op_set(Z, 0.0f, resources, cmd_queue);
+    UfoBuffer *e12 = ufo_buffer_dup(u);
+    ufo_op_set(e12, 1E-12, resources, cmd_queue);
+
+    gfloat dLambda = - 1 / LAMBDA;
+
+    // tmpx = Dx(u)+bx;
+    dx_op(method, u, tmpx, cmd_queue);
+    ufo_op_add(tmpx, bx, tmpx, resources, cmd_queue);
+
+    // tmpy = Dy(u)+by;
+    dy_op(method, u, tmpy, cmd_queue);
+    ufo_op_add(tmpy, by, tmpy, resources, cmd_queue);
+
+    // s = sqrt((tmpx.^2 + tmpy.^2));
+    elementsMult(tmpx, tmpx, temp_pow, cmd_queue);
+    ufo_buffer_copy(temp_pow, s);
+    elementsMult(tmpy, tmpy, temp_pow, cmd_queue);
+    ufo_op_add(s, temp_pow, s, resources, cmd_queue);
+    matrixSqrt(s, cmd_queue);
+
+    // tresh = max(s-1/lambda,Z)./max(1e-12,s);
+    ufo_op_set(temp_s_top, dLambda, resources, cmd_queue);
+    ufo_op_add(temp_s_top, s, temp_s_top, resources, cmd_queue);
+    elementsMax(temp_s_top, Z, temp_s_top, cmd_queue);
+    elementsMax(s, e12, e12, cmd_queue);
+    elementsDiv(temp_s_top, e12, tresh, cmd_queue);
+
+    // dx = tresh.*tmpx;
+    elementsMult(tresh, tmpx, dx, cmd_queue);
+
+    // dy = tresh.*tmpy;
+    elementsMult(tresh, tmpy, dy, cmd_queue);
+
+    // bx = tmpx-dx;
+    ufo_op_deduction(tmpx, dx, bx, resources, cmd_queue);
+
+    // by = tmpy-dy;
+    ufo_op_deduction(tmpy, dy, by, resources, cmd_queue);
+
+    // release memory
+    g_object_unref(tmpx);
+    g_object_unref(tmpy);
+    g_object_unref(s);
+    g_object_unref(temp_pow);
+    g_object_unref(tresh);
+    g_object_unref(temp_s_top);
+    g_object_unref(Z);
+    g_object_unref(e12);
+}
+
+static void calculate_b(UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoBuffer *b, UfoMethod *method, gpointer cmd_queue, UfoResources *resources)
+{
+    UfoBuffer *tmpx = ufo_buffer_dup(fbp);
+    UfoBuffer *tmpy = ufo_buffer_dup(fbp);
+    UfoBuffer *tmpDif = ufo_buffer_dup(fbp);
+
+    // tmpx = DXT(dx - bx);
+    ufo_op_deduction(dx, bx, tmpDif, resources, cmd_queue);
+    dxt_op(method, tmpDif, tmpx, cmd_queue);
+
+    // tmpx = DYT(dy - by);
+    ufo_op_deduction(dy, by, tmpDif, resources, cmd_queue);
+    dyt_op(method, tmpDif, tmpy, cmd_queue);
+
+    // b = mu * At(f) + lambda * (tmpx + tmpy)
+    ufo_op_add(tmpx, tmpy, b, resources, cmd_queue);
+    mult(b, LAMBDA, cmd_queue);
+    ufo_op_add(fbp, b, b, resources, cmd_queue);
+
+    g_object_unref(tmpx);
+    g_object_unref(tmpy);
+    g_object_unref(tmpDif);
+}
+
+static void normalize(UfoBuffer *to_norm, gfloat mult, gpointer cmd_queue)
+{
+    UfoRequisition requisition;
+    ufo_buffer_get_requisition (to_norm, &requisition);
+
+    gfloat *values = ufo_buffer_get_host_array (to_norm, cmd_queue);
+
+    guint length = 1;
+    for(guint dimension = 0; dimension < requisition.n_dims; dimension++)
+    {
+        length *= (guint)requisition.dims[dimension];
+    }
+
+    gfloat max = -1000.f;
+    gfloat min =  1000.f;
+
+    for(guint i = 0; i < length; i++)
+    {
+        max = fmax(values[i],max);
+        min = fmin(values[i],min);
+    }
+
+    gfloat delta = 1 / (max - min);
+
+
+    for(guint i = 0; i < length; i++)
+    {
+        values[i] = delta * values[i] - min * delta;
     }
 }

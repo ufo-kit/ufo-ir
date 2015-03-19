@@ -42,6 +42,7 @@ struct _UfoIrMethodPrivate {
     UfoIrProjector *projector;
     gfloat  relaxation_factor;
     guint   max_iterations;
+    UfoNode *proc_node;
 };
 
 enum {
@@ -95,6 +96,7 @@ ufo_ir_method_set_property (GObject      *object,
         case PROP_MAX_ITERATIONS:
             priv->max_iterations = g_value_get_uint (value);
             break;
+        break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -247,4 +249,24 @@ ufo_ir_method_init (UfoIrMethod *self)
     priv->projector = NULL;
     priv->relaxation_factor = 1.0f;
     priv->max_iterations = 1;
+}
+
+
+void ufo_ir_method_set_proc_node (UfoIrMethod *method, UfoNode *proc_node)
+{
+    g_return_if_fail (UFO_IS_METHOD (method));
+
+    if (method->priv->proc_node)
+    {
+        g_object_unref (method->priv->proc_node);
+    }
+
+    g_object_ref (proc_node);
+    method->priv->proc_node = proc_node;
+}
+
+UfoNode* ufo_ir_method_get_proc_node (UfoIrMethod *method)
+{
+    g_return_val_if_fail (UFO_IS_METHOD (method), NULL);
+    return method->priv->proc_node;
 }
