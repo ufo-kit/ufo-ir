@@ -26,6 +26,7 @@
 #include "ufo-ir-sbtv-method.h"
 #include <math.h>
 #include <ufo/ufo.h>
+#include <stdio.h>
 
 #define KERNELS_FILE_NAME "sb-gradient.cl"
 #define MU 5E-01
@@ -253,14 +254,8 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
 
     UfoBuffer *f = ufo_buffer_dup(input);
     ufo_buffer_copy(input, f);
-    DebugWrite(f, "debug/befoNorm.tiff");
     normalize(f, 1.0f, cmd_queue);
-
-    DebugWrite(f, "debug/afterNorm.tiff");
     Filter(f, &filter_work_set, cmd_queue);
-
-
-//    DebugWrite(f, "debug/afterFilterSino.tiff");
 
     // precompute At(f)
     UfoBuffer *fbp = ufo_buffer_dup(output);
@@ -301,13 +296,16 @@ ufo_ir_sbtv_method_process_real (UfoMethod *method,
     {
         g_print("SBTV iteration: %d\n", iterationNum);
         ufo_buffer_copy(u, up);
-        DebugWrite(up, "debug/up-%02i.tif");
 
         calculate_b(fbp, dx, dy, bx, by, b, method, cmd_queue, resources);
-        DebugWrite(b, "debug/b-%02i.tif");
 
         cgs(b, u, up, 30, f, projector, subsets, n_subsets, method, resources, cmd_queue, &filter_work_set);
-        DebugWrite(up, "debug/up-bp-%02i.tif");
+
+        char str[40];
+        sprintf(&str, "debug/out_%d.tiff", (int)iterationNum);
+
+        DebugWrite(up, &str);
+
 
         update_db(u, dx, dy, bx, by, method, cmd_queue, resources);
 
@@ -910,7 +908,7 @@ static void Filter(UfoBuffer *buffer, FilterWorkSet *work_set, gpointer *cmd_que
     {
         for(guint j = 0; j < width; j++)
         {
-            buffer_array[i * width + j] = ifft_result_array[i * big_width + j];
+            //buffer_array[i * width + j] = ifft_result_array[i * big_width + j];
         }
     }
 }
