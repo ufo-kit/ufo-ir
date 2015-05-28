@@ -6,4 +6,4 @@ install_manifest.txt
 tmp/
 build/
 /.project
-/.idea
+.idea/
