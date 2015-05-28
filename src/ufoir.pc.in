@@ -1,0 +1,13 @@
+prefix=@UFO_IR_PREFIX@
+exec_prefix=@UFO_IR_EPREFIX@
+libdir=@UFO_IR_LIBDIR@
+includedir=@UFO_IR_INCLUDEDIR@
+girdir=@UFO_IR_GIRDIR@
+typelibdir=@UFO_IR_TYPELIBDIR@
+
+Name: @TARNAME@
+Description: @UFO_IR_DESCRIPTION_SUMMARY@
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lufoir
+Cflags: -I${includedir}
+Requires: glib-2.0 gobject-2.0 gmodule-2.0 gio-2.0 json-glib-1.0 libzmq ufo

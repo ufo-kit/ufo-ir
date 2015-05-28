@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(ufoir C)
 
-set(TARNAME "libufoir")
+set(TARNAME "ufo-ir")
 
 set(UFO_IR_DESCRIPTION "Iterative reconstruction for UFO")
 set(UFO_IR_DESCRIPTION_SUMMARY "Iterative reconstruction for UFO")
@@ -12,6 +12,7 @@ set(UFO_IR_VERSION_MINOR "1")
 set(UFO_IR_VERSION_PATCH "0")
 set(UFO_IR_GIR_VERSION "${UFO_IR_VERSION_MAJOR}.0")
 #}}}
+
 #{{{ Package version
 set(PACKAGE_VERSION_MAJOR ${UFO_IR_VERSION_MAJOR})
 set(PACKAGE_VERSION_MINOR ${UFO_IR_VERSION_MINOR})
@@ -22,10 +23,13 @@ set(PACKAGE_TARNAME ${TARNAME})
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "http://ufo.kit.edu/ufo/newticket")
 #}}}
+
 #{{{ CMake
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/common/cmake")
 #}}}
+
 #{{{ Options
+
 option(WITH_PROFILING "Enable profiling" OFF)
 option(WITH_DEBUG "Build with DEBUG support" OFF)
 
@@ -39,23 +43,27 @@ if (WITH_DEBUG)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -ggdb")
 endif ()
 #}}}
+
 #{{{ Dependencies
 set(PKG_GLIB2_MIN_REQUIRED "2.22")
 set(PKG_UFO_MIN_REQUIRED "0.2")
 
 find_package(OpenCL REQUIRED)
 find_package(PkgConfig REQUIRED)
+include(PkgConfigVars)
 
 pkg_check_modules(GLIB2 glib-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(GOBJECT2 gobject-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(GIO2 gio-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(UFO ufo>=${PKG_UFO_MIN_REQUIRED} REQUIRED)
 
+pkg_check_variable(ufo plugindir)
+pkg_check_variable(ufo kerneldir)
+
 set(UFO_IR_DEPS
     ${OPENCL_LIBRARIES}
     ${GLIB2_LIBRARIES}
     ${GOBJECT2_LIBRARIES}
-    ${JSON_GLIB_LIBRARIES}
     ${UFO_LIBRARIES}
     )
 
@@ -129,7 +137,6 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PACKAGE_NAME}-${PACKAGE_VERSION}" CACHE IN
 
 #{{{ RPM
 set(CPACK_RPM_PACKAGE_AUTOREQPROV " no")
-set(CPACK_RPM_PACKAGE_REQUIRES "libjson-glib-1_0-0")
 #}}}
 
 include(CPack)
