@@ -97,6 +97,12 @@ ufo_ir_dummy_task_process (UfoTask *task,
     return TRUE;
 }
 
+static const gchar *
+ufo_ir_dummy_task_get_package_name_real (UfoTaskNode *task_node)
+{
+    return "ir";
+}
+
 static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
@@ -111,10 +117,15 @@ ufo_task_interface_init (UfoTaskIface *iface)
 static void
 ufo_ir_dummy_task_class_init (UfoIrDummyTaskClass *klass)
 {
+    UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
+    taskklass->get_package_name = ufo_ir_dummy_task_get_package_name_real;
 }
+
 
 static void
 ufo_ir_dummy_task_init (UfoIrDummyTask *task)
 {
     ufo_task_node_set_plugin_name (UFO_TASK_NODE (task), "broadcast-task");
 }
+
+

@@ -3,12 +3,14 @@ cmake_minimum_required(VERSION 2.6)
 #{{{ sources
 set(ufoir_SRCS
     ufo-ir-dummy-task.c
+    ufo-ir-method-task-node.c
 )
 #}}}
 
 #{{{ headers
 set(ufoir_HDRS
     ufo-ir-dummy-task.h
+    ufo-ir-method-task-node.h
 )
 #}}}
 
