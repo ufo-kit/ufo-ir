@@ -47,6 +47,8 @@ static void ufo_ir_method_task_node_set_json_object_property (UfoTask *task, con
 
 // IrMethod private Methods
 static void ufo_ir_method_task_node_setup_projection_model(UfoIrMethodTaskNode *method);
+
+static const gchar *ufo_ir_method_task_node_get_package_name (UfoTaskNode *task_node);
 // -----------------------------------------------------------------------------
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrMethodTaskNode, ufo_ir_method_task_node, UFO_TYPE_TASK_NODE,
@@ -102,6 +104,9 @@ ufo_ir_method_task_node_class_init (UfoIrMethodTaskNodeClass *klass)
 
     // TODO: Is it really needed?
     //UFO_NODE_CLASS (klass)->copy = ufo_ir_method_task_node_copy;
+
+    UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
+    taskklass->get_package_name = ufo_ir_method_task_node_get_package_name;
 }
 
 static void
@@ -358,6 +363,12 @@ ufo_ir_method_task_node_set_json_object_property (UfoTask     *task,
 //    return copy;
 //}
 // -----------------------------------------------------------------------------
+
+static const gchar *
+ufo_ir_method_task_node_get_package_name (UfoTaskNode *task_node)
+{
+    return "ir";
+}
 
 // -----------------------------------------------------------------------------
 
