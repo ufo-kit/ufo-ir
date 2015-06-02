@@ -5,6 +5,7 @@ set(ufoir_SRCS
     ufo-ir-dummy-task.c
     ufo-ir-method-task.c
     ufo-ir-state-dependent-task.c
+    ufo-ir-projector-task.c
 )
 #}}}
 
@@ -12,7 +13,8 @@ set(ufoir_SRCS
 set(ufoir_HDRS
     ufo-ir-dummy-task.h
     ufo-ir-method-task-node.h
-    ufo-ir-state-dependent-task-node.c
+    ufo-ir-state-dependent-task-node.h
+    ufo-ir-projector-task.h
 )
 #}}}
 
