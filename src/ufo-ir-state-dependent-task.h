@@ -24,7 +24,7 @@
 
 G_BEGIN_DECLS
 
-#define UFO_TYPE_IR_STATE_DEPENDENT_TASK             (ufo_ir_state_dependent_task_get_type())
+#define UFO_IR_TYPE_STATE_DEPENDENT_TASK             (ufo_ir_state_dependent_task_get_type())
 #define UFO_IR_STATE_DEPENDENT_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_TYPE_IR_STATE_DEPENDENT_TASK, UfoIrStateDependentTask))
 #define UFO_IR_IS_STATE_DEPENDENT_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_TYPE_IR_STATE_DEPENDENT_TASK))
 #define UFO_IR_STATE_DEPENDENT_TASK_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), UFO_TYPE_IR_STATE_DEPENDENT_TASK, UfoIrStateDependentTaskClass))
