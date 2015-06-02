@@ -23,44 +23,44 @@
 #include <CL/cl.h>
 #endif
 
-#include "ufo-ir-method-task-node.h"
+#include "ufo-ir-method-task.h"
 #include <ufo/ufo.h>
 
 // Private methods definitions
 // Class related methods
-static void ufo_ir_method_task_node_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
-static void ufo_ir_method_task_node_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void ufo_ir_method_task_node_finalize (GObject *object);
-static void ufo_ir_method_task_node_dispose (GObject *object);
+static void ufo_ir_method_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void ufo_ir_method_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+static void ufo_ir_method_task_finalize (GObject *object);
+static void ufo_ir_method_task_dispose (GObject *object);
 
 // UfoTask Interface related methods
 static void ufo_task_interface_init (UfoTaskIface *iface);
-static void ufo_ir_method_task_node_setup (UfoTask *task, UfoResources *resources, GError **error);
-static guint ufo_ir_method_task_node_get_num_inputs (UfoTask *task);
-static guint ufo_ir_method_task_node_get_num_dimensions (UfoTask *task, guint input);
-static UfoTaskMode ufo_ir_method_task_node_get_mode (UfoTask *task);
-static void ufo_ir_method_task_node_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
-static void ufo_ir_method_task_node_set_json_object_property (UfoTask *task, const gchar *prop_name, JsonObject *object);
+static void ufo_ir_method_task_setup (UfoTask *task, UfoResources *resources, GError **error);
+static guint ufo_ir_method_task_get_num_inputs (UfoTask *task);
+static guint ufo_ir_method_task_get_num_dimensions (UfoTask *task, guint input);
+static UfoTaskMode ufo_ir_method_task_get_mode (UfoTask *task);
+static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
+static void ufo_ir_method_task_set_json_object_property (UfoTask *task, const gchar *prop_name, JsonObject *object);
 
 // UfoTaskNode class related methods
 // UfoNode *ufo_ir_method_task_node_copy (UfoNode *node, GError **error);
 
 // IrMethod private Methods
-static void ufo_ir_method_task_node_setup_projection_model(UfoIrMethodTaskNode *method);
+static void ufo_ir_method_task_setup_projection_model(UfoIrMethodTask *method);
 
-static const gchar *ufo_ir_method_task_node_get_package_name (UfoTaskNode *task_node);
+static const gchar *ufo_ir_method_task_get_package_name (UfoTaskNode *task_node);
 // -----------------------------------------------------------------------------
 
-G_DEFINE_TYPE_WITH_CODE (UfoIrMethodTaskNode, ufo_ir_method_task_node, UFO_TYPE_TASK_NODE,
+G_DEFINE_TYPE_WITH_CODE (UfoIrMethodTask, ufo_ir_method_task, UFO_TYPE_TASK_NODE,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK, ufo_task_interface_init))
 
-#define UFO_IR_METHOD_TASK_NODE_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_METHOD_TASK_NODE, UfoIrMethodTaskNodePrivate))
+#define UFO_IR_METHOD_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_METHOD_TASK, UfoIrMethodTaskPrivate))
 
-struct _UfoIrMethodTaskNodePrivate {
+struct _UfoIrMethodTaskPrivate {
     UfoResources     *resources;
     cl_command_queue cmd_queue;
     gchar *projection_model_name;
-    UfoIrProjectorTaskNode *projection_model;
+    UfoIrProjectorTask *projection_model;
     guint iterations_count;
 };
 
@@ -74,13 +74,13 @@ enum {
 static GParamSpec *properties[N_PROPERTIES] = {NULL, };
 
 static void
-ufo_ir_method_task_node_class_init (UfoIrMethodTaskNodeClass *klass)
+ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
 {
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-    gobject_class->set_property = ufo_ir_method_task_node_set_property;
-    gobject_class->get_property = ufo_ir_method_task_node_get_property;
-    gobject_class->finalize     = ufo_ir_method_task_node_finalize;
-    gobject_class->dispose      = ufo_ir_method_task_node_dispose;
+    gobject_class->set_property = ufo_ir_method_task_set_property;
+    gobject_class->get_property = ufo_ir_method_task_get_property;
+    gobject_class->finalize     = ufo_ir_method_task_finalize;
+    gobject_class->dispose      = ufo_ir_method_task_dispose;
 
     properties[PROP_ITERATIONS_COUNT] =
             g_param_spec_uint("iterations_count",
@@ -100,31 +100,31 @@ ufo_ir_method_task_node_class_init (UfoIrMethodTaskNodeClass *klass)
         g_object_class_install_property (gobject_class, i, properties[i]);
     }
 
-    g_type_class_add_private (gobject_class, sizeof(UfoIrMethodTaskNodePrivate));
+    g_type_class_add_private (gobject_class, sizeof(UfoIrMethodTaskPrivate));
 
     // TODO: Is it really needed?
     //UFO_NODE_CLASS (klass)->copy = ufo_ir_method_task_node_copy;
 
     UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
-    taskklass->get_package_name = ufo_ir_method_task_node_get_package_name;
+    taskklass->get_package_name = ufo_ir_method_task_get_package_name;
 }
 
 static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
-    iface->setup = ufo_ir_method_task_node_setup;
-    iface->get_num_inputs = ufo_ir_method_task_node_get_num_inputs;
-    iface->get_num_dimensions = ufo_ir_method_task_node_get_num_dimensions;
-    iface->get_mode = ufo_ir_method_task_node_get_mode;
-    iface->get_requisition = ufo_ir_method_task_node_get_requisition;
-    iface->set_json_object_property = ufo_ir_method_task_node_set_json_object_property;
+    iface->setup = ufo_ir_method_task_setup;
+    iface->get_num_inputs = ufo_ir_method_task_get_num_inputs;
+    iface->get_num_dimensions = ufo_ir_method_task_get_num_dimensions;
+    iface->get_mode = ufo_ir_method_task_get_mode;
+    iface->get_requisition = ufo_ir_method_task_get_requisition;
+    iface->set_json_object_property = ufo_ir_method_task_set_json_object_property;
 }
 
 static void
-ufo_ir_method_task_node_init(UfoIrMethodTaskNode *self)
+ufo_ir_method_task_node_init(UfoIrMethodTask *self)
 {
-    UfoIrMethodTaskNodePrivate *priv = NULL;
-    self->priv = priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE(self);
+    UfoIrMethodTaskPrivate *priv = NULL;
+    self->priv = priv = UFO_IR_METHOD_TASK_GET_PRIVATE(self);
     priv->resources = NULL;
     priv->cmd_queue = NULL;
     priv->projection_model_name = g_strdup("");
@@ -132,9 +132,9 @@ ufo_ir_method_task_node_init(UfoIrMethodTaskNode *self)
 }
 
 UfoNode *
-ufo_ir_method_task_node_new (void)
+ufo_ir_method_task_new (void)
 {
-    return UFO_NODE (g_object_new (UFO_IR_TYPE_METHOD_TASK_NODE, NULL));
+    return UFO_NODE (g_object_new (UFO_IR_TYPE_METHOD_TASK, NULL));
 }
 
 // -----------------------------------------------------------------------------
@@ -145,12 +145,12 @@ ufo_ir_method_task_node_new (void)
 // Class related methods
 // -----------------------------------------------------------------------------
 static void
-ufo_ir_method_task_node_set_property (GObject      *object,
+ufo_ir_method_task_set_property (GObject      *object,
                                       guint        property_id,
                                       const GValue *value,
                                       GParamSpec   *pspec)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (object);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_ITERATIONS_COUNT:
@@ -159,7 +159,7 @@ ufo_ir_method_task_node_set_property (GObject      *object,
         case PROP_PROJECTION_MODEL:
             g_free(priv->projection_model_name);
             priv->projection_model_name = g_value_dup_string(value);
-            ufo_ir_method_task_node_setup_projection_model(UFO_IR_METHOD_TASK_NODE(object));
+            ufo_ir_method_task_setup_projection_model(UFO_IR_METHOD_TASK(object));
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -167,12 +167,12 @@ ufo_ir_method_task_node_set_property (GObject      *object,
 }
 
 static void
-ufo_ir_method_task_node_get_property (GObject    *object,
+ufo_ir_method_task_get_property (GObject    *object,
                                       guint      property_id,
                                       GValue     *value,
                                       GParamSpec *pspec)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (object);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_ITERATIONS_COUNT:
@@ -187,26 +187,26 @@ ufo_ir_method_task_node_get_property (GObject    *object,
 }
 
 static void
-ufo_ir_method_task_node_finalize (GObject *object)
+ufo_ir_method_task_finalize (GObject *object)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (object);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (object);
     if (priv->cmd_queue){
         UFO_RESOURCES_CHECK_CLERR (clReleaseCommandQueue(priv->cmd_queue));
     }
 
-    G_OBJECT_CLASS (ufo_ir_method_task_node_parent_class)->finalize (object);
+    G_OBJECT_CLASS (ufo_ir_method_task_parent_class)->finalize (object);
 }
 
 static void
-ufo_ir_method_task_node_dispose (GObject *object)
+ufo_ir_method_task_dispose (GObject *object)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (object);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (object);
 
     // TODO: Check object to clear
     g_clear_object (&priv->projection_model_name);
     g_clear_object (&priv->projection_model);
 
-    G_OBJECT_CLASS (ufo_ir_method_task_node_parent_class)->dispose (object);
+    G_OBJECT_CLASS (ufo_ir_method_task_parent_class)->dispose (object);
 }
 // -----------------------------------------------------------------------------
 
@@ -214,11 +214,11 @@ ufo_ir_method_task_node_dispose (GObject *object)
 // UfoTask Interface related methods
 // -----------------------------------------------------------------------------
 static void
-ufo_ir_method_task_node_setup (UfoTask      *task,
+ufo_ir_method_task_setup (UfoTask      *task,
                                UfoResources *resources,
                                GError       **error)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (task);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE (task)));
 
     priv->resources = g_object_ref (resources);
@@ -254,13 +254,13 @@ ufo_ir_method_task_node_setup (UfoTask      *task,
 }
 
 static guint
-ufo_ir_method_task_node_get_num_inputs (UfoTask *task)
+ufo_ir_method_task_get_num_inputs (UfoTask *task)
 {
     return 1;
 }
 
 static guint
-ufo_ir_method_task_node_get_num_dimensions (UfoTask *task,
+ufo_ir_method_task_get_num_dimensions (UfoTask *task,
                                             guint   input)
 {
     g_return_val_if_fail (input == 0, 0);
@@ -268,17 +268,17 @@ ufo_ir_method_task_node_get_num_dimensions (UfoTask *task,
 }
 
 static UfoTaskMode
-ufo_ir_method_task_node_get_mode (UfoTask *task)
+ufo_ir_method_task_get_mode (UfoTask *task)
 {
     return UFO_TASK_MODE_PROCESSOR | UFO_TASK_MODE_GPU;
 }
 
 static void
-ufo_ir_method_task_node_get_requisition (UfoTask        *task,
+ufo_ir_method_task_get_requisition (UfoTask        *task,
                                          UfoBuffer      **inputs,
                                          UfoRequisition *requisition)
 {
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (task);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
 
     if(priv->projection_model == NULL)
     {
@@ -294,12 +294,12 @@ ufo_ir_method_task_node_get_requisition (UfoTask        *task,
 }
 
 static void
-ufo_ir_method_task_node_set_json_object_property (UfoTask     *task,
+ufo_ir_method_task_set_json_object_property (UfoTask     *task,
                                                   const gchar *prop_name,
                                                   JsonObject  *json_obj)
 {
 
-    UfoIrMethodTaskNodePrivate *priv = UFO_IR_METHOD_TASK_NODE_GET_PRIVATE (task);
+    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
     gpointer obj = NULL;
 
     // TODO: realize
@@ -365,7 +365,7 @@ ufo_ir_method_task_node_set_json_object_property (UfoTask     *task,
 // -----------------------------------------------------------------------------
 
 static const gchar *
-ufo_ir_method_task_node_get_package_name (UfoTaskNode *task_node)
+ufo_ir_method_task_get_package_name (UfoTaskNode *task_node)
 {
     return "ir";
 }
@@ -373,7 +373,7 @@ ufo_ir_method_task_node_get_package_name (UfoTaskNode *task_node)
 // -----------------------------------------------------------------------------
 
 
-static void ufo_ir_method_task_node_setup_projection_model(UfoIrMethodTaskNode *method)
+static void ufo_ir_method_task_setup_projection_model(UfoIrMethodTask *method)
 {
     // TODO: Implement projection model setup
     g_error("ufo_ir_method_task_node_set_json_object_property not implemented");

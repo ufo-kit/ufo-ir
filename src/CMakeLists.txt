@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 #{{{ sources
 set(ufoir_SRCS
     ufo-ir-dummy-task.c
-    ufo-ir-method-task-node.c
-    ufo-ir-state-dependent-task-node.c
+    ufo-ir-method-task.c
+    ufo-ir-state-dependent-task.c
 )
 #}}}
 
