@@ -60,7 +60,7 @@ struct _UfoIrMethodTaskPrivate {
     UfoResources     *resources;
     cl_command_queue cmd_queue;
     gchar *projection_model_name;
-    UfoIrProjectorTask *projection_model;
+    UfoTaskNode *projection_model;
     guint iterations_count;
 };
 
@@ -121,7 +121,7 @@ ufo_task_interface_init (UfoTaskIface *iface)
 }
 
 static void
-ufo_ir_method_task_node_init(UfoIrMethodTask *self)
+ufo_ir_method_task_init(UfoIrMethodTask *self)
 {
     UfoIrMethodTaskPrivate *priv = NULL;
     self->priv = priv = UFO_IR_METHOD_TASK_GET_PRIVATE(self);
@@ -225,7 +225,7 @@ ufo_ir_method_task_setup (UfoTask      *task,
     priv->cmd_queue = ufo_gpu_node_get_cmd_queue (node);
     UFO_RESOURCES_CHECK_CLERR (clRetainCommandQueue (priv->cmd_queue));
 
-    UfoProfiler *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
+    //UfoProfiler *profiler = ufo_task_node_get_profiler (UFO_TASK_NODE (task));
 
 //    g_object_set (priv->projector,
 //                  "ufo-profiler", profiler,
@@ -299,7 +299,7 @@ ufo_ir_method_task_set_json_object_property (UfoTask     *task,
                                                   JsonObject  *json_obj)
 {
 
-    UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
+    //UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
     gpointer obj = NULL;
 
     // TODO: realize
