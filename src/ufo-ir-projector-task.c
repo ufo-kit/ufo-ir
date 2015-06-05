@@ -95,7 +95,7 @@ ufo_ir_projector_task_set_property (GObject *object,
                               const GValue *value,
                               GParamSpec *pspec)
 {
-    UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (object);
+    //UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_TEST:
@@ -112,7 +112,7 @@ ufo_ir_projector_task_get_property (GObject *object,
                               GValue *value,
                               GParamSpec *pspec)
 {
-    UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (object);
+    //UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (object);
 
     switch (property_id) {
         case PROP_TEST:

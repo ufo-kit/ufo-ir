@@ -41,7 +41,7 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrStateDependentTask, ufo_ir_state_dependent_task, U
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK,
                                                 ufo_task_interface_init))
 
-#define UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_TYPE_IR_STATE_DEPENDENT_TASK, UfoIrStateDependentTaskPrivate))
+#define UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_STATE_DEPENDENT_TASK, UfoIrStateDependentTaskPrivate))
 
 enum {
     PROP_0,
@@ -191,7 +191,7 @@ ufo_ir_state_dependent_task_get_property (GObject *object,
 UfoNode *
 ufo_ir_state_dependent_task_new (void)
 {
-    return UFO_NODE (g_object_new (UFO_TYPE_IR_STATE_DEPENDENT_TASK, NULL));
+    return UFO_NODE (g_object_new (UFO_IR_TYPE_STATE_DEPENDENT_TASK, NULL));
 }
 
 static void
