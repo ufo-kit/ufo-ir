@@ -17,8 +17,8 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UFO_COPY_TASK_H
-#define __UFO_COPY_TASK_H
+#ifndef __UFO_IR_DUMMY_TASK_H
+#define __UFO_IR_DUMMY_TASK_H
 
 #include <ufo/ufo.h>
 
@@ -33,30 +33,20 @@ G_BEGIN_DECLS
 
 typedef struct _UfoIrDummyTask           UfoIrDummyTask;
 typedef struct _UfoIrDummyTaskClass      UfoIrDummyTaskClass;
+typedef struct _UfoIrDummyTaskPrivate    UfoIrDummyTaskPrivate;
 
-/**
- * UfoCopyTask:
- *
- * Main object for organizing filters. The contents of the #UfoCopyTask structure
- * are private and should only be accessed via the provided API.
- */
 struct _UfoIrDummyTask {
-    /*< private >*/
     UfoTaskNode parent_instance;
+
+    UfoIrDummyTaskPrivate *priv;
 };
 
-/**
- * UfoCopyTaskClass:
- *
- * #UfoCopyTask class
- */
 struct _UfoIrDummyTaskClass {
-    /*< private >*/
     UfoTaskNodeClass parent_class;
 };
 
-UfoNode   * ufo_ir_dummy_task_new                  (void);
-GType       ufo_ir_dummy_task_get_type             (void);
+UfoNode  *ufo_ir_dummy_task_new       (void);
+GType     ufo_ir_dummy_task_get_type  (void);
 
 G_END_DECLS
 

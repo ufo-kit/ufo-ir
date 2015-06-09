@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Karlsruhe Institute of Technology
+ * Copyright (C) 2011-2015 Karlsruhe Institute of Technology
  *
  * This file is part of Ufo.
  *
@@ -17,24 +17,12 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
 #include "ufo-ir-dummy-task.h"
-#include <gmodule.h>
 #include <ufo/ufo.h>
 
-/**
- * SECTION:ufo-copy-task
- * @Short_description: Copy data from input to output
- * @Title: UfoCopyTask
- *
- * Copies input to output. This is useful in combination with a
- * #UfoFixedScheduler in order to emulate broadcasting behaviour.
- */
+struct _UfoIrDummyTaskPrivate {
+    UfoTaskNode *subtask;
+};
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
 
@@ -42,10 +30,15 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrDummyTask, ufo_ir_dummy_task, UFO_TYPE_TASK_NODE,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK,
                                                 ufo_task_interface_init))
 
+#define UFO_IR_DUMMY_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_DUMMY_TASK, UfoIrDummyTaskPrivate))
+
 enum {
     PROP_0,
+    PROP_SUBTASK,
     N_PROPERTIES
 };
+
+static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
 UfoNode *
 ufo_ir_dummy_task_new (void)
@@ -55,9 +48,17 @@ ufo_ir_dummy_task_new (void)
 
 static void
 ufo_ir_dummy_task_setup (UfoTask *task,
-                         UfoResources *resources,
-                         GError **error)
+                       UfoResources *resources,
+                       GError **error)
 {
+}
+
+static void
+ufo_ir_dummy_task_get_requisition (UfoTask *task,
+                                 UfoBuffer **inputs,
+                                 UfoRequisition *requisition)
+{
+    requisition->n_dims = 2;
 }
 
 static guint
@@ -68,39 +69,67 @@ ufo_ir_dummy_task_get_num_inputs (UfoTask *task)
 
 static guint
 ufo_ir_dummy_task_get_num_dimensions (UfoTask *task,
-                                  guint input)
+                                             guint input)
 {
-    return -1;
+    return 2;
 }
 
 static UfoTaskMode
 ufo_ir_dummy_task_get_mode (UfoTask *task)
 {
-    return UFO_TASK_MODE_PROCESSOR | UFO_TASK_MODE_CPU;
-}
-
-static void
-ufo_ir_dummy_task_get_requisition (UfoTask *task,
-                               UfoBuffer **inputs,
-                               UfoRequisition *requisition)
-{
-    ufo_buffer_get_requisition (inputs[0], requisition);
+    return UFO_TASK_MODE_PROCESSOR;
 }
 
 static gboolean
 ufo_ir_dummy_task_process (UfoTask *task,
-                       UfoBuffer **inputs,
-                       UfoBuffer *output,
-                       UfoRequisition *requisition)
+                         UfoBuffer **inputs,
+                         UfoBuffer *output,
+                         UfoRequisition *requisition)
 {
-    ufo_buffer_copy (inputs[0], output);
+    ufo_buffer_copy(inputs[0], output);
     return TRUE;
 }
 
-static const gchar *
-ufo_ir_dummy_task_get_package_name_real (UfoTaskNode *task_node)
+static void
+ufo_ir_dummy_task_set_property (GObject *object,
+                              guint property_id,
+                              const GValue *value,
+                              GParamSpec *pspec)
 {
-    return "ir";
+    UfoIrDummyTaskPrivate *priv = UFO_IR_DUMMY_TASK_GET_PRIVATE (object);
+
+    switch (property_id) {
+        case PROP_SUBTASK:
+            priv->subtask = g_value_get_object(value);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+            break;
+    }
+}
+
+static void
+ufo_ir_dummy_task_get_property (GObject *object,
+                              guint property_id,
+                              GValue *value,
+                              GParamSpec *pspec)
+{
+    UfoIrDummyTaskPrivate *priv = UFO_IR_DUMMY_TASK_GET_PRIVATE (object);
+
+    switch (property_id) {
+        case PROP_SUBTASK:
+            g_value_set_object(value, priv->subtask);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+            break;
+    }
+}
+
+static void
+ufo_ir_dummy_task_finalize (GObject *object)
+{
+    G_OBJECT_CLASS (ufo_ir_dummy_task_parent_class)->finalize (object);
 }
 
 static void
@@ -117,15 +146,27 @@ ufo_task_interface_init (UfoTaskIface *iface)
 static void
 ufo_ir_dummy_task_class_init (UfoIrDummyTaskClass *klass)
 {
-    UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
-    taskklass->get_package_name = ufo_ir_dummy_task_get_package_name_real;
-}
+    GObjectClass *oclass = G_OBJECT_CLASS (klass);
 
+    oclass->set_property = ufo_ir_dummy_task_set_property;
+    oclass->get_property = ufo_ir_dummy_task_get_property;
+    oclass->finalize = ufo_ir_dummy_task_finalize;
+
+    properties[PROP_SUBTASK] =
+            g_param_spec_object( "subtask",
+                                 "subtask",
+                                 "Subtask TaskNode",
+                                 UFO_TYPE_TASK_NODE,
+                                 G_PARAM_READWRITE);
+
+    for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
+        g_object_class_install_property (oclass, i, properties[i]);
+
+    g_type_class_add_private (oclass, sizeof(UfoIrDummyTaskPrivate));
+}
 
 static void
-ufo_ir_dummy_task_init (UfoIrDummyTask *task)
+ufo_ir_dummy_task_init(UfoIrDummyTask *self)
 {
-    ufo_task_node_set_plugin_name (UFO_TASK_NODE (task), "broadcast-task");
+    self->priv = UFO_IR_DUMMY_TASK_GET_PRIVATE(self);
 }
-
-
