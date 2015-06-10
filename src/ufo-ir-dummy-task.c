@@ -74,6 +74,12 @@ ufo_ir_dummy_task_get_num_dimensions (UfoTask *task,
     return 2;
 }
 
+static const gchar*
+get_package_name(UfoTaskNode *self)
+{
+    return g_strdup("ir");
+}
+
 static UfoTaskMode
 ufo_ir_dummy_task_get_mode (UfoTask *task)
 {
@@ -151,6 +157,9 @@ ufo_ir_dummy_task_class_init (UfoIrDummyTaskClass *klass)
     oclass->set_property = ufo_ir_dummy_task_set_property;
     oclass->get_property = ufo_ir_dummy_task_get_property;
     oclass->finalize = ufo_ir_dummy_task_finalize;
+
+    UfoTaskNodeClass *tnclass = UFO_TASK_NODE_CLASS(klass);
+    tnclass->get_package_name = get_package_name;
 
     properties[PROP_SUBTASK] =
             g_param_spec_object( "subtask",
