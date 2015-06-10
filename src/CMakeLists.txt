@@ -82,3 +82,13 @@ if (NOSETESTSBIN)
     add_dependencies(test ${all_targets})
 endif()
 #}}}
+
+#{{{ pkg-config
+# FIXME: inside the ufo.pc.in we should set the lib names that we found out, not
+# hard coded values
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ufoir.pc.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc" @ONLY IMMEDIATE)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc
+        DESTINATION ${UFO_IR_PKGCONFIGDIR})
+#}}}
