@@ -22,15 +22,14 @@
 
 #include "ufo-ir-state-dependent-task.h"
 
-
 G_BEGIN_DECLS
 
 #define UFO_IR_TYPE_PROJECTOR_TASK             (ufo_ir_projector_task_get_type())
-#define UFO_IR_PROJECTOR_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_TYPE_IR_PROJECTOR_TASK, UfoIrProjectorTask))
-#define UFO_IR_IS_PROJECTOR_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_TYPE_IR_PROJECTOR_TASK))
-#define UFO_IR_PROJECTOR_TASK_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), UFO_TYPE_IR_PROJECTOR_TASK, UfoIrProjectorTaskClass))
-#define UFO_IR_IS_PROJECTOR_TASK_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_TYPE_IR_PROJECTOR_TASK))
-#define UFO_IR_PROJECTOR_TASK_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_TYPE_IR_PROJECTOR_TASK, UfoIrProjectorTaskClass))
+#define UFO_IR_PROJECTOR_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_IR_TYPE_PROJECTOR_TASK, UfoIrProjectorTask))
+#define UFO_IR_IS_PROJECTOR_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_IR_TYPE_PROJECTOR_TASK))
+#define UFO_IR_PROJECTOR_TASK_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), UFO_IR_TYPE_PROJECTOR_TASK, UfoIrProjectorTaskClass))
+#define UFO_IR_IS_PROJECTOR_TASK_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_IR_TYPE_PROJECTOR_TASK))
+#define UFO_IR_PROJECTOR_TASK_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_IR_TYPE_PROJECTOR_TASK, UfoIrProjectorTaskClass))
 
 typedef struct _UfoIrProjectorTask           UfoIrProjectorTask;
 typedef struct _UfoIrProjectorTaskClass      UfoIrProjectorTaskClass;
@@ -48,6 +47,15 @@ struct _UfoIrProjectorTaskClass {
 
 UfoNode  *ufo_ir_projector_task_new       (void);
 GType     ufo_ir_projector_task_get_type  (void);
+
+gfloat ufo_ir_projector_task_get_step(UfoIrProjectorTask *self);
+void   ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat step);
+
+gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self);
+void   ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat axis_position);
+
+gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self);
+void   ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat relaxation);
 
 G_END_DECLS
 

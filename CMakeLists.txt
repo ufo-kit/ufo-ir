@@ -117,6 +117,14 @@ endif()
 #{{{ Subdirectories
 add_subdirectory(src)
 #}}}
+
+set(UFO_IR_KERNELDIR "${UFO_IR_DATADIR}/ufo")
+file(GLOB ufoir_KERNELS "kernels/*.cl")
+# copy kernels
+foreach(_kernel ${ufoir_KERNELS})
+    install(FILES ${_kernel} DESTINATION ${UFO_IR_KERNELDIR})
+endforeach()
+
 #{{{ CPack
 set(CPACK_PACKAGE_DESCRIPTION ${UFO_IR_DESCRIPTION})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${UFO_IR_DESCRIPTION_SUMMARY})

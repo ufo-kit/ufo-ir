@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 #{{{ sources
-set(ufoir_SRCS
-    ufo-ir-dummy-task.c
+set(ufoircore_SRCS
     ufo-ir-method-task.c
     ufo-ir-state-dependent-task.c
     ufo-ir-projector-task.c
@@ -10,11 +9,25 @@ set(ufoir_SRCS
 #}}}
 
 #{{{ headers
-set(ufoir_HDRS
-    ufo-ir-dummy-task.h
+set(ufoircore_HDRS
     ufo-ir-method-task-node.h
     ufo-ir-state-dependent-task-node.h
     ufo-ir-projector-task.h
+)
+#}}}
+
+
+#{{{ sources
+set(ufoir_SRCS
+    ufo-ir-dummy-task.c
+    ufo-ir-parallel-projector-task.c
+)
+#}}}
+
+#{{{ headers
+set(ufoir_HDRS
+    ufo-ir-dummy-task.h
+    ufo-ir-parallel-projector-task.h
 )
 #}}}
 
@@ -44,6 +57,11 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 #configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 #               ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+add_library(${TARNAME} SHARED ${ufoircore_SRCS})
+install(TARGETS ${TARNAME}
+        ARCHIVE DESTINATION ${UFO_LIBDIR}
+        LIBRARY DESTINATION ${UFO_LIBDIR})
+
 foreach(_src ${ufoir_SRCS})
     # find plugin suffix
     string(REGEX REPLACE "ufo-ir-([^ \\.]+)-task.*" "\\1" task "${_src}")
@@ -58,7 +76,7 @@ foreach(_src ${ufoir_SRCS})
         add_library(${target} SHARED ${_src} )
     endif()
 
-    target_link_libraries(${target} ${ufoir_LIBS})
+    target_link_libraries(${target} ${ufoir_LIBS} ${TARNAME})
 
     list(APPEND all_targets ${target})
 
@@ -68,7 +86,7 @@ foreach(_src ${ufoir_SRCS})
 endforeach()
 
 # copy kernels
-foreach(_kernel ${ufofilter_KERNELS})
+foreach(_kernel ${ufoir_KERNELS})
     install(FILES ${_kernel} DESTINATION ${UFO_KERNELDIR})
 endforeach()
 #}}}

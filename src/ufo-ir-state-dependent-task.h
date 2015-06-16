@@ -44,12 +44,12 @@ struct _UfoIrStateDependentTask {
 struct _UfoIrStateDependentTaskClass {
     UfoTaskNodeClass parent_class;
 
-    gboolean (*forward)(UfoTask        *task,
+    gboolean (*forward)(UfoIrStateDependentTask        *task,
                         UfoBuffer     **inputs,
                         UfoBuffer      *output,
                         UfoRequisition *requisition);
 
-    gboolean (*backward)(UfoTask        *task,
+    gboolean (*backward)(UfoIrStateDependentTask        *task,
                          UfoBuffer     **inputs,
                          UfoBuffer      *output,
                          UfoRequisition *requisition);
@@ -58,12 +58,12 @@ struct _UfoIrStateDependentTaskClass {
 UfoNode  *ufo_ir_state_dependent_task_new       (void);
 GType     ufo_ir_state_dependent_task_get_type  (void);
 
-gboolean ufo_ir_state_dependent_task_forward (UfoTask        *task,
+gboolean ufo_ir_state_dependent_task_forward (UfoIrStateDependentTask *task,
                                               UfoBuffer     **inputs,
                                               UfoBuffer      *output,
                                               UfoRequisition *requisition);
 
-gboolean ufo_ir_state_dependent_task_backward (UfoTask        *task,
+gboolean ufo_ir_state_dependent_task_backward (UfoIrStateDependentTask *task,
                                                UfoBuffer     **inputs,
                                                UfoBuffer      *output,
                                                UfoRequisition *requisition);

@@ -20,24 +20,24 @@
 #include "ufo-ir-state-dependent-task.h"
 
 
+
 struct _UfoIrStateDependentTaskPrivate {
     gboolean is_forward;
 };
 
 // Private methods definitions
 static void ufo_task_interface_init (UfoTaskIface *iface);
-static gboolean ufo_ir_state_dependent_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
+static gboolean ufo_ir_state_dependent_task_process (UfoTask *self, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 //static UfoTaskMode ufo_ir_state_dependent_task_get_mode (UfoTask *task);
 //static guint ufo_ir_state_dependent_task_get_num_dimensions (UfoTask *task, guint input);
 //static guint ufo_ir_state_dependent_task_get_num_inputs (UfoTask *task);
 //static void ufo_ir_state_dependent_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
-static void ufo_ir_state_dependent_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static void ufo_ir_state_dependent_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_state_dependent_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_state_dependent_task_finalize (GObject *object);
+static const gchar *ufo_ir_state_dependent_task_get_package_name (UfoTaskNode *node);
 
-
-G_DEFINE_TYPE_WITH_CODE (UfoIrStateDependentTask, ufo_ir_state_dependent_task, UFO_TYPE_TASK_NODE,
+G_DEFINE_ABSTRACT_TYPE_WITH_CODE (UfoIrStateDependentTask, ufo_ir_state_dependent_task, UFO_TYPE_TASK_NODE,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK,
                                                 ufo_task_interface_init))
 
@@ -57,11 +57,6 @@ static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
-    iface->setup = ufo_ir_state_dependent_task_setup;
-//    iface->get_num_inputs = ufo_ir_state_dependent_task_get_num_inputs;
-//    iface->get_num_dimensions = ufo_ir_state_dependent_task_get_num_dimensions;
-//    iface->get_mode = ufo_ir_state_dependent_task_get_mode;
-//    iface->get_requisition = ufo_ir_state_dependent_task_get_requisition;
     iface->process = ufo_ir_state_dependent_task_process;
 }
 
@@ -74,12 +69,15 @@ ufo_ir_state_dependent_task_class_init (UfoIrStateDependentTaskClass *klass)
     oclass->get_property = ufo_ir_state_dependent_task_get_property;
     oclass->finalize = ufo_ir_state_dependent_task_finalize;
 
+    UfoTaskNodeClass *tclass = UFO_TASK_NODE_CLASS(klass);
+    tclass->get_package_name = ufo_ir_state_dependent_task_get_package_name;
+
     properties[PROP_IS_FORWARD] =
-        g_param_spec_string ("test",
-            "Test property nick",
-            "Test property description blurb",
-            "",
-            G_PARAM_READWRITE);
+        g_param_spec_boolean ("is_forward",
+                             "Indicates process direction",
+                             "Indicates process direction",
+                              TRUE,
+                              G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (oclass, i, properties[i]);
@@ -88,26 +86,28 @@ ufo_ir_state_dependent_task_class_init (UfoIrStateDependentTaskClass *klass)
 
     klass->backward = NULL;
     klass->forward = NULL;
+    g_print("qwe");
 }
 
 static void
 ufo_ir_state_dependent_task_init(UfoIrStateDependentTask *self)
 {
     self->priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE(self);
+    self->priv->is_forward = TRUE;
 }
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // Public methods
 // -----------------------------------------------------------------------------
-gboolean ufo_ir_state_dependent_task_forward (UfoTask        *task,
+gboolean ufo_ir_state_dependent_task_forward (UfoIrStateDependentTask        *task,
                                               UfoBuffer     **inputs,
                                               UfoBuffer      *output,
                                               UfoRequisition *requisition){
     g_return_if_fail(UFO_IR_IS_STATE_DEPENDENT_TASK(task));
 
     if(UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->forward != NULL){
-        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->forward(task, inputs, output, requisition);
+        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->forward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
     }
     else{
         g_warning ("Class '%s' does not override the mandatory "
@@ -117,14 +117,17 @@ gboolean ufo_ir_state_dependent_task_forward (UfoTask        *task,
 
 }
 
-gboolean ufo_ir_state_dependent_task_backward (UfoTask        *task,
+gboolean ufo_ir_state_dependent_task_backward (UfoIrStateDependentTask *task,
                                                UfoBuffer     **inputs,
                                                UfoBuffer      *output,
                                                UfoRequisition *requisition){
     g_return_if_fail(UFO_IR_IS_STATE_DEPENDENT_TASK(task));
 
-    if(UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->backward != NULL){
-        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->backward(task, inputs, output, requisition);
+    UfoIrStateDependentTaskClass *klass = NULL;
+    klass = UFO_IR_STATE_DEPENDENT_TASK_CLASS(task);
+
+    if(klass->backward != NULL){
+        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->backward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
     }
     else{
         g_warning ("Class '%s' does not override the mandatory "
@@ -194,46 +197,31 @@ ufo_ir_state_dependent_task_new (void)
     return UFO_NODE (g_object_new (UFO_IR_TYPE_STATE_DEPENDENT_TASK, NULL));
 }
 
-static void
-ufo_ir_state_dependent_task_setup (UfoTask *task,
-                       UfoResources *resources,
-                       GError **error)
-{
-}
-
-//static void
-//ufo_ir_state_dependent_task_get_requisition (UfoTask *task,
-//                                 UfoBuffer **inputs,
-//                                 UfoRequisition *requisition)
-//{
-//    requisition->n_dims = 0;
-//}
-
-//static guint
-//ufo_ir_state_dependent_task_get_num_inputs (UfoTask *task)
-//{
-//    return 1;
-//}
-
-//static guint
-//ufo_ir_state_dependent_task_get_num_dimensions (UfoTask *task,
-//                                             guint input)
-//{
-//    return 2;
-//}
-
-//static UfoTaskMode
-//ufo_ir_state_dependent_task_get_mode (UfoTask *task)
-//{
-//    return UFO_TASK_MODE_PROCESSOR;
-//}
-
 static gboolean
-ufo_ir_state_dependent_task_process (UfoTask *task,
+ufo_ir_state_dependent_task_process (UfoTask *self,
                          UfoBuffer **inputs,
                          UfoBuffer *output,
                          UfoRequisition *requisition)
 {
-    return TRUE;
+    UfoIrStateDependentTaskPrivate * priv= UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE(self);
+
+    if(priv->is_forward)
+    {
+        return ufo_ir_state_dependent_task_forward(UFO_IR_STATE_DEPENDENT_TASK(self), inputs, output, requisition);
+    }
+    else
+    {
+        return ufo_ir_state_dependent_task_backward(UFO_IR_STATE_DEPENDENT_TASK(self), inputs, output, requisition);
+    }
 }
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// TaskNode implementation
+// -----------------------------------------------------------------------------
+static const gchar *ufo_ir_state_dependent_task_get_package_name (UfoTaskNode *node)
+{
+    return g_strdup ("ir");
+}
+
 // -----------------------------------------------------------------------------
