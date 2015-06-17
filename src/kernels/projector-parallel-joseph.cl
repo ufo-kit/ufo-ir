@@ -144,6 +144,7 @@ void BP(__read_only  image2d_t           r_volume,
     __const int2 vol_coord;
     vol_coord.x = get_global_id(0);
     vol_coord.y = get_global_id(1);
+    
     __const float f_axis_pos = axis_pos;
     __const float fX = convert_float(vol_coord.x) + 0.5f - f_axis_pos;
     __const float fY = convert_float(vol_coord.y) + 0.5f - f_axis_pos;

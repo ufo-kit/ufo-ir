@@ -86,7 +86,6 @@ ufo_ir_state_dependent_task_class_init (UfoIrStateDependentTaskClass *klass)
 
     klass->backward = NULL;
     klass->forward = NULL;
-    g_print("qwe");
 }
 
 static void
@@ -106,8 +105,8 @@ gboolean ufo_ir_state_dependent_task_forward (UfoIrStateDependentTask        *ta
                                               UfoRequisition *requisition){
     g_return_if_fail(UFO_IR_IS_STATE_DEPENDENT_TASK(task));
 
-    if(UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->forward != NULL){
-        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->forward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
+    if(UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task)->forward != NULL){
+        UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task)->forward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
     }
     else{
         g_warning ("Class '%s' does not override the mandatory "
@@ -124,10 +123,10 @@ gboolean ufo_ir_state_dependent_task_backward (UfoIrStateDependentTask *task,
     g_return_if_fail(UFO_IR_IS_STATE_DEPENDENT_TASK(task));
 
     UfoIrStateDependentTaskClass *klass = NULL;
-    klass = UFO_IR_STATE_DEPENDENT_TASK_CLASS(task);
+    klass = UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task);
 
     if(klass->backward != NULL){
-        UFO_IR_STATE_DEPENDENT_TASK_CLASS(task)->backward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
+        UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task)->backward(UFO_IR_STATE_DEPENDENT_TASK(task), inputs, output, requisition);
     }
     else{
         g_warning ("Class '%s' does not override the mandatory "
