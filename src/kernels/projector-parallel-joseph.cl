@@ -38,14 +38,12 @@ typedef struct {
 
 __kernel
 void FP_hor(__read_only     image2d_t               volume,
-            __const         UfoRegion               region,
             __read_only     image2d_t               r_sinogram,
             __write_only    image2d_t               w_sinogram,
-            __const         float                   output_scale,
             __constant      float                   *sin_val,
             __constant      float                   *cos_val,
             __const         UfoGeometryDims         dimensions,
-            __const         UfoParallelGeometrySpec geom_spec,
+            __const         float                   axis_pos,
             __const         UfoProjectionsSubset    part)
 {
     int2 sino_coord;
@@ -55,8 +53,8 @@ void FP_hor(__read_only     image2d_t               volume,
     __const float fDetStep   = -1.0f / sin_val[sino_coord.y];
             float fSliceStep = cos_val[sino_coord.y] / sin_val[sino_coord.y];
 
-    __const float fDistCorr  = (sin_val[sino_coord.y] > 0.0f ? -fDetStep : fDetStep) * output_scale;
-    __const float f_axis_pos = geom_spec.axis_pos;
+    __const float fDistCorr  = (sin_val[sino_coord.y] > 0.0f ? -fDetStep : fDetStep);
+    __const float f_axis_pos = axis_pos;
 
     float4 detected_value = 0.0f;
 
@@ -85,14 +83,12 @@ void FP_hor(__read_only     image2d_t               volume,
 
 __kernel
 void FP_vert(__read_only     image2d_t               volume,
-             __const         UfoRegion               region,
              __read_only     image2d_t               r_sinogram,
              __write_only    image2d_t               w_sinogram,
-             __const         float                   output_scale,
              __constant      float                   *sin_val,
              __constant      float                   *cos_val,
              __const         UfoGeometryDims         dimensions,
-             __const         UfoParallelGeometrySpec geom_spec,
+             __const         float                   axis_pos,
              __const         UfoProjectionsSubset    part)
 {
     int2 sino_coord;
@@ -102,8 +98,8 @@ void FP_vert(__read_only     image2d_t               volume,
     __const float fDetStep   = 1.0f / cos_val[sino_coord.y];
             float fSliceStep = sin_val[sino_coord.y] / cos_val[sino_coord.y];
 
-    __const float fDistCorr  = (cos_val[sino_coord.y] < 0.0f ? -fDetStep : fDetStep) * output_scale;
-    __const float f_axis_pos = geom_spec.axis_pos;
+    __const float fDistCorr  = (cos_val[sino_coord.y] < 0.0f ? -fDetStep : fDetStep);
+    __const float f_axis_pos = axis_pos;
     float4 detected_value = 0.0f;
 
     float2 volume_coord;
