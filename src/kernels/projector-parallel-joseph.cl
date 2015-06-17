@@ -14,8 +14,7 @@ typedef struct {
 typedef struct {
   unsigned long height;
   unsigned long width;
-  unsigned long depth;
-
+  
   unsigned long n_dets;
   unsigned long n_angles;
 } UfoGeometryDims;
