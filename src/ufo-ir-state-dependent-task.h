@@ -67,6 +67,10 @@ gboolean ufo_ir_state_dependent_task_backward (UfoIrStateDependentTask *task,
                                                UfoBuffer     **inputs,
                                                UfoBuffer      *output,
                                                UfoRequisition *requisition);
+
+gboolean ufo_ir_state_dependent_task_get_is_forward(UfoIrStateDependentTask *self);
+void     ufo_ir_state_dependent_task_set_is_forward(UfoIrStateDependentTask *self, gboolean value);
+
 G_END_DECLS
 
 #endif

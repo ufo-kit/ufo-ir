@@ -156,11 +156,11 @@ ufo_ir_state_dependent_task_set_property (GObject *object,
                               const GValue *value,
                               GParamSpec *pspec)
 {
-    UfoIrStateDependentTaskPrivate *priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE (object);
+    UfoIrStateDependentTask *self = UFO_IR_STATE_DEPENDENT_TASK(object);
 
     switch (property_id) {
         case PROP_IS_FORWARD:
-            priv->is_forward = g_value_get_boolean(value);
+            ufo_ir_state_dependent_task_set_is_forward(self, g_value_get_boolean(value));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -174,17 +174,31 @@ ufo_ir_state_dependent_task_get_property (GObject *object,
                               GValue *value,
                               GParamSpec *pspec)
 {
-    UfoIrStateDependentTaskPrivate *priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE (object);
-
+    UfoIrStateDependentTask *self = UFO_IR_STATE_DEPENDENT_TASK(object);
     switch (property_id) {
         case PROP_IS_FORWARD:
-            g_value_set_boolean(value, priv->is_forward);
+            g_value_set_boolean(value, ufo_ir_state_dependent_task_get_is_forward(self));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
     }
 }
+
+gboolean
+ufo_ir_state_dependent_task_get_is_forward(UfoIrStateDependentTask *self)
+{
+    UfoIrStateDependentTaskPrivate *priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE (self);
+    return priv->is_forward;
+}
+
+void
+ufo_ir_state_dependent_task_set_is_forward(UfoIrStateDependentTask *self, gboolean value)
+{
+    UfoIrStateDependentTaskPrivate *priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE (self);
+    priv->is_forward = value;
+}
+
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------

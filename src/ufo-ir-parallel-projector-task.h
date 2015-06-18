@@ -52,6 +52,14 @@ struct _UfoIrProjectionsSubset {
     UfoIrProjectionDirection direction;
 };
 
+typedef struct {
+  unsigned long height;
+  unsigned long width;
+
+  unsigned long n_dets;
+  unsigned long n_angles;
+} UfoIrGeometryDims;
+
 #define UFO_IR_TYPE_PARALLEL_PROJECTOR_TASK             (ufo_ir_parallel_projector_task_get_type())
 #define UFO_IR_PARALLEL_PROJECTOR_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_IR_TYPE_PARALLEL_PROJECTOR_TASK, UfoIrParallelProjectorTask))
 #define UFO_IR_IS_PARALLEL_PROJECTOR_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_IR_TYPE_PARALLEL_PROJECTOR_TASK))
@@ -78,6 +86,9 @@ GType     ufo_ir_parallel_projector_task_get_type  (void);
 
 const gchar *ufo_ir_parallel_projector_get_model(UfoIrParallelProjectorTask *self);
 void         ufo_ir_parallel_projector_set_model(UfoIrParallelProjectorTask *self, const gchar *model_name);
+
+guint ufo_ir_parallel_projector_get_angles_num(UfoIrParallelProjectorTask *self);
+void ufo_ir_parallel_projector_set_angles_num(UfoIrParallelProjectorTask *self, guint angles_num);
 
 void ufo_ir_parallel_projector_subset_fp(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset);
 void ufo_ir_parallel_projector_subset_bp(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset);
