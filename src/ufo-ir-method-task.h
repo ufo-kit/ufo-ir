@@ -21,6 +21,7 @@
 #define __UFO_IR_METHOD_TASK_H
 
 #include <ufo/ufo.h>
+#include "ufo-ir-projector-task.h"
 
 G_BEGIN_DECLS
 
@@ -46,6 +47,12 @@ struct _UfoIrMethodTaskClass {
 
 UfoNode  *ufo_ir_method_task_new       (void);
 GType     ufo_ir_method_task_get_type  (void);
+
+UfoIrProjectorTask *ufo_ir_method_task_get_projector(UfoIrMethodTask *self);
+void                ufo_ir_method_task_set_projector(UfoIrMethodTask *self, UfoIrProjectorTask *value);
+
+guint ufo_ir_method_task_get_iterations_number(UfoIrMethodTask *self);
+void  ufo_ir_method_task_set_iterations_number(UfoIrMethodTask *self, guint value);
 
 G_END_DECLS
 
