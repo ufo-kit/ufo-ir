@@ -87,10 +87,10 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
                               1,
                               G_PARAM_READWRITE);
     properties[PROP_PROJECTOR] =
-            g_param_spec_string("projection_model",
-                                "Current projection model",
-                                "Current projection model",
-                                "",
+            g_param_spec_object("projector",
+                                "Current projector",
+                                "Current projector",
+                                UFO_IR_TYPE_PROJECTOR_TASK,
                                 G_PARAM_READWRITE);
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++){
         g_object_class_install_property (gobject_class, i, properties[i]);
@@ -140,6 +140,7 @@ ufo_ir_method_task_set_property (GObject      *object,
             break;
         case PROP_PROJECTOR:
             ufo_ir_method_task_set_projector(self, UFO_IR_PROJECTOR_TASK(g_value_get_object(value)));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -160,6 +161,7 @@ ufo_ir_method_task_get_property (GObject    *object,
             break;
         case PROP_PROJECTOR:
             g_value_set_object(value, ufo_ir_method_task_get_projector(self));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;

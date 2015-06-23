@@ -5,6 +5,7 @@ set(ufoircore_SRCS
     ufo-ir-method-task.c
     ufo-ir-state-dependent-task.c
     ufo-ir-projector-task.c
+    ufo-ir-basic-ops.c
 )
 #}}}
 
@@ -13,6 +14,7 @@ set(ufoircore_HDRS
     ufo-ir-method-task-node.h
     ufo-ir-state-dependent-task-node.h
     ufo-ir-projector-task.h
+    ufo-ir-basic-ops.h
 )
 #}}}
 
@@ -21,6 +23,7 @@ set(ufoircore_HDRS
 set(ufoir_SRCS
     ufo-ir-dummy-task.c
     ufo-ir-parallel-projector-task.c
+    ufo-ir-sirt-task.c
 )
 #}}}
 
@@ -28,6 +31,7 @@ set(ufoir_SRCS
 set(ufoir_HDRS
     ufo-ir-dummy-task.h
     ufo-ir-parallel-projector-task.h
+    ufo-ir-sirt-task.h
 )
 #}}}
 
