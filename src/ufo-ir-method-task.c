@@ -40,7 +40,6 @@ static guint ufo_ir_method_task_get_num_inputs (UfoTask *task);
 static guint ufo_ir_method_task_get_num_dimensions (UfoTask *task, guint input);
 static UfoTaskMode ufo_ir_method_task_get_mode (UfoTask *task);
 static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
-static void ufo_ir_method_task_set_json_object_property (UfoTask *task, const gchar *prop_name, JsonObject *object);
 
 // UfoTaskNode class related methods
 // UfoNode *ufo_ir_method_task_node_copy (UfoNode *node, GError **error);

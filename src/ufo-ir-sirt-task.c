@@ -89,6 +89,7 @@ ufo_ir_sirt_task_class_init (UfoIrSirtTaskClass *klass) {
 static void
 ufo_ir_sirt_task_init(UfoIrSirtTask *self) {
     self->priv = UFO_IR_SIRT_TASK_GET_PRIVATE(self);
+    self->priv->relaxation_factor = 0.25;
 }
 // -----------------------------------------------------------------------------
 
@@ -169,9 +170,9 @@ ufo_ir_sirt_task_setup (UfoTask      *task,
                         UfoResources *resources,
                         GError       **error)
 {
-    UfoTaskIface *klass = UFO_TASK_CLASS(ufo_ir_sirt_task_parent_class);
-    klass->setup(task, resources, error);
+    ufo_task_node_set_proc_node(UFO_TASK_NODE(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), ufo_task_node_get_proc_node(UFO_TASK_NODE(task)));
 
+    ufo_task_setup(UFO_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), resources, error);
     UfoIrSirtTaskPrivate *priv = UFO_IR_SIRT_TASK_GET_PRIVATE (task);
     priv->op_set_kernel = ufo_ir_op_set_generate_kernel(resources);
     priv->op_inv_kernel = ufo_ir_op_inv_generate_kernel(resources);
@@ -189,7 +190,6 @@ ufo_ir_sirt_task_process (UfoTask *task,
     ufo_ir_projector_task_set_relaxation(projector, priv->relaxation_factor);
     UfoIrStateDependentTask *sdprojector = UFO_IR_STATE_DEPENDENT_TASK(projector);
     //UfoResources   *resources = ufo_processor_get_resources (UFO_PROCESSOR (method));
-
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(task)));
     cl_command_queue cmd_queue = (cl_command_queue)ufo_gpu_node_get_cmd_queue (node);
 
@@ -201,9 +201,8 @@ ufo_ir_sirt_task_process (UfoTask *task,
     UfoBuffer *pixel_weights = ufo_buffer_dup (output);
     UfoBuffer *ray_weights   = ufo_buffer_dup (inputs[0]);
 
-
-    //
     // calculate the weighting coefficients
+    ufo_ir_projector_task_set_relaxation(projector, 1.0f);
     ufo_ir_op_set (volume_tmp,  1.0f, cmd_queue, priv->op_set_kernel);
     ufo_ir_op_set (ray_weights, 0.0f, cmd_queue, priv->op_set_kernel);
     ufo_ir_state_dependent_task_forward(sdprojector, &volume_tmp, ray_weights, requisition);
@@ -212,12 +211,13 @@ ufo_ir_sirt_task_process (UfoTask *task,
 
     ufo_ir_op_set (sino_tmp, 1.0f, cmd_queue, priv->op_set_kernel);
     ufo_ir_op_set (pixel_weights, 0.0f, cmd_queue, priv->op_set_kernel);
-
     ufo_ir_state_dependent_task_backward(sdprojector, &sino_tmp, pixel_weights, requisition);
-
     ufo_ir_op_inv (pixel_weights, cmd_queue, priv->op_inv_kernel);
 
-    //
+    ufo_ir_projector_task_set_relaxation(projector, priv->relaxation_factor);
+    ufo_ir_projector_task_set_correction_scale(projector, -1.0f);
+    ufo_ir_op_set(output, 0.0f, cmd_queue, priv->op_set_kernel);
+
     // do SIRT
     guint iteration = 0;
     while (iteration < max_iterations) {
@@ -227,7 +227,6 @@ ufo_ir_sirt_task_process (UfoTask *task,
 
         ufo_ir_op_mul (sino_tmp, ray_weights, sino_tmp, cmd_queue, priv->op_mul_kernel);
         ufo_ir_op_set (volume_tmp, 0, cmd_queue, priv->op_set_kernel);
-
         ufo_ir_state_dependent_task_backward(sdprojector, &sino_tmp, volume_tmp, requisition);
 
         ufo_ir_op_mul (volume_tmp, pixel_weights, volume_tmp, cmd_queue, priv->op_mul_kernel);
