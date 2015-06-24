@@ -49,13 +49,16 @@ UfoNode  *ufo_ir_projector_task_new       (void);
 GType     ufo_ir_projector_task_get_type  (void);
 
 gfloat ufo_ir_projector_task_get_step(UfoIrProjectorTask *self);
-void   ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat step);
+void   ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat value);
 
 gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self);
-void   ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat axis_position);
+void   ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat value);
 
 gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self);
-void   ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat relaxation);
+void   ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat value);
+
+gfloat ufo_ir_projector_task_get_correction_scale(UfoIrProjectorTask *self);
+void   ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gfloat value);
 
 G_END_DECLS
 

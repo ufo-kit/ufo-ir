@@ -24,6 +24,7 @@ struct _UfoIrProjectorTaskPrivate {
     gfloat axis_position;
     gfloat step;
     gfloat relaxation;
+    gfloat correction_scale;
 };
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
@@ -44,6 +45,7 @@ enum {
     PROP_AXIS_POSITION,
     PROP_STEP,
     PROP_RELAXATION,
+    PROP_CORRECTION_SCALE,
     N_PROPERTIES
 };
 
@@ -70,25 +72,31 @@ ufo_ir_projector_task_class_init (UfoIrProjectorTaskClass *klass)
     oclass->finalize = ufo_ir_projector_task_finalize;
 
     properties[PROP_AXIS_POSITION] =
-        g_param_spec_int ("axis_position",
-                          "Axis position",
-                          "Axis position",
-                          -1, G_MAXINT, -1,
-                          G_PARAM_READWRITE);
+            g_param_spec_int ("axis_position",
+                              "Axis position",
+                              "Axis position",
+                              -1, G_MAXINT, -1,
+                              G_PARAM_READWRITE);
 
     properties[PROP_STEP] =
-        g_param_spec_float ("step",
-                            "Projection step in RAD",
-                            "Projection step in RAD",
-                            0.0f, G_MAXFLOAT, 0.0f,
-                            G_PARAM_READWRITE);
+            g_param_spec_float ("step",
+                                "Projection step in RAD",
+                                "Projection step in RAD",
+                                0.0f, G_MAXFLOAT, 0.0f,
+                                G_PARAM_READWRITE);
 
     properties[PROP_RELAXATION] =
-        g_param_spec_float ("relaxation",
-                            "Projection relaxation parameter",
-                            "Projection relaxation parameter",
-                            G_MINFLOAT, G_MAXFLOAT, 1.0f,
-                            G_PARAM_READWRITE);
+            g_param_spec_float ("relaxation",
+                                "Projection relaxation parameter",
+                                "Projection relaxation parameter",
+                                G_MINFLOAT, G_MAXFLOAT, 1.0f,
+                                G_PARAM_READWRITE);
+    properties[PROP_CORRECTION_SCALE] =
+            g_param_spec_float ("correction_scale",
+                                "FP correction scale",
+                                "FP correction scale",
+                                G_MINFLOAT, G_MAXFLOAT, 1.0f,
+                                G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
         g_object_class_install_property (oclass, i, properties[i]);
@@ -104,6 +112,7 @@ ufo_ir_projector_task_init(UfoIrProjectorTask *self)
     priv->axis_position = -1;
     priv->step = 0;
     priv->relaxation = 1;
+    priv->correction_scale = 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -115,8 +124,7 @@ static void
 ufo_ir_projector_task_set_property (GObject *object,
                                     guint property_id,
                                     const GValue *value,
-                                    GParamSpec *pspec)
-{
+                                    GParamSpec *pspec) {
     UfoIrProjectorTask *self = UFO_IR_PROJECTOR_TASK (object);
 
     switch (property_id) {
@@ -129,6 +137,9 @@ ufo_ir_projector_task_set_property (GObject *object,
         case PROP_RELAXATION:
             ufo_ir_projector_task_set_relaxation(self, g_value_get_float (value));
             break;
+        case PROP_CORRECTION_SCALE:
+            ufo_ir_projector_task_set_correction_scale(self, g_value_get_float (value));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
@@ -139,8 +150,7 @@ static void
 ufo_ir_projector_task_get_property (GObject *object,
                               guint property_id,
                               GValue *value,
-                              GParamSpec *pspec)
-{
+                              GParamSpec *pspec) {
     UfoIrProjectorTask *self = UFO_IR_PROJECTOR_TASK (object);
 
     switch (property_id) {
@@ -153,20 +163,23 @@ ufo_ir_projector_task_get_property (GObject *object,
         case PROP_RELAXATION:
             g_value_set_float (value, ufo_ir_projector_task_get_relaxation(self));
             break;
+        case PROP_CORRECTION_SCALE:
+            g_value_set_float (value, ufo_ir_projector_task_get_correction_scale(self));
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
     }
 }
 
-gfloat ufo_ir_projector_task_get_step(UfoIrProjectorTask *self){
+gfloat ufo_ir_projector_task_get_step(UfoIrProjectorTask *self) {
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     return priv->step;
 }
 
-void ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat step){
+void ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat value) {
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
-    priv->step = step;
+    priv->step = value;
 }
 
 gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self) {
@@ -174,9 +187,9 @@ gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self) {
     return priv->axis_position;
 }
 
-void ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat axis_position) {
+void ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat value) {
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
-    priv->axis_position = axis_position;
+    priv->axis_position = value;
 }
 
 gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self) {
@@ -184,9 +197,19 @@ gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self) {
     return priv->relaxation;
 }
 
-void ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat relaxation) {
+void ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat value) {
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
-    priv->relaxation = relaxation;
+    priv->relaxation = value;
+}
+
+gfloat ufo_ir_projector_task_get_correction_scale(UfoIrProjectorTask *self) {
+    UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
+    return priv->correction_scale;
+}
+
+void   ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gfloat value) {
+    UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
+    priv->correction_scale = value;
 }
 
 // -----------------------------------------------------------------------------

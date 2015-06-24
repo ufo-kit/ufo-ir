@@ -43,7 +43,8 @@ void FP_hor(__read_only     image2d_t               volume,
             __constant      float                   *cos_val,
             __const         UfoGeometryDims         dimensions,
             __const         float                   axis_pos,
-            __const         UfoProjectionsSubset    part)
+            __const         UfoProjectionsSubset    part,
+            __const         float                   correction_scale)
 {
     int2 sino_coord;
     sino_coord.y = part.offset + get_global_id(1);
@@ -52,7 +53,7 @@ void FP_hor(__read_only     image2d_t               volume,
     __const float fDetStep   = -1.0f / sin_val[sino_coord.y];
             float fSliceStep = cos_val[sino_coord.y] / sin_val[sino_coord.y];
 
-    __const float fDistCorr  = (sin_val[sino_coord.y] > 0.0f ? -fDetStep : fDetStep);
+    __const float fDistCorr  = (sin_val[sino_coord.y] > 0.0f ? -fDetStep : fDetStep) * correction_scale;
     __const float f_axis_pos = axis_pos;
 
     float4 detected_value = 0.0f;
@@ -88,7 +89,8 @@ void FP_vert(__read_only     image2d_t               volume,
              __constant      float                   *cos_val,
              __const         UfoGeometryDims         dimensions,
              __const         float                   axis_pos,
-             __const         UfoProjectionsSubset    part)
+             __const         UfoProjectionsSubset    part,
+             __const         float                   correction_scale)
 {
     int2 sino_coord;
     sino_coord.y = part.offset + get_global_id(1);
@@ -97,7 +99,7 @@ void FP_vert(__read_only     image2d_t               volume,
     __const float fDetStep   = 1.0f / cos_val[sino_coord.y];
             float fSliceStep = sin_val[sino_coord.y] / cos_val[sino_coord.y];
 
-    __const float fDistCorr  = (cos_val[sino_coord.y] < 0.0f ? -fDetStep : fDetStep);
+    __const float fDistCorr  = (cos_val[sino_coord.y] < 0.0f ? -fDetStep : fDetStep) * correction_scale;
     __const float f_axis_pos = axis_pos;
     float4 detected_value = 0.0f;
 
@@ -140,9 +142,8 @@ void BP(__read_only  image2d_t           r_volume,
     vol_coord.x = get_global_id(0);
     vol_coord.y = get_global_id(1);
     
-    __const float f_axis_pos = axis_pos;
-    __const float fX = convert_float(vol_coord.x) + 0.5f - f_axis_pos;
-    __const float fY = convert_float(vol_coord.y) + 0.5f - f_axis_pos;
+    __const float fX = convert_float(vol_coord.x) + 0.5f - axis_pos;
+    __const float fY = convert_float(vol_coord.y) + 0.5f - axis_pos;
 
     /*if (fX > f_axis_pos || fY > f_axis_pos)
         return;*/
@@ -155,7 +156,7 @@ void BP(__read_only  image2d_t           r_volume,
         float sin_theta = sin_val[i + part.offset];
         float cos_theta = cos_val[i + part.offset];
 
-        sino_coord.x = f_axis_pos + fX * cos_theta - fY * sin_theta;
+        sino_coord.x = axis_pos + fX * cos_theta - fY * sin_theta;
 
         // the difference of ufo fbp and this fbp in sampling
         // if I will use linear_clamp_sampler instead linear_clamp_edge_sampler,
