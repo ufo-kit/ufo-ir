@@ -50,6 +50,14 @@ gpointer ufo_ir_op_add (UfoBuffer *arg1,
                         gpointer   kernel);
 gpointer ufo_ir_op_add_generate_kernel(UfoResources *resources);
 
+gpointer ufo_ir_op_mul_rows (UfoBuffer *arg1,
+                             UfoBuffer *arg2,
+                             UfoBuffer *out,
+                             guint offset,
+                             guint n,
+                             gpointer command_queue,
+                             gpointer kernel);
+gpointer ufo_ir_op_mul_rows_generate_kernel(UfoResources *resources);
 G_END_DECLS
 
 #endif

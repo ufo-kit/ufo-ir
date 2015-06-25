@@ -136,6 +136,16 @@ ufo_ir_parallel_projector_task_init(UfoIrParallelProjectorTask *self) {
 // Public methods
 // -----------------------------------------------------------------------------
 
+const gfloat *ufo_ir_parallel_projector_get_host_sin_vals(UfoIrParallelProjectorTask *self) {
+    UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
+    return priv->scan_host_sin_lut;
+}
+
+const gfloat *ufo_ir_parallel_projector_get_host_cos_vals(UfoIrParallelProjectorTask *self) {
+    UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
+    return priv->scan_host_cos_lut;
+}
+
 void ufo_ir_parallel_projector_subset_fp(UfoIrParallelProjectorTask *self,
                                              UfoBuffer *volume,
                                              UfoBuffer *sinogram,

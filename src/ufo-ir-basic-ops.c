@@ -150,3 +150,53 @@ gpointer
 ufo_ir_op_add_generate_kernel(UfoResources *resources){
     return kernel_from_name(resources, "operation_add");
 }
+
+gpointer ufo_ir_op_mul_rows (UfoBuffer *arg1,
+                             UfoBuffer *arg2,
+                             UfoBuffer *out,
+                             guint offset,
+                             guint n,
+                             gpointer command_queue,
+                             gpointer kernel) {
+    UfoRequisition arg1_requisition, arg2_requisition, out_requisition;
+    ufo_buffer_get_requisition (arg1, &arg1_requisition);
+    ufo_buffer_get_requisition (arg2, &arg2_requisition);
+    ufo_buffer_get_requisition (out, &out_requisition);
+
+    if (arg1_requisition.dims[0] != arg2_requisition.dims[0] ||
+        arg1_requisition.dims[0] != out_requisition.dims[0]) {
+        g_error ("Number of columns is different.");
+        return NULL;
+    }
+
+    if (arg1_requisition.dims[1] < offset + n ||
+        arg2_requisition.dims[1] < offset + n ||
+        out_requisition.dims[1] < offset + n) {
+        g_error ("Rows are not enough.");
+        return NULL;
+    }
+
+    cl_mem d_arg1 = ufo_buffer_get_device_image (arg1, command_queue);
+    cl_mem d_arg2 = ufo_buffer_get_device_image (arg2, command_queue);
+    cl_mem d_out  = ufo_buffer_get_device_image (out, command_queue);
+
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 0, sizeof(void *), (void *) &d_arg1));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 1, sizeof(void *), (void *) &d_arg2));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 2, sizeof(void *), (void *) &d_out));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 3, sizeof(unsigned int), (void *) &offset));
+
+    UfoRequisition operation_requisition = out_requisition;
+    operation_requisition.dims[1] = n;
+
+    cl_event event;
+    UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel (command_queue, kernel,
+                                                       operation_requisition.n_dims, NULL, operation_requisition.dims,
+                                                       NULL, 0, NULL, &event));
+
+    return event;
+}
+
+gpointer ufo_ir_op_mul_rows_generate_kernel(UfoResources *resources) {
+    return kernel_from_name(resources, "op_mulRows");
+}
+

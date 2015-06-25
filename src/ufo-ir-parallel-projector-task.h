@@ -88,10 +88,13 @@ const gchar *ufo_ir_parallel_projector_get_model(UfoIrParallelProjectorTask *sel
 void         ufo_ir_parallel_projector_set_model(UfoIrParallelProjectorTask *self, const gchar *model_name);
 
 guint ufo_ir_parallel_projector_get_angles_num(UfoIrParallelProjectorTask *self);
-void ufo_ir_parallel_projector_set_angles_num(UfoIrParallelProjectorTask *self, guint angles_num);
+void  ufo_ir_parallel_projector_set_angles_num(UfoIrParallelProjectorTask *self, guint angles_num);
 
 void ufo_ir_parallel_projector_subset_fp(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset);
 void ufo_ir_parallel_projector_subset_bp(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset);
+
+const gfloat *ufo_ir_parallel_projector_get_host_sin_vals(UfoIrParallelProjectorTask *self);
+const gfloat *ufo_ir_parallel_projector_get_host_cos_vals(UfoIrParallelProjectorTask *self);
 
 G_END_DECLS
 
