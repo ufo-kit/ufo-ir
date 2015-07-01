@@ -32,6 +32,7 @@ static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_sirt_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_sirt_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 static void ufo_ir_sirt_task_finalize (GObject *object);
+static const gchar *ufo_ir_sirt_task_get_package_name(UfoTaskNode *self);
 
 struct _UfoIrSirtTaskPrivate {
     gfloat relaxation_factor;
@@ -72,6 +73,9 @@ ufo_ir_sirt_task_class_init (UfoIrSirtTaskClass *klass) {
     oclass->set_property = ufo_ir_sirt_task_set_property;
     oclass->get_property = ufo_ir_sirt_task_get_property;
     oclass->finalize = ufo_ir_sirt_task_finalize;
+
+    UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
+    tnclass->get_package_name = ufo_ir_sirt_task_get_package_name;
 
     properties[PROP_RELAXATION_FACTOR] =
             g_param_spec_float("relaxation_factor",
@@ -233,5 +237,9 @@ ufo_ir_sirt_task_process (UfoTask *task,
     }
 
     return TRUE;
+}
+
+static const gchar *ufo_ir_sirt_task_get_package_name(UfoTaskNode *self) {
+    return g_strdup("ir");
 }
 // -----------------------------------------------------------------------------

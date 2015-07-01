@@ -72,10 +72,10 @@ ufo_ir_projector_task_class_init (UfoIrProjectorTaskClass *klass)
     oclass->finalize = ufo_ir_projector_task_finalize;
 
     properties[PROP_AXIS_POSITION] =
-            g_param_spec_int ("axis_position",
+            g_param_spec_float ("axis_position",
                               "Axis position",
                               "Axis position",
-                              -1, G_MAXINT, -1,
+                              -1, G_MAXFLOAT, -1,
                               G_PARAM_READWRITE);
 
     properties[PROP_STEP] =

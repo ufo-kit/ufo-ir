@@ -130,6 +130,8 @@ ufo_ir_parallel_projector_task_class_init (UfoIrParallelProjectorTaskClass *klas
 static void
 ufo_ir_parallel_projector_task_init(UfoIrParallelProjectorTask *self) {
     self->priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
+    self->priv->model_name = g_strdup("joseph");
+    self->priv->angles_num = 1;
 }
 
 // -----------------------------------------------------------------------------

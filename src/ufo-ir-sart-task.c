@@ -35,6 +35,7 @@ static void ufo_ir_sart_task_setup (UfoTask *task, UfoResources *resources, GErr
 static gboolean ufo_ir_sart_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 static void ufo_ir_sart_task_finalize (GObject *object);
 static UfoIrProjectionsSubset *generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets);
+static const gchar *ufo_ir_sart_task_get_package_name(UfoTaskNode *self);
 
 struct _UfoIrSartTaskPrivate {
     gfloat relaxation_factor;
@@ -76,6 +77,9 @@ ufo_ir_sart_task_class_init (UfoIrSartTaskClass *klass) {
     oclass->set_property = ufo_ir_sart_task_set_property;
     oclass->get_property = ufo_ir_sart_task_get_property;
     oclass->finalize = ufo_ir_sart_task_finalize;
+
+    UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
+    tnclass->get_package_name = ufo_ir_sart_task_get_package_name;
 
     properties[PROP_RELAXATION_FACTOR] =
             g_param_spec_float("relaxation_factor",
@@ -200,6 +204,13 @@ ufo_ir_sart_task_process (UfoTask *task,
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(task)));
     cl_command_queue cmd_queue = (cl_command_queue)ufo_gpu_node_get_cmd_queue (node);
 
+
+    GTimer *timer = g_timer_new ();
+    g_timer_reset(timer);
+    clFinish(cmd_queue);
+    g_timer_start(timer);
+    
+
     UfoBuffer *sino_tmp = ufo_buffer_dup (inputs[0]);
     UfoBuffer *volume_tmp = ufo_buffer_dup (output);
 
@@ -238,6 +249,11 @@ ufo_ir_sart_task_process (UfoTask *task,
         iteration++;
     }
 
+    clFinish(cmd_queue);
+    g_timer_stop(timer);
+    gdouble _time = g_timer_elapsed (timer, NULL);
+    g_timer_destroy(timer);
+    g_print("%p %3.5f\n", cmd_queue, _time);
     return TRUE;
 }
 // -----------------------------------------------------------------------------
@@ -264,4 +280,9 @@ generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets)
 
     return subsets;
 }
+
+static const gchar *ufo_ir_sart_task_get_package_name(UfoTaskNode *self) {
+    return g_strdup("ir");
+}
+
 // -----------------------------------------------------------------------------

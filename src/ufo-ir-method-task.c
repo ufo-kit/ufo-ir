@@ -46,7 +46,7 @@ static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **input
 
 // IrMethod private Methods
 
-static const gchar *ufo_ir_method_task_get_package_name (UfoTaskNode *task_node);
+static const gchar *ufo_ir_method_task_get_package_name (UfoTaskNode *self);
 // -----------------------------------------------------------------------------
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrMethodTask, ufo_ir_method_task, UFO_TYPE_TASK_NODE,
@@ -279,9 +279,9 @@ ufo_ir_method_task_get_requisition (UfoTask        *task,
 // -----------------------------------------------------------------------------
 
 static const gchar *
-ufo_ir_method_task_get_package_name (UfoTaskNode *task_node)
+ufo_ir_method_task_get_package_name (UfoTaskNode *self)
 {
-    return "ir";
+    return g_strdup("ir");
 }
 
 // -----------------------------------------------------------------------------
