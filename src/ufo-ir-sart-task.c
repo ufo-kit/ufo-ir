@@ -204,12 +204,11 @@ ufo_ir_sart_task_process (UfoTask *task,
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(task)));
     cl_command_queue cmd_queue = (cl_command_queue)ufo_gpu_node_get_cmd_queue (node);
 
-
     GTimer *timer = g_timer_new ();
     g_timer_reset(timer);
     clFinish(cmd_queue);
     g_timer_start(timer);
-    
+
 
     UfoBuffer *sino_tmp = ufo_buffer_dup (inputs[0]);
     UfoBuffer *volume_tmp = ufo_buffer_dup (output);

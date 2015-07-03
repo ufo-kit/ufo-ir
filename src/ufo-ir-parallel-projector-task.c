@@ -497,7 +497,6 @@ ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self,
                                          cl_command_queue cmd_queue) {
     UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
     cl_kernel kernel = priv->bp_kernel;
-
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_sino = ufo_buffer_get_device_image (sinogram, cmd_queue);
 
