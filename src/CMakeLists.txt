@@ -25,6 +25,7 @@ set(ufoir_SRCS
     ufo-ir-parallel-projector-task.c
     ufo-ir-sirt-task.c
     ufo-ir-sart-task.c
+    ufo-ir-asdpocs-task.c
 )
 #}}}
 
@@ -34,6 +35,7 @@ set(ufoir_HDRS
     ufo-ir-parallel-projector-task.h
     ufo-ir-sirt-task.h
     ufo-ir-sart-task.h
+    ufo-ir-asdpocs-task.h
 )
 #}}}
 
