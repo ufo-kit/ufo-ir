@@ -1,0 +1,56 @@
+{
+    "nodes": [
+        {
+            "plugin": "read",
+            "name": "read",
+            "properties": {
+                "path": "sino01.tif"
+            }
+        },
+        {
+            "plugin": "write",
+            "name": "write",
+            "properties": {
+            "filename":"out/out%03i.tif"
+            }
+        },
+        {
+            "plugin": "asdpocs",
+            "name": "asdpocs",
+            "package": "ir",
+            "properties":{
+                "projector":{
+                    "plugin": "parallel-projector",
+                    "name": "parallel-projector",
+                    "package": "ir",
+                    "properties": {
+                        "model":"joseph",
+                        "is_forward": false,
+                        "step":0.034906585
+                    }
+                },
+                "df_minimizer":{
+                    "plugin": "sart",
+                    "package": "ir",
+                    "name": "sart_minimizer",
+                    "properties": {
+                        "relaxation_factor":0.25,
+                        "iterations_number":100
+                    }
+                },
+                "iterations_number":10
+
+            }
+        }
+    ],
+    "edges": [
+        {
+            "from": {"name": "read"},
+            "to": {"name": "asdpocs"}
+        },
+        {
+            "from": {"name": "asdpocs"},
+            "to": {"name": "write"}
+        }
+    ]
+}
