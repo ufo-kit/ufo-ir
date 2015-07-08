@@ -70,7 +70,7 @@ G_DEFINE_TYPE_WITH_CODE (UfoIrParallelProjectorTask, ufo_ir_parallel_projector_t
 #define UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_PARALLEL_PROJECTOR_TASK, UfoIrParallelProjectorTaskPrivate))
 
 enum {
-    PROP_0,
+    PROP_0 = 200,
     PROP_MODEL,
     PROP_ANGLES_NUM,
     N_PROPERTIES

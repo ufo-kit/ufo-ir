@@ -58,6 +58,30 @@ gpointer ufo_ir_op_mul_rows (UfoBuffer *arg1,
                              gpointer command_queue,
                              gpointer kernel);
 gpointer ufo_ir_op_mul_rows_generate_kernel(UfoResources *resources);
+
+gfloat ufo_ir_op_l1_norm (UfoBuffer *arg,
+                          gpointer command_queue);
+
+gpointer ufo_ir_op_deduction (UfoBuffer *arg1,
+                              UfoBuffer *arg2,
+                              UfoBuffer *out,
+                              gpointer command_queue,
+                              gpointer kernel);
+gpointer ufo_ir_op_deduction_generate_kernel(UfoResources *resources);
+
+gpointer ufo_ir_op_positive_constraint (UfoBuffer *arg,
+                                        UfoBuffer *out,
+                                        gpointer command_queue,
+                                        gpointer kernel);
+gpointer ufo_ir_op_positive_constraint_generate_kernel(UfoResources *resources);
+
+gpointer ufo_ir_op_deduction2 (UfoBuffer *arg1,
+                               UfoBuffer *arg2,
+                               gfloat modifier,
+                               UfoBuffer *out,
+                               gpointer command_queue,
+                               gpointer kernel);
+gpointer ufo_ir_op_deduction2_generate_kernel(UfoResources *resources);
 G_END_DECLS
 
 #endif

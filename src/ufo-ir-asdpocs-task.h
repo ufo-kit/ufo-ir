@@ -68,6 +68,9 @@ void   ufo_ir_asdpocs_task_set_r_max(UfoIrAsdpocsTask *self, gfloat value);
 
 gboolean ufo_ir_asdpocs_task_get_positive_constraint(UfoIrAsdpocsTask *self);
 void     ufo_ir_asdpocs_task_set_positive_constraint(UfoIrAsdpocsTask *self, gboolean value);
+
+UfoTask *ufo_ir_asdpocs_task_get_df_minimizer(UfoIrAsdpocsTask *self);
+void     ufo_ir_asdpocs_task_set_df_minimizer(UfoIrAsdpocsTask *self, UfoTask *value);
 G_END_DECLS
 
 #endif

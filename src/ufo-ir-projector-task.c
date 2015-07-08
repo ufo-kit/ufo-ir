@@ -41,7 +41,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_CODE (UfoIrProjectorTask, ufo_ir_projector_task, UFO
 #define UFO_IR_PROJECTOR_TASK_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_PROJECTOR_TASK, UfoIrProjectorTaskPrivate))
 
 enum {
-    PROP_0,
+    PROP_0 = 100,
     PROP_AXIS_POSITION,
     PROP_STEP,
     PROP_RELAXATION,
