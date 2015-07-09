@@ -26,6 +26,7 @@ set(ufoir_SRCS
     ufo-ir-sirt-task.c
     ufo-ir-sart-task.c
     ufo-ir-asdpocs-task.c
+    ufo-ir-splitbregman-task.c
 )
 #}}}
 
@@ -36,6 +37,7 @@ set(ufoir_HDRS
     ufo-ir-sirt-task.h
     ufo-ir-sart-task.h
     ufo-ir-asdpocs-task.h
+    ufo-ir-splitbregman-task.h
 )
 #}}}
 
