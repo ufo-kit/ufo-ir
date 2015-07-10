@@ -20,7 +20,7 @@
 #ifndef __UFO_IR_SIRT_TASK_H
 #define __UFO_IR_SIRT_TASK_H
 
-#include "ufo-ir-method-task.h"
+#include "core/ufo-ir-method-task.h"
 
 
 G_BEGIN_DECLS

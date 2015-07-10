@@ -2,42 +2,44 @@ cmake_minimum_required(VERSION 2.6)
 
 #{{{ sources
 set(ufoircore_SRCS
-    ufo-ir-method-task.c
-    ufo-ir-state-dependent-task.c
-    ufo-ir-projector-task.c
-    ufo-ir-basic-ops.c
+    core/ufo-ir-method-task.c
+    core/ufo-ir-state-dependent-task.c
+    core/ufo-ir-projector-task.c
+    core/ufo-ir-basic-ops.c
 )
 #}}}
 
 #{{{ headers
 set(ufoircore_HDRS
-    ufo-ir-method-task-node.h
-    ufo-ir-state-dependent-task-node.h
-    ufo-ir-projector-task.h
-    ufo-ir-basic-ops.h
+    core/ufo-ir-method-task-node.h
+    core/ufo-ir-state-dependent-task-node.h
+    core/ufo-ir-projector-task.h
+    core/ufo-ir-basic-ops.h
 )
 #}}}
 
 
 #{{{ sources
 set(ufoir_SRCS
-    ufo-ir-dummy-task.c
-    ufo-ir-parallel-projector-task.c
-    ufo-ir-sirt-task.c
-    ufo-ir-sart-task.c
-    ufo-ir-asdpocs-task.c
-    ufo-ir-splitbregman-task.c
+    tasks/ufo-ir-dummy-task.c
+    tasks/ufo-ir-parallel-projector-task.c
+    tasks/ufo-ir-sirt-task.c
+    tasks/ufo-ir-sart-task.c
+    tasks/ufo-ir-asdpocs-task.c
+    tasks/ufo-ir-splitbregman-task.c
+#    tasks/ufo-ir-gradient-task.c
 )
 #}}}
 
 #{{{ headers
 set(ufoir_HDRS
-    ufo-ir-dummy-task.h
-    ufo-ir-parallel-projector-task.h
-    ufo-ir-sirt-task.h
-    ufo-ir-sart-task.h
-    ufo-ir-asdpocs-task.h
-    ufo-ir-splitbregman-task.h
+    tasks/ufo-ir-dummy-task.h
+    tasks/ufo-ir-parallel-projector-task.h
+    tasks/ufo-ir-sirt-task.h
+    tasks/ufo-ir-sart-task.h
+    tasks/ufo-ir-asdpocs-task.h
+    tasks/ufo-ir-splitbregman-task.h
+#    tasks/ufo-ir-gradient-task.h
 )
 #}}}
 
@@ -74,7 +76,7 @@ install(TARGETS ${TARNAME}
 
 foreach(_src ${ufoir_SRCS})
     # find plugin suffix
-    string(REGEX REPLACE "ufo-ir-([^ \\.]+)-task.*" "\\1" task "${_src}")
+    string(REGEX REPLACE "tasks/ufo-ir-([^ \\.]+)-task.*" "\\1" task "${_src}")
 
     string(REPLACE "-" "" _targetname ${task})
     set(target "ufo${_targetname}")
@@ -101,14 +103,14 @@ foreach(_kernel ${ufoir_KERNELS})
 endforeach()
 #}}}
 #{{{ Python tests
-find_program(NOSETESTSBIN nosetests)
-if (NOSETESTSBIN)
-    add_custom_target(test
-        COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../run_tests.py
-        ${CMAKE_CURRENT_BINARY_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
-    add_dependencies(test ${all_targets})
-endif()
+#find_program(NOSETESTSBIN nosetests)
+#if (NOSETESTSBIN)
+#    add_custom_target(test
+#        COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../run_tests.py
+#        ${CMAKE_CURRENT_BINARY_DIR}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
+#    add_dependencies(test ${all_targets})
+#endif()
 #}}}
 
 #{{{ pkg-config

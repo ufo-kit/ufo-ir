@@ -21,7 +21,7 @@
 #define __UFO_IR_SPLITBREGMAN_TASK_H
 
 #include <ufo/ufo.h>
-#include "ufo-ir-method-task.h"
+#include "core/ufo-ir-method-task.h"
 
 G_BEGIN_DECLS
 
@@ -54,6 +54,9 @@ void   ufo_ir_splitbregman_task_set_mu(UfoIrSplitBregmanTask *self, gfloat value
 
 gfloat ufo_ir_splitbregman_task_get_lambda(UfoIrSplitBregmanTask *self);
 void   ufo_ir_splitbregman_task_set_lambda(UfoIrSplitBregmanTask *self, gfloat value);
+
+UfoIrStateDependentTask *ufo_ir_splitbregman_task_get_sp_domain(UfoIrSplitBregmanTask *self);
+void                     ufo_ir_splitbregman_task_set_sp_domain(UfoIrSplitBregmanTask *self, UfoIrStateDependentTask *value);
 
 G_END_DECLS
 

@@ -36,6 +36,8 @@ struct _UfoIrSplitBregmanTaskPrivate {
     // Method parameters
     gfloat mu;
     gfloat lambda;
+
+    UfoIrStateDependentTask *sp_domain;
 };
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
@@ -50,6 +52,7 @@ enum {
     PROP_0,
     PROP_MU,
     PROP_LAMBDA,
+    PROP_SP_DOMAIN,
     N_PROPERTIES
 };
 
@@ -126,12 +129,21 @@ void   ufo_ir_splitbregman_task_set_lambda(UfoIrSplitBregmanTask *self, gfloat v
     priv->lambda = value;
 }
 
+UfoIrStateDependentTask *ufo_ir_splitbregman_task_get_sp_domain(UfoIrSplitBregmanTask *self) {
+    UfoIrSplitBregmanTaskPrivate *priv = UFO_IR_SPLITBREGMAN_TASK_GET_PRIVATE (self);
+    return priv->sp_domain;
+}
+
+void ufo_ir_splitbregman_task_set_sp_domain(UfoIrSplitBregmanTask *self, UfoIrStateDependentTask *value) {
+    UfoIrSplitBregmanTaskPrivate *priv = UFO_IR_SPLITBREGMAN_TASK_GET_PRIVATE (self);
+    priv->sp_domain = value;
+}
+
 static void
 ufo_ir_splitbregman_task_set_property (GObject *object,
                                        guint property_id,
                                        const GValue *value,
-                                       GParamSpec *pspec)
-{
+                                       GParamSpec *pspec) {
     UfoIrSplitBregmanTask *self = UFO_IR_SPLITBREGMAN_TASK (object);
 
     switch (property_id) {
@@ -140,6 +152,9 @@ ufo_ir_splitbregman_task_set_property (GObject *object,
             break;
         case PROP_LAMBDA:
             ufo_ir_splitbregman_task_set_lambda(self, g_value_get_float(value));
+            break;
+        case PROP_SP_DOMAIN:
+            ufo_ir_splitbregman_task_set_sp_domain(self, g_value_get_object(value));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -151,8 +166,7 @@ static void
 ufo_ir_splitbregman_task_get_property (GObject *object,
                                        guint property_id,
                                        GValue *value,
-                                       GParamSpec *pspec)
-{
+                                       GParamSpec *pspec) {
     UfoIrSplitBregmanTask *self = UFO_IR_SPLITBREGMAN_TASK (object);
 
     switch (property_id) {
@@ -161,6 +175,9 @@ ufo_ir_splitbregman_task_get_property (GObject *object,
             break;
         case PROP_LAMBDA:
             g_value_set_float(value, ufo_ir_splitbregman_task_get_lambda(self));
+            break;
+        case PROP_SP_DOMAIN:
+            g_value_set_object(value, ufo_ir_splitbregman_task_get_sp_domain(self));
             break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -212,5 +229,34 @@ ufo_ir_splitbregman_task_finalize (GObject *object)
 // -----------------------------------------------------------------------------
 static const gchar *ufo_ir_splitbregman_task_get_package_name(UfoTaskNode *self) {
     return g_strdup("ir");
+}
+// -----------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+// Private methods
+// -----------------------------------------------------------------------------
+static void calculate_b(UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoBuffer *b, UfoMethod *method, gpointer cmd_queue, UfoResources *resources)
+{
+    UfoBuffer *tmpx = ufo_buffer_dup(fbp);
+    UfoBuffer *tmpy = ufo_buffer_dup(fbp);
+    UfoBuffer *tmpDif = ufo_buffer_dup(fbp);
+
+    // tmpx = DXT(dx - bx);
+    ufo_op_deduction(dx, bx, tmpDif, resources, cmd_queue);
+    dxt_op(method, tmpDif, tmpx, cmd_queue);
+
+    // tmpx = DYT(dy - by);
+    ufo_op_deduction(dy, by, tmpDif, resources, cmd_queue);
+    dyt_op(method, tmpDif, tmpy, cmd_queue);
+
+    // b = mu * At(f) + lambda * (tmpx + tmpy)
+    ufo_op_add(tmpx, tmpy, b, resources, cmd_queue);
+    mult(b, LAMBDA, cmd_queue);
+    ufo_op_add(fbp, b, b, resources, cmd_queue);
+
+    g_object_unref(tmpx);
+    g_object_unref(tmpy);
+    g_object_unref(tmpDif);
 }
 // -----------------------------------------------------------------------------

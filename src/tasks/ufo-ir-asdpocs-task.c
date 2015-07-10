@@ -25,7 +25,7 @@
 #include <math.h>
 
 #include "ufo-ir-asdpocs-task.h"
-#include "ufo-ir-basic-ops.h"
+#include "core/ufo-ir-basic-ops.h"
 #include "ufo-ir-parallel-projector-task.h"
 
 static void ufo_ir_asdpocs_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
