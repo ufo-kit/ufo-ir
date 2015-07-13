@@ -66,7 +66,6 @@ UfoIrGradientProcessor *ufo_ir_gradient_processor_new (UfoResources *resources, 
     ufo_ir_gradient_processor_resources_init(processor, resources, cmd_queue);
     return processor;
 }
-
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
@@ -189,5 +188,4 @@ ufo_ir_gradient_processor_resources_init(UfoIrGradientProcessor *self,
             UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dytKernel));
     }
 }
-
 // -----------------------------------------------------------------------------

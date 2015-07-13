@@ -22,12 +22,12 @@
 
 #include <ufo/ufo.h>
 #include <glib.h>
+
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
-
 
 G_BEGIN_DECLS
 
