@@ -6,6 +6,7 @@ set(ufoircore_SRCS
     core/ufo-ir-state-dependent-task.c
     core/ufo-ir-projector-task.c
     core/ufo-ir-basic-ops.c
+    core/ufo-ir-gradient-processor.c
 )
 #}}}
 
@@ -15,6 +16,7 @@ set(ufoircore_HDRS
     core/ufo-ir-state-dependent-task-node.h
     core/ufo-ir-projector-task.h
     core/ufo-ir-basic-ops.h
+    core/ufo-ir-gradient-processor.h
 )
 #}}}
 
@@ -27,7 +29,6 @@ set(ufoir_SRCS
     tasks/ufo-ir-sart-task.c
     tasks/ufo-ir-asdpocs-task.c
     tasks/ufo-ir-sbtv-task.c
-#    tasks/ufo-ir-gradient-task.c
 )
 #}}}
 
@@ -39,7 +40,6 @@ set(ufoir_HDRS
     tasks/ufo-ir-sart-task.h
     tasks/ufo-ir-asdpocs-task.h
     tasks/ufo-ir-sbtv-task.h
-#    tasks/ufo-ir-gradient-task.h
 )
 #}}}
 
