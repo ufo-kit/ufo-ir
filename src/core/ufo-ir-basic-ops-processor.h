@@ -56,14 +56,23 @@ UfoIrBasicOpsProcessor *ufo_ir_basic_ops_processor_new (UfoResources *resources,
 GType     ufo_ir_basic_ops_processor_get_type (void);
 
 gpointer ufo_ir_basic_ops_processor_add (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
+gpointer ufo_ir_basic_ops_processor_add2 (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, gfloat modifier, UfoBuffer *result);
 gpointer ufo_ir_basic_ops_processor_deduction (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
 gpointer ufo_ir_basic_ops_processor_deduction2 (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, gfloat modifier, UfoBuffer *result);
+void     ufo_ir_basic_ops_processor_div_element_wise(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
+gfloat   ufo_ir_basic_ops_processor_dot_product(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2);
 gpointer ufo_ir_basic_ops_processor_inv (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer);
 gfloat   ufo_ir_basic_ops_processor_l1_norm (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer);
+gfloat   ufo_ir_basic_ops_processor_l2_norm (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer);
+void     ufo_ir_basic_ops_processor_max_element_wise(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
 gpointer ufo_ir_basic_ops_processor_mul (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
+void     ufo_ir_basic_ops_processor_mul_element_wise(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result);
 gpointer ufo_ir_basic_ops_processor_mul_rows (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer1, UfoBuffer *buffer2, UfoBuffer *result, guint offset, guint n);
+void     ufo_ir_basic_ops_processor_mul_scalar(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer, gfloat multiplier);
+void     ufo_ir_basic_ops_processor_normalization(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer);
 gpointer ufo_ir_basic_ops_processor_positive_constraint (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer, UfoBuffer *result);
 gpointer ufo_ir_basic_ops_processor_set (UfoIrBasicOpsProcessor *self, UfoBuffer *buffer, gfloat value);
+void     ufo_ir_basic_ops_processor_sqrt(UfoIrBasicOpsProcessor *self, UfoBuffer *buffer);
 
 G_END_DECLS
 
