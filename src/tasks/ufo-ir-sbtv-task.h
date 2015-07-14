@@ -17,46 +17,42 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __UFO_IR_SPLITBREGMAN_TASK_H
-#define __UFO_IR_SPLITBREGMAN_TASK_H
+#ifndef __UFO_IR_SBTV_TASK_H
+#define __UFO_IR_SBTV_TASK_H
 
 #include <ufo/ufo.h>
-#include "core/ufo-ir-method-task.h"
 
 G_BEGIN_DECLS
 
-#define UFO_IR_TYPE_SPLITBREGMAN_TASK             (ufo_ir_splitbregman_task_get_type())
-#define UFO_IR_SPLITBREGMAN_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_IR_TYPE_SPLITBREGMAN_TASK, UfoIrSplitBregmanTask))
-#define UFO_IR_IS_SPLITBREGMAN_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_IR_TYPE_SPLITBREGMAN_TASK))
-#define UFO_IR_SPLITBREGMAN_TASK_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), UFO_IR_TYPE_SPLITBREGMAN_TASK, UfoIrSplitBregmanTaskClass))
-#define UFO_IR_IS_SPLITBREGMAN_TASK_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_IR_TYPE_SPLITBREGMAN_TASK))
-#define UFO_IR_SPLITBREGMAN_TASK_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_IR_TYPE_SPLITBREGMAN_TASK, UfoIrSplitBregmanTaskClass))
+#define UFO_IR_TYPE_SBTV_TASK             (ufo_ir_sbtv_task_get_type())
+#define UFO_IR_SBTV_TASK(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj), UFO_IR_TYPE_SBTV_TASK, UfoIrSbtvTask))
+#define UFO_IR_IS_SBTV_TASK(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj), UFO_IR_TYPE_SBTV_TASK))
+#define UFO_IR_SBTV_TASK_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), UFO_IR_TYPE_SBTV_TASK, UfoIrSbtvTaskClass))
+#define UFO_IR_IS_SBTV_TASK_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE((klass), UFO_IR_TYPE_SBTV_TASK))
+#define UFO_IR_SBTV_TASK_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS((obj), UFO_IR_TYPE_SBTV_TASK, UfoIrSbtvTaskClass))
 
-typedef struct _UfoIrSplitBregmanTask           UfoIrSplitBregmanTask;
-typedef struct _UfoIrSplitBregmanTaskClass      UfoIrSplitBregmanTaskClass;
-typedef struct _UfoIrSplitBregmanTaskPrivate    UfoIrSplitBregmanTaskPrivate;
+typedef struct _UfoIrSbtvTask           UfoIrSbtvTask;
+typedef struct _UfoIrSbtvTaskClass      UfoIrSbtvTaskClass;
+typedef struct _UfoIrSbtvTaskPrivate    UfoIrSbtvTaskPrivate;
 
-struct _UfoIrSplitBregmanTask {
+struct _UfoIrSbtvTask {
     UfoTaskNode parent_instance;
 
-    UfoIrSplitBregmanTaskPrivate *priv;
+    UfoIrSbtvTaskPrivate *priv;
 };
 
-struct _UfoIrSplitBregmanTaskClass {
+struct _UfoIrSbtvTaskClass {
     UfoTaskNodeClass parent_class;
 };
 
-UfoNode  *ufo_ir_splitbregman_task_new       (void);
-GType     ufo_ir_splitbregman_task_get_type  (void);
+UfoNode  *ufo_ir_sbtv_task_new       (void);
+GType     ufo_ir_sbtv_task_get_type  (void);
 
-gfloat ufo_ir_splitbregman_task_get_mu(UfoIrSplitBregmanTask *self);
-void   ufo_ir_splitbregman_task_set_mu(UfoIrSplitBregmanTask *self, gfloat value);
+gfloat ufo_ir_sbtv_task_get_mu(UfoIrSbtvTask *self);
+void   ufo_ir_sbtv_task_set_mu(UfoIrSbtvTask *self, gfloat value);
 
-gfloat ufo_ir_splitbregman_task_get_lambda(UfoIrSplitBregmanTask *self);
-void   ufo_ir_splitbregman_task_set_lambda(UfoIrSplitBregmanTask *self, gfloat value);
-
-UfoIrStateDependentTask *ufo_ir_splitbregman_task_get_sp_domain(UfoIrSplitBregmanTask *self);
-void                     ufo_ir_splitbregman_task_set_sp_domain(UfoIrSplitBregmanTask *self, UfoIrStateDependentTask *value);
+gfloat ufo_ir_sbtv_task_get_lambda(UfoIrSbtvTask *self);
+void   ufo_ir_sbtv_task_set_lambda(UfoIrSbtvTask *self, gfloat value);
 
 G_END_DECLS
 
