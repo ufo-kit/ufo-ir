@@ -8,6 +8,7 @@ set(ufoircore_SRCS
     core/ufo-ir-basic-ops.c
     core/ufo-ir-basic-ops-processor.c
     core/ufo-ir-gradient-processor.c
+    core/ufo-ir-debug.c
 )
 #}}}
 
@@ -19,6 +20,7 @@ set(ufoircore_HDRS
     core/ufo-ir-basic-ops.h
     core/ufo-ir-basic-ops-processor.h
     core/ufo-ir-gradient-processor.h
+    core/ufo-ir-debug.h
 )
 #}}}
 
