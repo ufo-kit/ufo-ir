@@ -56,7 +56,7 @@ struct _UfoIrSbtvTaskPrivate {
 
 static void ufo_task_interface_init (UfoTaskIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (UfoIrSbtvTask, ufo_ir_sbtv_task, UFO_TYPE_TASK_NODE,
+G_DEFINE_TYPE_WITH_CODE (UfoIrSbtvTask, ufo_ir_sbtv_task, UFO_IR_TYPE_METHOD_TASK,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK,
                                                 ufo_task_interface_init))
 
@@ -200,6 +200,10 @@ ufo_ir_sbtv_task_setup (UfoTask *task,
                         GError **error)
 {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (task);
+    ufo_task_node_set_proc_node(UFO_TASK_NODE(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), ufo_task_node_get_proc_node(UFO_TASK_NODE(task)));
+
+    ufo_task_setup(UFO_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), resources, error);
+
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(task)));
     cl_command_queue cmd_queue = (cl_command_queue)ufo_gpu_node_get_cmd_queue (node);
     priv->gradient_processor = ufo_ir_gradient_processor_new(resources, cmd_queue);

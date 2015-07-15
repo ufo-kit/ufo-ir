@@ -48,7 +48,7 @@ struct _UfoIrBasicOpsProcessorPrivate {
     cl_command_queue command_queue;
 };
 
-G_DEFINE_TYPE (UfoIrBasicOpsProcessor, ufo_ir_basic_ops_processor, UFO_TYPE_TASK_NODE)
+G_DEFINE_TYPE (UfoIrBasicOpsProcessor, ufo_ir_basic_ops_processor, G_TYPE_OBJECT)
 
 #define UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_BASIC_OPS_PROCESSOR, UfoIrBasicOpsProcessorPrivate))
 

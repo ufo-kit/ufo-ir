@@ -21,6 +21,7 @@
 #define __UFO_IR_SBTV_TASK_H
 
 #include <ufo/ufo.h>
+#include "core/ufo-ir-method-task.h"
 
 G_BEGIN_DECLS
 
@@ -36,13 +37,13 @@ typedef struct _UfoIrSbtvTaskClass      UfoIrSbtvTaskClass;
 typedef struct _UfoIrSbtvTaskPrivate    UfoIrSbtvTaskPrivate;
 
 struct _UfoIrSbtvTask {
-    UfoTaskNode parent_instance;
+    UfoIrMethodTask parent_instance;
 
     UfoIrSbtvTaskPrivate *priv;
 };
 
 struct _UfoIrSbtvTaskClass {
-    UfoTaskNodeClass parent_class;
+    UfoIrMethodTaskClass parent_class;
 };
 
 UfoNode  *ufo_ir_sbtv_task_new       (void);
