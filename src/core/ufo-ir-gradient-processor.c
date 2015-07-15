@@ -19,7 +19,7 @@
 
 #include "ufo-ir-gradient-processor.h"
 
-#define KERNELS_FILE_NAME "sb-gradient.cl"
+#define KERNELS_FILE_NAME "ufo-ir-gradient-processor.cl"
 
 struct _UfoIrGradientProcessorPrivate {
     // Kernels
