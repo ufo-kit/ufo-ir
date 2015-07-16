@@ -149,7 +149,7 @@ ufo_ir_basic_ops_processor_dot_product(UfoIrBasicOpsProcessor *self,
     }
 
     UfoRequisition buffer2_requisition;
-    ufo_buffer_get_requisition (buffer1, &buffer2_requisition);
+    ufo_buffer_get_requisition (buffer2, &buffer2_requisition);
 
     gfloat *values2 = ufo_buffer_get_host_array (buffer2, priv->command_queue);
 

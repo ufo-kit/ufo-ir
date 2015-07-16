@@ -30,6 +30,7 @@
 #include "core/ufo-ir-gradient-processor.h"
 #include "core/ufo-ir-basic-ops-processor.h"
 #include "core/ufo-ir-projector-task.h"
+#include "core/ufo-ir-debug.h"
 
 #define EPS 2.2204E-16
 
@@ -99,7 +100,7 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass)
                                "Lambda",
                                0.0f, G_MAXFLOAT, 0.1f,
                                G_PARAM_READWRITE);
-    properties[PROP_LAMBDA] =
+    properties[PROP_MU] =
             g_param_spec_float("mu",
                                "Mu",
                                "Mu",
@@ -115,7 +116,10 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass)
 static void
 ufo_ir_sbtv_task_init(UfoIrSbtvTask *self)
 {
-    self->priv = UFO_IR_SBTV_TASK_GET_PRIVATE(self);
+    UfoIrSbtvTaskPrivate *priv;
+    self->priv = priv = UFO_IR_SBTV_TASK_GET_PRIVATE(self);
+    priv->lambda = 0.1f;
+    priv->mu = 0.5f;
 }
 // -----------------------------------------------------------------------------
 
@@ -219,14 +223,12 @@ ufo_ir_sbtv_task_process (UfoTask *task,
     UfoIrSbtvTask *self = UFO_IR_SBTV_TASK(task);
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoBuffer *input = inputs[0];
+    ufo_ir_basic_ops_processor_normalization( priv->bo_processor, input);
     UfoRequisition sinogramReq;
     ufo_buffer_get_requisition(input, &sinogramReq);
 
-    // UfoResources   *resources = NULL;
-    // gpointer       *cmd_queue = NULL;
-
     UfoIrProjectorTask *projector = ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(self));
-    guint          max_iterations = ufo_ir_method_task_get_iterations_number(UFO_IR_METHOD_TASK(self));
+    guint max_iterations = ufo_ir_method_task_get_iterations_number(UFO_IR_METHOD_TASK(self));
 
     UfoBuffer *f = ufo_buffer_dup(input);
     ufo_buffer_copy(input, f);
@@ -235,12 +237,12 @@ ufo_ir_sbtv_task_process (UfoTask *task,
     // precompute At(f)
     UfoBuffer *fbp = ufo_buffer_dup(output);
     ufo_ir_basic_ops_processor_set(priv->bo_processor, fbp, 0.0f);
-    ufo_ir_projector_task_set_relaxation(projector, 1.0f);
-    ufo_ir_state_dependent_task_backward(UFO_IR_STATE_DEPENDENT_TASK(projector), &fbp, f, NULL);
+    ufo_ir_state_dependent_task_backward(UFO_IR_STATE_DEPENDENT_TASK(projector), &f, fbp, NULL);
 
     // u = At(f)
     UfoBuffer *u = output;
-    ufo_buffer_copy(fbp, u);
+    ufo_ir_basic_ops_processor_set(priv->bo_processor, u, 0.0f);
+    //ufo_buffer_copy(fbp, u);
 
     UfoBuffer *up = ufo_buffer_dup(fbp);
 
@@ -263,7 +265,6 @@ ufo_ir_sbtv_task_process (UfoTask *task,
 
     // fbp = fbp * mu
     ufo_ir_basic_ops_processor_mul_scalar(priv->bo_processor, fbp, priv->mu);
-
     // Main loop
     for(guint iterationNum = 0; iterationNum < max_iterations; ++iterationNum)
     {
@@ -271,16 +272,8 @@ ufo_ir_sbtv_task_process (UfoTask *task,
         ufo_buffer_copy(u, up);
 
         calculate_b(self, fbp, dx, dy, bx, by, b);
-
         cgs(self, b, u, up, 30, f);
-
-        //char str[40];
-        //sprintf(&str, "debug/out_%d.tiff", (int)iterationNum);
-
-        //DebugWrite(up, &str);
-
         update_db(self, u, dx, dy, bx, by);
-
     }
 
     return TRUE;
@@ -402,12 +395,9 @@ static void
 cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino)
 {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
-//    DebugWrite(b,"debug/cgs/b.tiff");
-//    DebugWrite(x,"debug/cgs/x.tiff");
-//    DebugWrite(x0,"debug/cgs/x0.tiff");
-    gfloat tol = 1E-06;
 
-    gfloat n2b = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, b);
+    gfloat tol = 1E-06;
+    float n2b = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, b);
 
     ufo_buffer_copy(x0, x);
 
@@ -417,17 +407,16 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     xmin = ufo_buffer_dup(x);
     ufo_buffer_copy(x, xmin);
 
+    guint imin = 0;
     gfloat tolb = tol * n2b;
 
     // r = b - A * x
     UfoBuffer *r = ufo_buffer_dup(b);
-
-    processA(self, x, r, sino);
-
-    ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, r, r);
-//    DebugWrite(r, "debug/cgs/r.tiff");
+    processA(self, x, r, sino); // A * x
+    ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, r, r); // b - result of A * x
 
     gfloat normr = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r);
+    gfloat normr_act = normr;
 
     if(normr <= tolb)
     {
@@ -439,11 +428,16 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     UfoBuffer *rt = ufo_buffer_dup(r);
     ufo_buffer_copy(r, rt);
 
+    float normmin = normr;
     gfloat rho = 1.0f;
-    gfloat stag = 0.0f;
-
+    guint stag = 0;
+    guint moresteps = 0;
+    guint maxmsteps = 5;
     UfoBuffer *u = ufo_buffer_dup(r);
     ufo_ir_basic_ops_processor_set(priv->bo_processor, u, 0.0f);
+
+    UfoBuffer *tmpa = ufo_buffer_dup(r);
+    ufo_ir_basic_ops_processor_set(priv->bo_processor, tmpa, 0.0f);
 
     UfoBuffer *p = ufo_buffer_dup(r);
     ufo_ir_basic_ops_processor_set(priv->bo_processor, p, 0.0f);
@@ -465,6 +459,7 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     for(iterationNum = 0; iterationNum < maxIter; ++iterationNum)
     {
         gfloat rho1 = rho;
+
         rho = ufo_ir_basic_ops_processor_dot_product(priv->bo_processor, rt, r);
         if(rho == 0 || isinf(rho) || isnan(rho))
         {
@@ -508,7 +503,7 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
             alpha = rho / rtvh;
         }
 
-        if(isinf(alpha))
+        if(isinf(alpha)|| isnan(alpha))
         {
             flag = 4;
             break;
@@ -528,16 +523,51 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
         }
 
         ufo_ir_basic_ops_processor_add2(priv->bo_processor, x, uh, alpha, x);
-//        DebugWrite(x, "debug/cgs/afterItX.tiff");
         processA(self, uh, qh, sino);
-
         ufo_ir_basic_ops_processor_add2(priv->bo_processor, r, qh, -alpha, r);
         normr = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r);
-//        DebugWrite(r, "debug/cgs/afterItR.tiff");
-        if(normr <= tolb || stag >= maxstagsteps)
+        normr_act = normr;
+
+        if(normr <= tolb || stag >= maxstagsteps || moresteps)
         {
+            processA(self, r, tmpa, sino);
+            ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, tmpa, r);
+            normr_act = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r);
+            if(normr_act <= tolb) {
+                flag = 0;
+                break;
+            }
+            else {
+                if(stag >= maxstagsteps && moresteps == 0) {
+                    stag = 0;
+                }
+                moresteps +=1;
+                if(moresteps >= maxmsteps) {
+                    flag = 3;
+                    break;
+                }
+            }
+        }
+
+        if(normr_act < normmin) {
+            normmin = normr_act;
+            ufo_buffer_copy(x, xmin);
+
+        }
+
+        if(stag >= maxstagsteps) {
+            flag = 3;
             break;
         }
+    }
+
+    if(flag!=0){
+        processA(self, xmin, tmpa, sino);
+        ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, tmpa, r);
+        if(ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r) <= normr_act){
+            ufo_buffer_copy(xmin, x);
+        }
+
     }
     g_print("SGS %d iterations\n", iterationNum);
 
@@ -551,6 +581,7 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     g_object_unref(tempSum);
     g_object_unref(uh);
     g_object_unref(qh);
+    g_object_unref(tmpa);
 
 }
 
@@ -559,9 +590,13 @@ processA(UfoIrSbtvTask *self, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino)
 {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoIrStateDependentTask *projector = UFO_IR_STATE_DEPENDENT_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(self)));
-//    DebugWrite(in, "debug/processA.tiff");
 
+    // The code bellow should process next expression
+    //out = mu * At(A(in)) + lambda * (Dxt(Dx(in)) + Dyt(Dy(in)))
+
+    // Fill out with zeros
     ufo_ir_basic_ops_processor_set(priv->bo_processor, out, 0.0f);
+
     // mu * At(A(z))
     UfoBuffer *tempA = ufo_buffer_dup(sino);
     ufo_ir_basic_ops_processor_set(priv->bo_processor, tempA, 0.0f);
@@ -570,9 +605,9 @@ processA(UfoIrSbtvTask *self, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino)
     ufo_ir_basic_ops_processor_set(priv->bo_processor, tempAt, 0.0f);
 
     ufo_ir_state_dependent_task_forward(projector, &in, tempA, NULL);
-    ufo_ir_state_dependent_task_backward(projector, &tempAt, tempA, NULL);
-
+    ufo_ir_state_dependent_task_backward(projector, &tempA, tempAt, NULL);
     ufo_ir_basic_ops_processor_mul_scalar(priv->bo_processor, tempAt, priv->mu);
+
     // DYT(DY(z))
     UfoBuffer *tempD = ufo_buffer_dup(in);
     ufo_ir_gradient_processor_dy_op(priv->gradient_processor, in, tempD);
@@ -582,12 +617,13 @@ processA(UfoIrSbtvTask *self, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino)
     ufo_ir_gradient_processor_dx_op(priv->gradient_processor, in, tempD);
     UfoBuffer *tempDxt = ufo_buffer_dup(in);
     ufo_ir_gradient_processor_dxt_op(priv->gradient_processor, tempD, tempDxt);
-    ufo_ir_basic_ops_processor_add(priv->bo_processor ,out, tempDxt, out); // DYT + DXT
 
+    // DYT + DXT
+    ufo_ir_basic_ops_processor_add(priv->bo_processor ,out, tempDxt, out);
+
+    // lambda * (DXT + DYT)
     ufo_ir_basic_ops_processor_mul_scalar(priv->bo_processor, out, priv->lambda);
 
-//    DebugWrite(tempAt, "debug/tempAt.tiff");
-//    DebugWrite(out, "debug/inGrad.tiff");
     ufo_ir_basic_ops_processor_add(priv->bo_processor, out, tempAt, out);
 
     g_object_unref(tempA);
