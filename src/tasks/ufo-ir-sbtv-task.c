@@ -76,15 +76,13 @@ static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 // Init methods
 // -----------------------------------------------------------------------------
 static void
-ufo_task_interface_init (UfoTaskIface *iface)
-{
+ufo_task_interface_init (UfoTaskIface *iface) {
     iface->setup = ufo_ir_sbtv_task_setup;
     iface->process = ufo_ir_sbtv_task_process;
 }
 
 static void
-ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass)
-{
+ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass) {
     GObjectClass *oclass = G_OBJECT_CLASS (klass);
 
     oclass->set_property = ufo_ir_sbtv_task_set_property;
@@ -114,8 +112,7 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass)
 }
 
 static void
-ufo_ir_sbtv_task_init(UfoIrSbtvTask *self)
-{
+ufo_ir_sbtv_task_init(UfoIrSbtvTask *self) {
     UfoIrSbtvTaskPrivate *priv;
     self->priv = priv = UFO_IR_SBTV_TASK_GET_PRIVATE(self);
     priv->lambda = 0.1f;
@@ -126,12 +123,15 @@ ufo_ir_sbtv_task_init(UfoIrSbtvTask *self)
 // -----------------------------------------------------------------------------
 // Getters and setters
 // -----------------------------------------------------------------------------
-gfloat ufo_ir_sbtv_task_get_mu(UfoIrSbtvTask *self) {
+gfloat
+ufo_ir_sbtv_task_get_mu(UfoIrSbtvTask *self) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     return priv->mu;
 }
 
-void   ufo_ir_sbtv_task_set_mu(UfoIrSbtvTask *self, gfloat value) {
+void
+ufo_ir_sbtv_task_set_mu(UfoIrSbtvTask *self,
+                        gfloat value) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     priv->mu = value;
 }
@@ -141,16 +141,18 @@ gfloat ufo_ir_sbtv_task_get_lambda(UfoIrSbtvTask *self) {
     return priv->lambda;
 }
 
-void   ufo_ir_sbtv_task_set_lambda(UfoIrSbtvTask *self, gfloat value) {
+void
+ufo_ir_sbtv_task_set_lambda(UfoIrSbtvTask *self,
+                            gfloat value) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     priv->lambda = value;
 }
 
 static void
 ufo_ir_sbtv_task_set_property (GObject *object,
-                                       guint property_id,
-                                       const GValue *value,
-                                       GParamSpec *pspec) {
+                               guint property_id,
+                               const GValue *value,
+                               GParamSpec *pspec) {
     UfoIrSbtvTask *self = UFO_IR_SBTV_TASK (object);
 
     switch (property_id) {
@@ -168,9 +170,9 @@ ufo_ir_sbtv_task_set_property (GObject *object,
 
 static void
 ufo_ir_sbtv_task_get_property (GObject *object,
-                                       guint property_id,
-                                       GValue *value,
-                                       GParamSpec *pspec) {
+                               guint property_id,
+                               GValue *value,
+                               GParamSpec *pspec) {
     UfoIrSbtvTask *self = UFO_IR_SBTV_TASK (object);
 
     switch (property_id) {
@@ -193,16 +195,14 @@ ufo_ir_sbtv_task_get_property (GObject *object,
 // -----------------------------------------------------------------------------
 
 UfoNode *
-ufo_ir_sbtv_task_new (void)
-{
+ufo_ir_sbtv_task_new (void) {
     return UFO_NODE (g_object_new (UFO_IR_TYPE_SBTV_TASK, NULL));
 }
 
 static void
 ufo_ir_sbtv_task_setup (UfoTask *task,
                         UfoResources *resources,
-                        GError **error)
-{
+                        GError **error) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (task);
     ufo_task_node_set_proc_node(UFO_TASK_NODE(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), ufo_task_node_get_proc_node(UFO_TASK_NODE(task)));
 
@@ -218,8 +218,7 @@ static gboolean
 ufo_ir_sbtv_task_process (UfoTask *task,
                          UfoBuffer **inputs,
                          UfoBuffer *output,
-                         UfoRequisition *requisition)
-{
+                         UfoRequisition *requisition) {
     UfoIrSbtvTask *self = UFO_IR_SBTV_TASK(task);
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoBuffer *input = inputs[0];
@@ -284,8 +283,7 @@ ufo_ir_sbtv_task_process (UfoTask *task,
 // GObject methods
 // -----------------------------------------------------------------------------
 static void
-ufo_ir_sbtv_task_finalize (GObject *object)
-{
+ufo_ir_sbtv_task_finalize (GObject *object) {
     G_OBJECT_CLASS (ufo_ir_sbtv_task_parent_class)->finalize (object);
 }
 // -----------------------------------------------------------------------------
@@ -303,8 +301,13 @@ static const gchar *ufo_ir_sbtv_task_get_package_name(UfoTaskNode *self) {
 // Private methods
 // -----------------------------------------------------------------------------
 static void
-calculate_b(UfoIrSbtvTask *self, UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoBuffer *b)
-{
+calculate_b(UfoIrSbtvTask *self,
+            UfoBuffer *fbp,
+            UfoBuffer *dx,
+            UfoBuffer *dy,
+            UfoBuffer *bx,
+            UfoBuffer *by,
+            UfoBuffer *b) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoBuffer *tmpx = ufo_buffer_dup(fbp);
     UfoBuffer *tmpy = ufo_buffer_dup(fbp);
@@ -329,8 +332,12 @@ calculate_b(UfoIrSbtvTask *self, UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, U
 }
 
 static void
-update_db(UfoIrSbtvTask *self, UfoBuffer *u, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by)
-{
+update_db(UfoIrSbtvTask *self,
+          UfoBuffer *u,
+          UfoBuffer *dx,
+          UfoBuffer *dy,
+          UfoBuffer *bx,
+          UfoBuffer *by) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     // Mem allocation
     UfoBuffer *tmpx = ufo_buffer_dup(u);
@@ -392,8 +399,12 @@ update_db(UfoIrSbtvTask *self, UfoBuffer *u, UfoBuffer *dx, UfoBuffer *dy, UfoBu
 }
 
 static void
-cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIter, UfoBuffer *sino)
-{
+cgs(UfoIrSbtvTask *self,
+    UfoBuffer *b,
+    UfoBuffer *x,
+    UfoBuffer *x0,
+    guint maxIter,
+    UfoBuffer *sino) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
 
     gfloat tol = 1E-06;
@@ -407,7 +418,6 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     xmin = ufo_buffer_dup(x);
     ufo_buffer_copy(x, xmin);
 
-    guint imin = 0;
     gfloat tolb = tol * n2b;
 
     // r = b - A * x
@@ -456,27 +466,22 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     guint maxstagsteps = 3;
     guint iterationNum;
 
-    for(iterationNum = 0; iterationNum < maxIter; ++iterationNum)
-    {
+    for(iterationNum = 0; iterationNum < maxIter; ++iterationNum) {
         gfloat rho1 = rho;
 
         rho = ufo_ir_basic_ops_processor_dot_product(priv->bo_processor, rt, r);
-        if(rho == 0 || isinf(rho) || isnan(rho))
-        {
+        if(rho == 0 || isinf(rho) || isnan(rho)) {
             flag = 4;
             break;
         }
 
-        if(iterationNum == 0)
-        {
+        if(iterationNum == 0) {
             ufo_buffer_copy(r, u);
             ufo_buffer_copy(u, p);
         }
-        else
-        {
+        else {
             gfloat beta = rho / rho1;
-            if(beta == 0 || isinf(beta) || isnan(beta))
-            {
+            if(beta == 0 || isinf(beta) || isnan(beta)) {
                 flag = 4;
                 break;
             }
@@ -493,18 +498,15 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
 
         gfloat rtvh = ufo_ir_basic_ops_processor_dot_product(priv->bo_processor, rt, vh);
         gfloat alpha = 0;
-        if(rtvh == 0)
-        {
+        if(rtvh == 0) {
             flag = 4;
             break;
         }
-        else
-        {
+        else {
             alpha = rho / rtvh;
         }
 
-        if(isinf(alpha)|| isnan(alpha))
-        {
+        if(isinf(alpha)|| isnan(alpha)) {
             flag = 4;
             break;
         }
@@ -513,12 +515,10 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
         ufo_ir_basic_ops_processor_add(priv->bo_processor, u, q, uh);
 
         // Check for stagnation
-        if(fabs(alpha) * ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, uh) < EPS * ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, x))
-        {
+        if(fabs(alpha) * ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, uh) < EPS * ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, x)) {
             stag += 1;
         }
-        else
-        {
+        else {
             stag = 0;
         }
 
@@ -528,8 +528,7 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
         normr = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r);
         normr_act = normr;
 
-        if(normr <= tolb || stag >= maxstagsteps || moresteps)
-        {
+        if(normr <= tolb || stag >= maxstagsteps || moresteps) {
             processA(self, r, tmpa, sino);
             ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, tmpa, r);
             normr_act = ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r);
@@ -561,15 +560,15 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
         }
     }
 
-    if(flag!=0){
+    if(flag!=0) {
         processA(self, xmin, tmpa, sino);
         ufo_ir_basic_ops_processor_deduction(priv->bo_processor, b, tmpa, r);
         if(ufo_ir_basic_ops_processor_l2_norm(priv->bo_processor, r) <= normr_act){
             ufo_buffer_copy(xmin, x);
         }
-
     }
-    g_print("SGS %d iterations\n", iterationNum);
+
+    // g_print("SGS %d iterations\n", iterationNum);
 
     g_object_unref(xmin);
     g_object_unref(r);
@@ -582,12 +581,13 @@ cgs(UfoIrSbtvTask *self, UfoBuffer *b, UfoBuffer *x, UfoBuffer *x0, guint maxIte
     g_object_unref(uh);
     g_object_unref(qh);
     g_object_unref(tmpa);
-
 }
 
 static void
-processA(UfoIrSbtvTask *self, UfoBuffer *in, UfoBuffer *out, UfoBuffer *sino)
-{
+processA(UfoIrSbtvTask *self,
+         UfoBuffer *in,
+         UfoBuffer *out,
+         UfoBuffer *sino) {
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoIrStateDependentTask *projector = UFO_IR_STATE_DEPENDENT_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(self)));
 
