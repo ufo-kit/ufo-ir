@@ -24,7 +24,7 @@
 #endif
 
 #include "ufo-ir-sart-task.h"
-#include "ufo-ir-basic-ops.h"
+#include "core/ufo-ir-basic-ops.h"
 #include "ufo-ir-parallel-projector-task.h"
 #include <math.h>
 

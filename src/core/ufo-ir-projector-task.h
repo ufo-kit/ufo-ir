@@ -54,9 +54,11 @@ void   ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat value);
 gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self);
 void   ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat value);
 
+// Relaxation for BP
 gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self);
 void   ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat value);
 
+// Correction scale for FP
 gfloat ufo_ir_projector_task_get_correction_scale(UfoIrProjectorTask *self);
 void   ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gfloat value);
 

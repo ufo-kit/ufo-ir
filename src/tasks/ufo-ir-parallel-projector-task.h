@@ -20,7 +20,7 @@
 #ifndef __UFO_IR_PARALLEL_PROJECTOR_TASK_H
 #define __UFO_IR_PARALLEL_PROJECTOR_TASK_H
 
-#include "ufo-ir-projector-task.h"
+#include "core/ufo-ir-projector-task.h"
 #include <ufo/ufo.h>
 
 G_BEGIN_DECLS

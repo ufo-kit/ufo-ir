@@ -24,7 +24,7 @@
 #endif
 
 #include "ufo-ir-sirt-task.h"
-#include "ufo-ir-basic-ops.h"
+#include "core/ufo-ir-basic-ops.h"
 
 static void ufo_ir_sirt_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_sirt_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
