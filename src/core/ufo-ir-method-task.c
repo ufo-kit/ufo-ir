@@ -40,7 +40,6 @@ static guint ufo_ir_method_task_get_num_inputs (UfoTask *task);
 static guint ufo_ir_method_task_get_num_dimensions (UfoTask *task, guint input);
 static UfoTaskMode ufo_ir_method_task_get_mode (UfoTask *task);
 static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
-static UfoNode *ufo_ir_method_task_copy (UfoNode *node, GError **error);
 
 // UfoTaskNode class related methods
 // UfoNode *ufo_ir_method_task_node_copy (UfoNode *node, GError **error);
@@ -97,8 +96,6 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
     }
 
     g_type_class_add_private (gobject_class, sizeof(UfoIrMethodTaskPrivate));
-
-    //UFO_NODE_CLASS (klass)->copy = ufo_ir_method_task_copy;
 
     UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
     taskklass->get_package_name = ufo_ir_method_task_get_package_name;
@@ -295,10 +292,6 @@ static const gchar *
 ufo_ir_method_task_get_package_name (UfoTaskNode *self)
 {
     return g_strdup("ir");
-}
-
-static UfoNode *ufo_ir_method_task_copy (UfoNode *node, GError **error){
-
 }
 
 // -----------------------------------------------------------------------------
