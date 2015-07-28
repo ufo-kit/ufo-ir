@@ -291,7 +291,7 @@ ufo_ir_method_task_get_requisition (UfoTask        *task,
 static const gchar *
 ufo_ir_method_task_get_package_name (UfoTaskNode *self)
 {
-    return g_strdup("ir");
+    return "ir";
 }
 
 // -----------------------------------------------------------------------------

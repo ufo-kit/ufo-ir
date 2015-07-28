@@ -291,8 +291,10 @@ ufo_ir_sbtv_task_finalize (GObject *object) {
 // -----------------------------------------------------------------------------
 // TaskNode methods
 // -----------------------------------------------------------------------------
-static const gchar *ufo_ir_sbtv_task_get_package_name(UfoTaskNode *self) {
-    return g_strdup("ir");
+static const gchar *
+ufo_ir_sbtv_task_get_package_name (UfoTaskNode *self)
+{
+    return "ir";
 }
 // -----------------------------------------------------------------------------
 

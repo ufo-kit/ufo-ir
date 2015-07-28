@@ -285,8 +285,10 @@ generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets)
     return subsets;
 }
 
-static const gchar *ufo_ir_sart_task_get_package_name(UfoTaskNode *self) {
-    return g_strdup("ir");
+static const gchar *
+ufo_ir_sart_task_get_package_name (UfoTaskNode *self)
+{
+    return "ir";
 }
 
 // -----------------------------------------------------------------------------

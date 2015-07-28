@@ -507,8 +507,10 @@ ufo_ir_asdpocs_task_process (UfoTask *task,
     return TRUE;
 }
 
-static const gchar *ufo_ir_asdpocs_task_get_package_name(UfoTaskNode *self) {
-    return g_strdup("ir");
+static const gchar *
+ufo_ir_asdpocs_task_get_package_name (UfoTaskNode *self)
+{
+    return "ir";
 }
 // -----------------------------------------------------------------------------
 
