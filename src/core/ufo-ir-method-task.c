@@ -117,9 +117,9 @@ ufo_task_interface_init (UfoTaskIface *iface)
 static void
 ufo_ir_method_task_init(UfoIrMethodTask *self)
 {
-    UfoIrMethodTaskPrivate *priv = NULL;
-    self->priv = priv = UFO_IR_METHOD_TASK_GET_PRIVATE(self);
-    priv->iterations_number = 10;
+    self->priv = UFO_IR_METHOD_TASK_GET_PRIVATE(self);
+    self->priv->projector = NULL;
+    self->priv->iterations_number = 10;
 }
 
 // -----------------------------------------------------------------------------
@@ -167,22 +167,34 @@ ufo_ir_method_task_get_property (GObject    *object,
     }
 }
 
-UfoIrProjectorTask *ufo_ir_method_task_get_projector(UfoIrMethodTask *self) {
+UfoIrProjectorTask *
+ufo_ir_method_task_get_projector(UfoIrMethodTask *self)
+{
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (self);
     return priv->projector;
 }
 
-void ufo_ir_method_task_set_projector(UfoIrMethodTask *self, UfoIrProjectorTask *value) {
+void
+ufo_ir_method_task_set_projector (UfoIrMethodTask *self, UfoIrProjectorTask *value)
+{
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (self);
-    priv->projector = value;
+
+    if (priv->projector != NULL)
+        g_object_unref (priv->projector);
+
+    priv->projector = g_object_ref (value);
 }
 
-guint ufo_ir_method_task_get_iterations_number(UfoIrMethodTask *self) {
+guint
+ufo_ir_method_task_get_iterations_number (UfoIrMethodTask *self)
+{
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (self);
     return priv->iterations_number;
 }
 
-void  ufo_ir_method_task_set_iterations_number(UfoIrMethodTask *self, guint value) {
+void
+ufo_ir_method_task_set_iterations_number (UfoIrMethodTask *self, guint value)
+{
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (self);
     priv->iterations_number = value;
 }
@@ -204,9 +216,10 @@ ufo_ir_method_task_dispose (GObject *object)
 {
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (object);
 
-    // TODO: Check object to clear
-
-    g_object_unref(priv->projector);
+    if (priv->projector != NULL) {
+        g_object_unref (priv->projector);
+        priv->projector = NULL;
+    }
 
     G_OBJECT_CLASS (ufo_ir_method_task_parent_class)->dispose (object);
 }
