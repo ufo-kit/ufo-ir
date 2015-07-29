@@ -218,7 +218,8 @@ static gboolean
 ufo_ir_sbtv_task_process (UfoTask *task,
                          UfoBuffer **inputs,
                          UfoBuffer *output,
-                         UfoRequisition *requisition) {
+                         UfoRequisition *requisition)
+{
     UfoIrSbtvTask *self = UFO_IR_SBTV_TASK(task);
     UfoIrSbtvTaskPrivate *priv = UFO_IR_SBTV_TASK_GET_PRIVATE (self);
     UfoBuffer *input = inputs[0];
@@ -241,7 +242,6 @@ ufo_ir_sbtv_task_process (UfoTask *task,
     // u = At(f)
     UfoBuffer *u = output;
     ufo_ir_basic_ops_processor_set(priv->bo_processor, u, 0.0f);
-    //ufo_buffer_copy(fbp, u);
 
     UfoBuffer *up = ufo_buffer_dup(fbp);
 
@@ -264,10 +264,10 @@ ufo_ir_sbtv_task_process (UfoTask *task,
 
     // fbp = fbp * mu
     ufo_ir_basic_ops_processor_mul_scalar(priv->bo_processor, fbp, priv->mu);
+
     // Main loop
-    for(guint iterationNum = 0; iterationNum < max_iterations; ++iterationNum)
-    {
-        g_print("SBTV iteration: %d\n", iterationNum);
+    for (guint i = 0; i < max_iterations; ++i) {
+        g_debug ("SBTV iteration: %d", i);
         ufo_buffer_copy(u, up);
 
         calculate_b(self, fbp, dx, dy, bx, by, b);
