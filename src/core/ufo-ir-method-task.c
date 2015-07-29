@@ -78,12 +78,10 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
     gobject_class->dispose      = ufo_ir_method_task_dispose;
 
     properties[PROP_ITERATIONS_NUMBER] =
-            g_param_spec_uint("iterations_number",
+            g_param_spec_uint("num-iterations",
                               "Number of iterations of method",
                               "Number of iterations of method",
-                              1,
-                              G_MAXUINT,
-                              1,
+                              1, G_MAXUINT, 1,
                               G_PARAM_READWRITE);
     properties[PROP_PROJECTOR] =
             g_param_spec_object("projector",

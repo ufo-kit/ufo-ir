@@ -35,10 +35,10 @@
                     "name": "sart_minimizer",
                     "properties": {
                         "relaxation_factor":0.25,
-                        "iterations_number":100
+                        "num-iterations":100
                     }
                 },
-                "iterations_number":10
+                "num-iterations":10
 
             }
         }
