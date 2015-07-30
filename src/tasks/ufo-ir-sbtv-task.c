@@ -38,7 +38,6 @@ static void ufo_ir_sbtv_task_set_property (GObject *object, guint property_id, c
 static void ufo_ir_sbtv_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_sbtv_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_sbtv_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
-static const gchar *ufo_ir_sbtv_task_get_package_name(UfoTaskNode *self);
 
 static void calculate_b(UfoIrSbtvTask *self, UfoBuffer *fbp, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by, UfoBuffer *b);
 static void update_db(UfoIrSbtvTask *self, UfoBuffer *u, UfoBuffer *dx, UfoBuffer *dy, UfoBuffer *bx, UfoBuffer *by);
@@ -86,9 +85,6 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass) {
 
     oclass->set_property = ufo_ir_sbtv_task_set_property;
     oclass->get_property = ufo_ir_sbtv_task_get_property;
-
-    UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
-    tnclass->get_package_name = ufo_ir_sbtv_task_get_package_name;
 
     properties[PROP_LAMBDA] =
             g_param_spec_float("lambda",
@@ -274,20 +270,6 @@ ufo_ir_sbtv_task_process (UfoTask *task,
     }
 
     return TRUE;
-}
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// GObject methods
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// TaskNode methods
-// -----------------------------------------------------------------------------
-static const gchar *
-ufo_ir_sbtv_task_get_package_name (UfoTaskNode *self)
-{
-    return "ir";
 }
 // -----------------------------------------------------------------------------
 

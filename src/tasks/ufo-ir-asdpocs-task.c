@@ -34,7 +34,6 @@ static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_asdpocs_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_asdpocs_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 static void ufo_ir_asdpocs_task_dispose (GObject *object);
-static const gchar *ufo_ir_asdpocs_task_get_package_name(UfoTaskNode *self);
 static UfoIrProjectionsSubset *generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets);
 static void ufo_math_tvstd_method_process_real (UfoIrAsdpocsTask *self, UfoBuffer *input, UfoBuffer *output, gfloat relaxation, cl_command_queue cmd_queue);
 
@@ -103,9 +102,6 @@ ufo_ir_asdpocs_task_class_init (UfoIrAsdpocsTaskClass *klass) {
     oclass->set_property = ufo_ir_asdpocs_task_set_property;
     oclass->get_property = ufo_ir_asdpocs_task_get_property;
     oclass->dispose = ufo_ir_asdpocs_task_dispose;
-
-    UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
-    tnclass->get_package_name = ufo_ir_asdpocs_task_get_package_name;
 
     properties[PROP_BETA] =
         g_param_spec_float("beta",
@@ -509,12 +505,6 @@ ufo_ir_asdpocs_task_process (UfoTask *task,
     return TRUE;
 }
 
-static const gchar *
-ufo_ir_asdpocs_task_get_package_name (UfoTaskNode *self)
-{
-    return "ir";
-}
-// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // Private methods
