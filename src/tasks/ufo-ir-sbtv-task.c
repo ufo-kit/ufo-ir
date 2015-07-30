@@ -291,6 +291,16 @@ ufo_ir_sbtv_task_process (UfoTask *task,
         update_db(self, u, dx, dy, bx, by);
     }
 
+    g_object_unref (f);
+    g_object_unref (fbp);
+    g_object_unref (up);
+    g_object_unref (Z);
+    g_object_unref (b);
+    g_object_unref (bx);
+    g_object_unref (by);
+    g_object_unref (dx);
+    g_object_unref (dy);
+
     return TRUE;
 }
 // -----------------------------------------------------------------------------
