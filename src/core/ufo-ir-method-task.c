@@ -93,7 +93,7 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
 
     g_type_class_add_private (gobject_class, sizeof(UfoIrMethodTaskPrivate));
 
-    UfoTaskNodeClass *taskklass = UFO_TASK_NODE_GET_CLASS(klass);
+    UfoTaskNodeClass *taskklass = UFO_TASK_NODE_CLASS (klass);
     taskklass->get_package_name = ufo_ir_method_task_get_package_name;
 }
 
