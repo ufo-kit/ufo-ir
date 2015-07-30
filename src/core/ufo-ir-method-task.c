@@ -30,7 +30,6 @@
 // Class related methods
 static void ufo_ir_method_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_method_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void ufo_ir_method_task_finalize (GObject *object);
 static void ufo_ir_method_task_dispose (GObject *object);
 
 // UfoTask Interface related methods
@@ -74,7 +73,6 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
     GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
     gobject_class->set_property = ufo_ir_method_task_set_property;
     gobject_class->get_property = ufo_ir_method_task_get_property;
-    gobject_class->finalize     = ufo_ir_method_task_finalize;
     gobject_class->dispose      = ufo_ir_method_task_dispose;
 
     properties[PROP_ITERATIONS_NUMBER] =
@@ -199,12 +197,6 @@ ufo_ir_method_task_set_iterations_number (UfoIrMethodTask *self, guint value)
 // -----------------------------------------------------------------------------
 // Class related methods
 // -----------------------------------------------------------------------------
-
-static void
-ufo_ir_method_task_finalize (GObject *object)
-{
-    G_OBJECT_CLASS (ufo_ir_method_task_parent_class)->finalize (object);
-}
 
 static void
 ufo_ir_method_task_dispose (GObject *object)

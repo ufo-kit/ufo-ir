@@ -33,7 +33,7 @@ static void ufo_ir_asdpocs_task_set_property (GObject *object, guint property_id
 static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_asdpocs_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_asdpocs_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
-static void ufo_ir_asdpocs_task_finalize (GObject *object);
+static void ufo_ir_asdpocs_task_dispose (GObject *object);
 static const gchar *ufo_ir_asdpocs_task_get_package_name(UfoTaskNode *self);
 static UfoIrProjectionsSubset *generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets);
 static void ufo_math_tvstd_method_process_real (UfoIrAsdpocsTask *self, UfoBuffer *input, UfoBuffer *output, gfloat relaxation, cl_command_queue cmd_queue);
@@ -102,7 +102,7 @@ ufo_ir_asdpocs_task_class_init (UfoIrAsdpocsTaskClass *klass) {
 
     oclass->set_property = ufo_ir_asdpocs_task_set_property;
     oclass->get_property = ufo_ir_asdpocs_task_get_property;
-    oclass->finalize = ufo_ir_asdpocs_task_finalize;
+    oclass->dispose = ufo_ir_asdpocs_task_dispose;
 
     UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
     tnclass->get_package_name = ufo_ir_asdpocs_task_get_package_name;
@@ -191,10 +191,12 @@ ufo_ir_asdpocs_task_init(UfoIrAsdpocsTask *self) {
 // -----------------------------------------------------------------------------
 
 static void
-ufo_ir_asdpocs_task_finalize (GObject *object) {
+ufo_ir_asdpocs_task_dispose (GObject *object)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (object);
-    g_object_unref(priv->df_minimizer);
-    G_OBJECT_CLASS (ufo_ir_asdpocs_task_parent_class)->finalize (object);
+    g_object_unref (priv->df_minimizer);
+    priv->df_minimizer = NULL;
+    G_OBJECT_CLASS (ufo_ir_asdpocs_task_parent_class)->dispose (object);
 }
 
 // -----------------------------------------------------------------------------

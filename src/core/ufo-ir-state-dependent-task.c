@@ -34,7 +34,6 @@ static gboolean ufo_ir_state_dependent_task_process (UfoTask *self, UfoBuffer **
 //static void ufo_ir_state_dependent_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
 static void ufo_ir_state_dependent_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_state_dependent_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
-static void ufo_ir_state_dependent_task_finalize (GObject *object);
 static const gchar *ufo_ir_state_dependent_task_get_package_name (UfoTaskNode *node);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (UfoIrStateDependentTask, ufo_ir_state_dependent_task, UFO_TYPE_TASK_NODE,
@@ -67,7 +66,6 @@ ufo_ir_state_dependent_task_class_init (UfoIrStateDependentTaskClass *klass)
 
     oclass->set_property = ufo_ir_state_dependent_task_set_property;
     oclass->get_property = ufo_ir_state_dependent_task_get_property;
-    oclass->finalize = ufo_ir_state_dependent_task_finalize;
 
     UfoTaskNodeClass *tclass = UFO_TASK_NODE_CLASS(klass);
     tclass->get_package_name = ufo_ir_state_dependent_task_get_package_name;
@@ -135,16 +133,6 @@ gboolean ufo_ir_state_dependent_task_backward (UfoIrStateDependentTask *task,
     }
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Finalizataion
-// -----------------------------------------------------------------------------
-static void
-ufo_ir_state_dependent_task_finalize (GObject *object)
-{
-    G_OBJECT_CLASS (ufo_ir_state_dependent_task_parent_class)->finalize (object);
-}
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------

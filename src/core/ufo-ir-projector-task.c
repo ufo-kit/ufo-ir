@@ -32,7 +32,6 @@ static guint ufo_ir_projector_task_get_num_inputs (UfoTask *task);
 static guint ufo_ir_projector_task_get_num_dimensions (UfoTask *task, guint input);
 static void ufo_ir_projector_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_projector_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void ufo_ir_projector_task_finalize (GObject *object);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (UfoIrProjectorTask, ufo_ir_projector_task, UFO_IR_TYPE_STATE_DEPENDENT_TASK,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK,
@@ -69,7 +68,6 @@ ufo_ir_projector_task_class_init (UfoIrProjectorTaskClass *klass)
 
     oclass->set_property = ufo_ir_projector_task_set_property;
     oclass->get_property = ufo_ir_projector_task_get_property;
-    oclass->finalize = ufo_ir_projector_task_finalize;
 
     properties[PROP_AXIS_POSITION] =
             g_param_spec_float ("axis_position",
@@ -212,16 +210,6 @@ void   ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gflo
     priv->correction_scale = value;
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Finalizataion
-// -----------------------------------------------------------------------------
-static void
-ufo_ir_projector_task_finalize (GObject *object)
-{
-    G_OBJECT_CLASS (ufo_ir_projector_task_parent_class)->finalize (object);
-}
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------

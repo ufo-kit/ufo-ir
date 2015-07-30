@@ -31,7 +31,6 @@ static void ufo_ir_sirt_task_set_property (GObject *object, guint property_id, c
 static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_sirt_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_sirt_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
-static void ufo_ir_sirt_task_finalize (GObject *object);
 static const gchar *ufo_ir_sirt_task_get_package_name(UfoTaskNode *self);
 
 struct _UfoIrSirtTaskPrivate {
@@ -72,7 +71,6 @@ ufo_ir_sirt_task_class_init (UfoIrSirtTaskClass *klass) {
 
     oclass->set_property = ufo_ir_sirt_task_set_property;
     oclass->get_property = ufo_ir_sirt_task_get_property;
-    oclass->finalize = ufo_ir_sirt_task_finalize;
 
     UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
     tnclass->get_package_name = ufo_ir_sirt_task_get_package_name;
@@ -95,17 +93,6 @@ ufo_ir_sirt_task_init(UfoIrSirtTask *self) {
     self->priv = UFO_IR_SIRT_TASK_GET_PRIVATE(self);
     self->priv->relaxation_factor = 0.25;
 }
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Finalization
-// -----------------------------------------------------------------------------
-
-static void
-ufo_ir_sirt_task_finalize (GObject *object) {
-    G_OBJECT_CLASS (ufo_ir_sirt_task_parent_class)->finalize (object);
-}
-
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------

@@ -37,7 +37,6 @@
 static void ufo_ir_sbtv_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_sbtv_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_sbtv_task_setup (UfoTask *task, UfoResources *resources, GError **error);
-static void ufo_ir_sbtv_task_finalize (GObject *object);
 static gboolean ufo_ir_sbtv_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 static const gchar *ufo_ir_sbtv_task_get_package_name(UfoTaskNode *self);
 
@@ -87,7 +86,6 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass) {
 
     oclass->set_property = ufo_ir_sbtv_task_set_property;
     oclass->get_property = ufo_ir_sbtv_task_get_property;
-    oclass->finalize = ufo_ir_sbtv_task_finalize;
 
     UfoTaskNodeClass * tnclass= UFO_TASK_NODE_CLASS(klass);
     tnclass->get_package_name = ufo_ir_sbtv_task_get_package_name;
@@ -281,11 +279,6 @@ ufo_ir_sbtv_task_process (UfoTask *task,
 
 // -----------------------------------------------------------------------------
 // GObject methods
-// -----------------------------------------------------------------------------
-static void
-ufo_ir_sbtv_task_finalize (GObject *object) {
-    G_OBJECT_CLASS (ufo_ir_sbtv_task_parent_class)->finalize (object);
-}
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
