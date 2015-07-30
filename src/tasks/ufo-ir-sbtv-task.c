@@ -36,6 +36,7 @@
 
 static void ufo_ir_sbtv_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_sbtv_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+static void ufo_ir_sbtv_task_dispose (GObject *object);
 static void ufo_ir_sbtv_task_setup (UfoTask *task, UfoResources *resources, GError **error);
 static gboolean ufo_ir_sbtv_task_process (UfoTask *task, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 
@@ -85,6 +86,7 @@ ufo_ir_sbtv_task_class_init (UfoIrSbtvTaskClass *klass) {
 
     oclass->set_property = ufo_ir_sbtv_task_set_property;
     oclass->get_property = ufo_ir_sbtv_task_get_property;
+    oclass->dispose = ufo_ir_sbtv_task_dispose;
 
     properties[PROP_LAMBDA] =
             g_param_spec_float("lambda",
@@ -180,6 +182,26 @@ ufo_ir_sbtv_task_get_property (GObject *object,
             G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
             break;
     }
+}
+
+static void
+ufo_ir_sbtv_task_dispose (GObject *object)
+{
+    UfoIrSbtvTaskPrivate *priv;
+
+    priv = UFO_IR_SBTV_TASK_GET_PRIVATE (object);
+
+    if (priv->gradient_processor != NULL) {
+        g_object_unref (priv->gradient_processor);
+        priv->gradient_processor = NULL;
+    }
+
+    if (priv->bo_processor != NULL) {
+        g_object_unref (priv->bo_processor);
+        priv->bo_processor = NULL;
+    }
+
+    G_OBJECT_CLASS (ufo_ir_sbtv_task_parent_class)->dispose (object);
 }
 
 // -----------------------------------------------------------------------------
