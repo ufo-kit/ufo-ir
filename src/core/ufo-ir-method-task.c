@@ -229,12 +229,10 @@ ufo_ir_method_task_setup (UfoTask      *task,
 {
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
 
-    if(priv->projector == NULL) {
-        g_error("Projector not specified");
-    }
-    else {
-        ufo_task_setup(UFO_TASK(priv->projector), resources, error);
-    }
+    if (priv->projector == NULL)
+        g_set_error (error, UFO_TASK_ERROR, UFO_TASK_ERROR_SETUP, "No projector specified.");
+    else
+        ufo_task_setup (UFO_TASK (priv->projector), resources, error);
 }
 
 static guint
@@ -259,17 +257,15 @@ ufo_ir_method_task_get_mode (UfoTask *task)
 
 static void
 ufo_ir_method_task_get_requisition (UfoTask        *task,
-                                         UfoBuffer      **inputs,
-                                         UfoRequisition *requisition)
+                                    UfoBuffer      **inputs,
+                                    UfoRequisition *requisition)
 {
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
 
-    if(priv->projector == NULL) {
-        g_error("Projector not specified");
-    }
-    else {
-        ufo_task_get_requisition(UFO_TASK(priv->projector), inputs, requisition);
-    }
+    if (priv->projector == NULL)
+        g_error ("Projector not specified");
+    else
+        ufo_task_get_requisition (UFO_TASK(priv->projector), inputs, requisition);
 }
 
 // -----------------------------------------------------------------------------
