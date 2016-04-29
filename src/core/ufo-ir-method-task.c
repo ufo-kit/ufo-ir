@@ -175,7 +175,7 @@ ufo_ir_method_task_set_projector (UfoIrMethodTask *self, UfoIrProjectorTask *val
     if (priv->projector != NULL)
         g_object_unref (priv->projector);
 
-    priv->projector = g_object_ref (value);
+    priv->projector = g_object_ref_sink (value);
 }
 
 guint
