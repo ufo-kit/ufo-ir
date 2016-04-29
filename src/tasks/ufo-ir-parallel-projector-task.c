@@ -84,7 +84,22 @@ ufo_ir_parallel_projector_task_new (void) {
 }
 
 static void
-ufo_ir_parallel_projector_task_finalize (GObject *object) {
+ufo_ir_parallel_projector_task_finalize (GObject *object)
+{
+    UfoIrParallelProjectorTaskPrivate *priv;
+
+    priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE (object);
+
+    if (priv->scan_sin_lut) {
+        UFO_RESOURCES_CHECK_CLERR (clReleaseMemObject (priv->scan_sin_lut));
+        priv->scan_sin_lut = NULL;
+    }
+
+    if (priv->scan_cos_lut) {
+        UFO_RESOURCES_CHECK_CLERR (clReleaseMemObject (priv->scan_cos_lut));
+        priv->scan_cos_lut = NULL;
+    }
+
     G_OBJECT_CLASS (ufo_ir_parallel_projector_task_parent_class)->finalize (object);
 }
 
@@ -161,8 +176,6 @@ void ufo_ir_parallel_projector_subset_fp(UfoIrParallelProjectorTask *self,
     ufo_ir_parallel_projector_subset_fp_real(self, volume, sinogram, subset, &req, cmd_queue);
 
 }
-
-
 
 void
 ufo_ir_parallel_projector_subset_bp(UfoIrParallelProjectorTask *self,
