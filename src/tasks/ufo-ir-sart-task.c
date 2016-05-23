@@ -161,8 +161,9 @@ ufo_ir_sart_task_setup (UfoTask      *task,
                         UfoResources *resources,
                         GError       **error)
 {
-    if(!UFO_IR_IS_PARALLEL_PROJECTOR_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task)))) {
-        g_error("Wrong projector type");
+    if (!UFO_IR_IS_PARALLEL_PROJECTOR_TASK (ufo_ir_method_task_get_projector (UFO_IR_METHOD_TASK(task)))) {
+        g_set_error (error, UFO_TASK_ERROR, UFO_TASK_ERROR_SETUP, "Wrong projector type, must be parallel");
+        return;
     }
 
     ufo_task_node_set_proc_node(UFO_TASK_NODE(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), ufo_task_node_get_proc_node(UFO_TASK_NODE(task)));

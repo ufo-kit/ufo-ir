@@ -385,9 +385,11 @@ ufo_ir_asdpocs_task_setup (UfoTask *task,
     ufo_task_setup(UFO_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task))), resources, error);
 
     // Init df_minimizer
-    if(priv->df_minimizer == NULL) {
-        g_error("df_minimizer does not defined");
+    if (priv->df_minimizer == NULL) {
+        g_set_error (error, UFO_TASK_ERROR, UFO_TASK_ERROR_SETUP, "df_minimizer is not defined");
+        return;
     }
+
     ufo_task_node_set_proc_node(UFO_TASK_NODE(priv->df_minimizer), ufo_task_node_get_proc_node(UFO_TASK_NODE(task)));
     ufo_ir_method_task_set_projector(UFO_IR_METHOD_TASK(priv->df_minimizer), projector);
     ufo_task_setup(priv->df_minimizer, resources, error);
