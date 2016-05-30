@@ -26,8 +26,6 @@
 #include <CL/cl.h>
 #endif
 
-#define OPS_FILENAME "ufo-basic-ops.cl"
-
 struct _UfoIrParallelProjectorTaskPrivate {
     cl_context context;
 
@@ -37,11 +35,11 @@ struct _UfoIrParallelProjectorTaskPrivate {
     gfloat *scan_host_sin_lut;
     gfloat *scan_host_cos_lut;
 
-    gchar *model_name; // Projection model name
-    gpointer fp_kernel[2]; // Forward projections kernels
-    gpointer bp_kernel; // Backprojection kernel
-    gpointer set_kernel;
+    gchar *model_name;      // Projection model name
+    gpointer fp_kernel[2];  // Forward projections kernels
+    gpointer bp_kernel;     // Backprojection kernel
 
+    gboolean first_run;     // Required to avoid the recalculation of angles
     guint detectors_num;
     guint angles_num;
     UfoIrProjectionsSubset *full_subsets_list;
@@ -51,7 +49,6 @@ struct _UfoIrParallelProjectorTaskPrivate {
 static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_parallel_projector_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_parallel_projector_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void ufo_ir_parallel_projector_task_setup (UfoTask *self, UfoResources *resources, GError **error);
 static void ufo_ir_parallel_projector_task_get_requisition (UfoTask *self, UfoBuffer **inputs, UfoRequisition *requisition);
 static UfoTaskMode ufo_ir_parallel_projector_task_get_mode (UfoTask *task);
 // Private methods
@@ -60,6 +57,7 @@ static UfoIrProjectionsSubset *generate_full_subsets_list (UfoIrParallelProjecto
 static void ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset, UfoRequisition *requisitions, cl_command_queue cmd_queue);
 static void ufo_ir_parallel_projector_subset_fp_real(UfoIrParallelProjectorTask *self, UfoBuffer *volume, UfoBuffer *sinogram, UfoIrProjectionsSubset *subset, UfoRequisition *requisitions, cl_command_queue cmd_queue);
 // State dependent methods
+static void ufo_ir_parallel_projector_task_setup (UfoIrStateDependentTask *self, UfoResources *resources, GError **error);
 gboolean ufo_ir_parallel_projector_task_forward(UfoIrStateDependentTask *self, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 gboolean ufo_ir_parallel_projector_task_backward(UfoIrStateDependentTask *self, UfoBuffer **inputs, UfoBuffer *output, UfoRequisition *requisition);
 
@@ -105,7 +103,6 @@ ufo_ir_parallel_projector_task_finalize (GObject *object)
 
 static void
 ufo_task_interface_init (UfoTaskIface *iface) {
-    iface->setup = ufo_ir_parallel_projector_task_setup;
     iface->get_mode = ufo_ir_parallel_projector_task_get_mode;
     iface->get_requisition = ufo_ir_parallel_projector_task_get_requisition;
 }
@@ -121,6 +118,7 @@ ufo_ir_parallel_projector_task_class_init (UfoIrParallelProjectorTaskClass *klas
     UfoIrStateDependentTaskClass *sdclass = UFO_IR_STATE_DEPENDENT_TASK_CLASS(klass);
     sdclass->forward = ufo_ir_parallel_projector_task_forward;
     sdclass->backward = ufo_ir_parallel_projector_task_backward;
+    sdclass->setup = ufo_ir_parallel_projector_task_setup;
 
     properties[PROP_MODEL] =
         g_param_spec_string ("model",
@@ -129,11 +127,13 @@ ufo_ir_parallel_projector_task_class_init (UfoIrParallelProjectorTaskClass *klas
                              "joseph",
                               G_PARAM_READWRITE);
 
+    // If angles_num == 0, then the number of angles should be taken
+    // from the passed sinogram.
     properties[PROP_ANGLES_NUM] =
         g_param_spec_uint ("angles_num",
                            "Amount of angles for forward projection",
                            "Amount of angles for forward projection",
-                           1, G_MAXUINT, 1,
+                           (guint)0, G_MAXUINT, (guint)0,
                            G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
@@ -146,7 +146,8 @@ static void
 ufo_ir_parallel_projector_task_init(UfoIrParallelProjectorTask *self) {
     self->priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
     self->priv->model_name = g_strdup("joseph");
-    self->priv->angles_num = 1;
+    self->priv->angles_num = 0;
+    self->priv->first_run = TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -302,7 +303,60 @@ void ufo_ir_parallel_projector_set_angles_num(UfoIrParallelProjectorTask *self, 
 // -----------------------------------------------------------------------------
 
 static void
-ufo_ir_parallel_projector_task_setup (UfoTask *self,
+ufo_ir_parallel_projector_task_get_requisition (UfoTask *self,
+                                                UfoBuffer **inputs,
+                                                UfoRequisition *requisition) {
+    UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
+    UfoRequisition buffer_req;
+    ufo_buffer_get_requisition(inputs[0], &buffer_req);
+
+    if (priv->angles_num == 0) {
+        priv->angles_num = buffer_req.dims[1];
+    }
+
+    if (priv->first_run || priv->angles_num != buffer_req.dims[1]) {
+        priv->first_run = FALSE;
+        gfloat angles_step = ufo_ir_projector_task_get_step(UFO_IR_PROJECTOR_TASK(self));
+        priv->scan_sin_lut = create_lut_buffer (priv->angles_num,
+                                                angles_step,
+                                                &priv->context,
+                                                &priv->scan_host_sin_lut, sin);
+
+        priv->scan_cos_lut = create_lut_buffer (priv->angles_num,
+                                                angles_step,
+                                                &priv->context,
+                                                &priv->scan_host_cos_lut, cos);
+
+        priv->full_subsets_list = generate_full_subsets_list(priv);
+    }
+
+    if (priv->detectors_num != buffer_req.dims[0]) {
+        priv->detectors_num = buffer_req.dims[0];
+    }
+
+    requisition->n_dims = 2;
+    requisition->dims[0] = priv->detectors_num;
+
+    if (ufo_ir_state_dependent_task_get_is_forward(UFO_IR_STATE_DEPENDENT_TASK(self))) {
+        requisition->dims[1] = priv->angles_num;
+    } else {
+        requisition->dims[1] = priv->detectors_num;
+    }
+}
+
+static UfoTaskMode
+ufo_ir_parallel_projector_task_get_mode (UfoTask *task) {
+    return UFO_TASK_MODE_PROCESSOR | UFO_TASK_MODE_GPU;
+}
+
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// State dependent task implementation
+// -----------------------------------------------------------------------------
+
+static void
+ufo_ir_parallel_projector_task_setup (UfoIrStateDependentTask *self,
                                       UfoResources *resources,
                                       GError **error) {
     UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
@@ -330,66 +384,8 @@ ufo_ir_parallel_projector_task_setup (UfoTask *self,
     if (*error && error) {
         return;
     }
-
-    priv->set_kernel = ufo_resources_get_kernel(resources, OPS_FILENAME, "operation_set", error);
-    if (*error && error) {
-        return;
-    }
 }
 
-static void
-ufo_ir_parallel_projector_task_get_requisition (UfoTask *self,
-                                                UfoBuffer **inputs,
-                                                UfoRequisition *requisition) {
-    UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
-
-    UfoRequisition buffer_req;
-    ufo_buffer_get_requisition(inputs[0], &buffer_req);
-    if(ufo_ir_state_dependent_task_get_is_forward(UFO_IR_STATE_DEPENDENT_TASK(self))){
-        if(priv->detectors_num != buffer_req.dims[0]){
-            priv->detectors_num = buffer_req.dims[0];
-
-            gfloat angles_step = ufo_ir_projector_task_get_step(UFO_IR_PROJECTOR_TASK(self));
-            // Recalc sin/cos
-            priv->scan_sin_lut = create_lut_buffer (priv->angles_num, angles_step, &priv->context, &priv->scan_host_sin_lut, sin);
-            priv->scan_cos_lut = create_lut_buffer (priv->angles_num, angles_step, &priv->context, &priv->scan_host_cos_lut, cos);
-
-            priv->full_subsets_list = generate_full_subsets_list(priv);
-        }
-
-        requisition->n_dims = 2;
-        requisition->dims[0] = priv->detectors_num;
-        requisition->dims[1] = priv->angles_num;
-    }
-    else{
-        if(priv->detectors_num != buffer_req.dims[0] || priv->angles_num != buffer_req.dims[1]){
-            priv->detectors_num = buffer_req.dims[0];
-            priv->angles_num = buffer_req.dims[1];
-
-            gfloat angles_step = ufo_ir_projector_task_get_step(UFO_IR_PROJECTOR_TASK(self));
-            // Recalc sin/cos
-            priv->scan_sin_lut = create_lut_buffer (priv->angles_num, angles_step, &priv->context, &priv->scan_host_sin_lut, sin);
-            priv->scan_cos_lut = create_lut_buffer (priv->angles_num, angles_step, &priv->context, &priv->scan_host_cos_lut, cos);
-
-            priv->full_subsets_list = generate_full_subsets_list(priv);
-        }
-
-        requisition->n_dims = 2;
-        requisition->dims[0] = priv->detectors_num;
-        requisition->dims[1] = priv->detectors_num;
-    }
-}
-
-static UfoTaskMode
-ufo_ir_parallel_projector_task_get_mode (UfoTask *task) {
-    return UFO_TASK_MODE_PROCESSOR | UFO_TASK_MODE_GPU;
-}
-
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// State dependent task implementation
-// -----------------------------------------------------------------------------
 gboolean
 ufo_ir_parallel_projector_task_forward(UfoIrStateDependentTask *self,
                                        UfoBuffer **inputs,
@@ -399,7 +395,6 @@ ufo_ir_parallel_projector_task_forward(UfoIrStateDependentTask *self,
 
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE (self)));
     cl_command_queue cmd_queue = ufo_gpu_node_get_cmd_queue (node);
-
 
     UfoRequisition req;
     ufo_buffer_get_requisition(output, &req);
@@ -513,12 +508,21 @@ ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self,
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_sino = ufo_buffer_get_device_image (sinogram, cmd_queue);
 
+    UfoRequisition sino_req;
+    ufo_buffer_get_requisition(sinogram, &sino_req);
+
+    UfoIrGeometryDims dims;
+    dims.width = requisitions->dims[0];
+    dims.height = requisitions->dims[1];
+    dims.n_dets = sino_req.dims[0];
+    dims.n_angles = sino_req.dims[1];
+
     UfoIrProjectorTask *projection_task = UFO_IR_PROJECTOR_TASK(self);
     float relaxation = ufo_ir_projector_task_get_relaxation(projection_task);
     float axis_position = ufo_ir_projector_task_get_axis_position(projection_task);
     if(axis_position < 0)
     {
-        axis_position = requisitions->dims[0] / 2.0;
+        axis_position = sino_req.dims[0] / 2.0;
     }
 
     /* Kernel definition
@@ -537,8 +541,9 @@ ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self,
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 3, sizeof (gfloat), &relaxation));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 4, sizeof (cl_mem), &priv->scan_sin_lut));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 5, sizeof (cl_mem), &priv->scan_cos_lut));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 6, sizeof (gfloat), &axis_position));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 7, sizeof (UfoIrProjectionsSubset), subset));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 6, sizeof (UfoIrGeometryDims), &dims));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 7, sizeof (gfloat), &axis_position));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 8, sizeof (UfoIrProjectionsSubset), subset));
 
     UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(
                                    cmd_queue,           // cl_command_queue command_queue

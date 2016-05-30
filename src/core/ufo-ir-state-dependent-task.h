@@ -53,6 +53,10 @@ struct _UfoIrStateDependentTaskClass {
                          UfoBuffer     **inputs,
                          UfoBuffer      *output,
                          UfoRequisition *requisition);
+
+    void (*setup) (UfoIrStateDependentTask *task,
+                   UfoResources *resources,
+                   GError **error);
 };
 
 UfoNode  *ufo_ir_state_dependent_task_new       (void);
@@ -74,4 +78,3 @@ void     ufo_ir_state_dependent_task_set_is_forward(UfoIrStateDependentTask *sel
 G_END_DECLS
 
 #endif
-

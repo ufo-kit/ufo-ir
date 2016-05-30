@@ -17,12 +17,19 @@
  * License along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ufo-ir-state-dependent-task.h"
+ #ifdef __APPLE__
+ #include <OpenCL/cl.h>
+ #else
+ #include <CL/cl.h>
+ #endif
 
+#include "ufo-ir-state-dependent-task.h"
+#include "core/ufo-ir-basic-ops.h"
 
 
 struct _UfoIrStateDependentTaskPrivate {
     gboolean is_forward;
+    gpointer op_set_kernel;
 };
 
 // Private methods definitions
@@ -34,6 +41,7 @@ static gboolean ufo_ir_state_dependent_task_process (UfoTask *self, UfoBuffer **
 //static void ufo_ir_state_dependent_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
 static void ufo_ir_state_dependent_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void ufo_ir_state_dependent_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void ufo_ir_state_dependent_task_setup (UfoTask *self, UfoResources *resources, GError **error);
 static const gchar *ufo_ir_state_dependent_task_get_package_name (UfoTaskNode *node);
 
 G_DEFINE_ABSTRACT_TYPE_WITH_CODE (UfoIrStateDependentTask, ufo_ir_state_dependent_task, UFO_TYPE_TASK_NODE,
@@ -57,6 +65,7 @@ static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
     iface->process = ufo_ir_state_dependent_task_process;
+    iface->setup = ufo_ir_state_dependent_task_setup;
 }
 
 static void
@@ -84,6 +93,7 @@ ufo_ir_state_dependent_task_class_init (UfoIrStateDependentTaskClass *klass)
 
     klass->backward = NULL;
     klass->forward = NULL;
+    klass->setup = NULL;
 }
 
 static void
@@ -205,6 +215,10 @@ ufo_ir_state_dependent_task_process (UfoTask *self,
                          UfoRequisition *requisition)
 {
     UfoIrStateDependentTaskPrivate * priv= UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE(self);
+    // Clear the output memory first
+    UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(self)));
+    cl_command_queue cmd_queue = (cl_command_queue) ufo_gpu_node_get_cmd_queue(node);
+    ufo_ir_op_set(output, 0.0f, cmd_queue, priv->op_set_kernel);
 
     if(priv->is_forward)
     {
@@ -216,6 +230,18 @@ ufo_ir_state_dependent_task_process (UfoTask *self,
     }
 }
 // -----------------------------------------------------------------------------
+
+static void
+ufo_ir_state_dependent_task_setup(UfoTask      *task,
+                                  UfoResources *resources,
+                                  GError       **error)
+{
+  UfoIrStateDependentTaskPrivate *priv = UFO_IR_STATE_DEPENDENT_TASK_GET_PRIVATE (task);
+  priv->op_set_kernel = ufo_ir_op_set_generate_kernel(resources);
+  if (UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task)->setup != NULL) {
+    UFO_IR_STATE_DEPENDENT_TASK_GET_CLASS(task)->setup(UFO_IR_STATE_DEPENDENT_TASK(task), resources, error);
+  }
+}
 
 // -----------------------------------------------------------------------------
 // TaskNode implementation
