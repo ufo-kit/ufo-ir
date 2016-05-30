@@ -508,12 +508,21 @@ ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self,
     cl_mem d_volume = ufo_buffer_get_device_image (volume, cmd_queue);
     cl_mem d_sino = ufo_buffer_get_device_image (sinogram, cmd_queue);
 
+    UfoRequisition sino_req;
+    ufo_buffer_get_requisition(sinogram, &sino_req);
+
+    UfoIrGeometryDims dims;
+    dims.width = requisitions->dims[0];
+    dims.height = requisitions->dims[1];
+    dims.n_dets = sino_req.dims[0];
+    dims.n_angles = sino_req.dims[1];
+
     UfoIrProjectorTask *projection_task = UFO_IR_PROJECTOR_TASK(self);
     float relaxation = ufo_ir_projector_task_get_relaxation(projection_task);
     float axis_position = ufo_ir_projector_task_get_axis_position(projection_task);
     if(axis_position < 0)
     {
-        axis_position = requisitions->dims[0] / 2.0;
+        axis_position = sino_req.dims[0] / 2.0;
     }
 
     /* Kernel definition
@@ -532,8 +541,9 @@ ufo_ir_parallel_projector_subset_bp_real(UfoIrParallelProjectorTask *self,
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 3, sizeof (gfloat), &relaxation));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 4, sizeof (cl_mem), &priv->scan_sin_lut));
     UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 5, sizeof (cl_mem), &priv->scan_cos_lut));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 6, sizeof (gfloat), &axis_position));
-    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 7, sizeof (UfoIrProjectionsSubset), subset));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 6, sizeof (UfoIrGeometryDims), &dims));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 7, sizeof (gfloat), &axis_position));
+    UFO_RESOURCES_CHECK_CLERR (clSetKernelArg (kernel, 8, sizeof (UfoIrProjectionsSubset), subset));
 
     UFO_RESOURCES_CHECK_CLERR (clEnqueueNDRangeKernel(
                                    cmd_queue,           // cl_command_queue command_queue
