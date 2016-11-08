@@ -75,8 +75,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}
 
 add_library(${TARNAME} SHARED ${ufoircore_SRCS})
 install(TARGETS ${TARNAME}
-        ARCHIVE DESTINATION ${UFO_LIBDIR}
-        LIBRARY DESTINATION ${UFO_LIBDIR})
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 foreach(_src ${ufoir_SRCS})
     # find plugin suffix
@@ -97,13 +96,12 @@ foreach(_src ${ufoir_SRCS})
     list(APPEND all_targets ${target})
 
     install(TARGETS ${target}
-            ARCHIVE DESTINATION ${UFO_PLUGINDIR}/ir
-            LIBRARY DESTINATION ${UFO_PLUGINDIR}/ir)
+            LIBRARY DESTINATION ${CMAKE_INSTALL_PLUGINDIR}/ir)
 endforeach()
 
 # copy kernels
 foreach(_kernel ${ufoir_KERNELS})
-    install(FILES ${_kernel} DESTINATION ${UFO_KERNELDIR})
+    install(FILES ${_kernel} DESTINATION ${CMAKE_INSTALL_KERNELDIR})
 endforeach()
 #}}}
 #{{{ Python tests
@@ -124,5 +122,5 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ufoir.pc.in"
                "${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc" @ONLY IMMEDIATE)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ufoir.pc
-        DESTINATION ${UFO_IR_PKGCONFIGDIR})
+        DESTINATION ${CMAKE_INSTALL_PKGCONFIGDIR})
 #}}}

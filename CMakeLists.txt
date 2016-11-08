@@ -59,7 +59,9 @@ set(PKG_UFO_MIN_REQUIRED "0.2")
 
 find_package(OpenCL REQUIRED)
 find_package(PkgConfig REQUIRED)
+
 include(PkgConfigVars)
+include(GNUInstallDirs)
 
 pkg_check_modules(GLIB2 glib-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
 pkg_check_modules(GOBJECT2 gobject-2.0>=${PKG_GLIB2_MIN_REQUIRED} REQUIRED)
@@ -76,9 +78,12 @@ set(UFO_IR_DEPS
     ${UFO_LIBRARIES}
     )
 
+set(CMAKE_INSTALL_PLUGINDIR     "${UFO_PLUGINDIR}")
+set(CMAKE_INSTALL_KERNELDIR     "${UFO_KERNELDIR}")
+set(CMAKE_INSTALL_PKGCONFIGDIR  "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+
 link_directories(${UFO_LIBRARY_DIRS})
 
-#{{{ Add include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -86,20 +91,6 @@ include_directories(
     ${GIO2_INCLUDE_DIRS}
     ${OPENCL_INCLUDE_DIRS}
     ${UFO_INCLUDE_DIRS})
-#}}}
-#}}}
-#{{{ CMake: Add configure-like prefixes and directories
-include(ConfigurePaths)
-configure_paths(UFO_IR)
-
-string(REGEX MATCH "[A-Za-z./]*ufo-[0-9]" UFO_IR_INCLUDE_DIR ${UFO_INCLUDE_DIRS})
-set (UFO_INCLUDE_DIR
-     ${UFO_IR_INCLUDE_DIR})
-
-if (${UFO_IR_INCLUDE_DIR})
-    set(UFO_IR_INCLUDE_DIR "${UFO_IR_INCLUDEDIR}/ufoir-${UFO_IR_VERSION_MAJOR}")
-endif()
-
 #}}}
 #{{{ Definitions
 add_definitions("-std=c99 -pedantic -Wall -Wextra -fPIC")
