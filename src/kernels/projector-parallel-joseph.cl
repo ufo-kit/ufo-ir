@@ -33,16 +33,16 @@ typedef struct {
   Direction direction;
 } UfoProjectionsSubset;
 
-__kernel
-void FP_hor(__read_only     image2d_t               volume,
-            __read_only     image2d_t               r_sinogram,
-            __write_only    image2d_t               w_sinogram,
-            __constant      float                   *sin_val,
-            __constant      float                   *cos_val,
-            __const         UfoGeometryDims         dimensions,
-            __const         float                   axis_pos,
-            __const         UfoProjectionsSubset    part,
-            __const         float                   correction_scale)
+kernel
+void FP_hor(read_only     image2d_t               volume,
+            read_only     image2d_t               r_sinogram,
+            write_only    image2d_t               w_sinogram,
+            constant      float                   *sin_val,
+            constant      float                   *cos_val,
+            const         UfoGeometryDims         dimensions,
+            const         float                   axis_pos,
+            const         UfoProjectionsSubset    part,
+            const         float                   correction_scale)
 {
     int2 sino_coord;
     sino_coord.y = part.offset + get_global_id(1);
@@ -65,7 +65,7 @@ void FP_hor(__read_only     image2d_t               volume,
         return;
     }
 
-    __const float fDetStep   = -1.0f / sin_val[sino_coord.y];
+    const float fDetStep   = -1.0f / sin_val[sino_coord.y];
     float fSliceStep = cos_val[sino_coord.y] / sin_val[sino_coord.y];
 
     float2 volume_coord;
@@ -94,16 +94,16 @@ void FP_hor(__read_only     image2d_t               volume,
     write_imagef (w_sinogram, sino_coord, det_value);
 }
 
-__kernel
-void FP_vert(__read_only     image2d_t               volume,
-             __read_only     image2d_t               r_sinogram,
-             __write_only    image2d_t               w_sinogram,
-             __constant      float                   *sin_val,
-             __constant      float                   *cos_val,
-             __const         UfoGeometryDims         dimensions,
-             __const         float                   axis_pos,
-             __const         UfoProjectionsSubset    part,
-             __const         float                   correction_scale)
+kernel
+void FP_vert(read_only     image2d_t               volume,
+             read_only     image2d_t               r_sinogram,
+             write_only    image2d_t               w_sinogram,
+             constant      float                   *sin_val,
+             constant      float                   *cos_val,
+             const         UfoGeometryDims         dimensions,
+             const         float                   axis_pos,
+             const         UfoProjectionsSubset    part,
+             const         float                   correction_scale)
 {
     int2 sino_coord;
     sino_coord.y = part.offset + get_global_id(1);
@@ -126,7 +126,7 @@ void FP_vert(__read_only     image2d_t               volume,
         return;
     }
 
-    __const float fDetStep   = 1.0f / cos_val[sino_coord.y];
+    const float fDetStep   = 1.0f / cos_val[sino_coord.y];
     float fSliceStep = sin_val[sino_coord.y] / cos_val[sino_coord.y];
 
     float2 volume_coord;
@@ -155,18 +155,18 @@ void FP_vert(__read_only     image2d_t               volume,
     write_imagef (w_sinogram, sino_coord, det_value);
 }
 
-__kernel
-void BP(__read_only  image2d_t           r_volume,
-        __write_only image2d_t           w_volume,
-        __read_only  image2d_t           sinogram,
-        __const      float               relax_param,
-        __constant   float               *sin_val,
-        __constant   float               *cos_val,
-        __const      UfoGeometryDims     dimensions,
-        __const      float               axis_pos,
-        __const      UfoProjectionsSubset    part)
+kernel
+void BP(read_only  image2d_t           r_volume,
+        write_only image2d_t           w_volume,
+        read_only  image2d_t           sinogram,
+        const      float               relax_param,
+        constant   float               *sin_val,
+        constant   float               *cos_val,
+        const      UfoGeometryDims     dimensions,
+        const      float               axis_pos,
+        const      UfoProjectionsSubset    part)
 {
-    __const int2 vol_coord;
+    const int2 vol_coord;
     vol_coord.x = get_global_id(0);
     vol_coord.y = get_global_id(1);
 
@@ -186,8 +186,8 @@ void BP(__read_only  image2d_t           r_volume,
     // Shift to put the origin in X-axis into the center of the slice
     float origin_shift = (float)dimensions.width / 2.0f;
 
-    __const float fX = convert_float(vol_coord.x) + 0.5f - origin_shift;
-    __const float fY = convert_float(vol_coord.y) + 0.5f - origin_shift;
+    const float fX = convert_float(vol_coord.x) + 0.5f - origin_shift;
+    const float fY = convert_float(vol_coord.y) + 0.5f - origin_shift;
 
     float4 value = 0.0f;
     float2 sino_coord;
