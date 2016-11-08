@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-#{{{ sources
+#{{{ Sources
 set(ufoircore_SRCS
     core/ufo-ir-method-task.c
     core/ufo-ir-state-dependent-task.c
@@ -10,22 +10,7 @@ set(ufoircore_SRCS
     core/ufo-ir-gradient-processor.c
     core/ufo-ir-debug.c
 )
-#}}}
 
-#{{{ headers
-set(ufoircore_HDRS
-    core/ufo-ir-method-task-node.h
-    core/ufo-ir-state-dependent-task-node.h
-    core/ufo-ir-projector-task.h
-    core/ufo-ir-basic-ops.h
-    core/ufo-ir-basic-ops-processor.h
-    core/ufo-ir-gradient-processor.h
-    core/ufo-ir-debug.h
-)
-#}}}
-
-
-#{{{ sources
 set(ufoir_SRCS
     tasks/ufo-ir-dummy-task.c
     tasks/ufo-ir-parallel-projector-task.c
@@ -34,46 +19,20 @@ set(ufoir_SRCS
     tasks/ufo-ir-asdpocs-task.c
     tasks/ufo-ir-sbtv-task.c
 )
-#}}}
-
-#{{{ headers
-set(ufoir_HDRS
-    tasks/ufo-ir-dummy-task.h
-    tasks/ufo-ir-parallel-projector-task.h
-    tasks/ufo-ir-sirt-task.h
-    tasks/ufo-ir-sart-task.h
-    tasks/ufo-ir-asdpocs-task.h
-    tasks/ufo-ir-sbtv-task.h
-)
-#}}}
 
 file(GLOB ufoir_KERNELS "kernels/*.cl")
 #}}}
-
 #{{{ Variables
 set(ufoir_LIBS ${UFO_LIBRARIES})
-
-if (CMAKE_COMPILER_IS_GNUCC OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang"))
-    add_definitions("-Wcast-align -Wcast-qual -Winline -Wmissing-declarations "
-                    "-Wmissing-prototypes -Wnested-externs -Wno-long-long "
-                    "-Wno-missing-field-initializers -Wpointer-arith "
-                    "-Wredundant-decls -Wshadow -Wstrict-prototypes -Wwrite-strings")
-endif()
 #}}}
-
-#{{{ Dependency checks
-#}}}
-
 #{{{ Plugin targets
 include_directories(${CMAKE_CURRENT_BINARY_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}
                     ${OPENCL_INCLUDE_DIRS}
                     ${UFO_INCLUDE_DIRS})
 
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
-#               ${CMAKE_CURRENT_BINARY_DIR}/config.h)
-
 add_library(${TARNAME} SHARED ${ufoircore_SRCS})
+
 install(TARGETS ${TARNAME}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
@@ -104,17 +63,6 @@ foreach(_kernel ${ufoir_KERNELS})
     install(FILES ${_kernel} DESTINATION ${CMAKE_INSTALL_KERNELDIR})
 endforeach()
 #}}}
-#{{{ Python tests
-#find_program(NOSETESTSBIN nosetests)
-#if (NOSETESTSBIN)
-#    add_custom_target(test
-#        COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../run_tests.py
-#        ${CMAKE_CURRENT_BINARY_DIR}
-#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../)
-#    add_dependencies(test ${all_targets})
-#endif()
-#}}}
-
 #{{{ pkg-config
 # FIXME: inside the ufo.pc.in we should set the lib names that we found out, not
 # hard coded values
