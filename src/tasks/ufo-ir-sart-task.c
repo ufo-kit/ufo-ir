@@ -58,18 +58,16 @@ enum {
 
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-// -----------------------------------------------------------------------------
-// Init methods
-// -----------------------------------------------------------------------------
-
 static void
-ufo_task_interface_init (UfoTaskIface *iface) {
+ufo_task_interface_init (UfoTaskIface *iface)
+{
     iface->process = ufo_ir_sart_task_process;
     iface->setup = ufo_ir_sart_task_setup;
 }
 
 static void
-ufo_ir_sart_task_class_init (UfoIrSartTaskClass *klass) {
+ufo_ir_sart_task_class_init (UfoIrSartTaskClass *klass)
+{
     GObjectClass *oclass = G_OBJECT_CLASS (klass);
 
     oclass->set_property = ufo_ir_sart_task_set_property;
@@ -79,7 +77,7 @@ ufo_ir_sart_task_class_init (UfoIrSartTaskClass *klass) {
             g_param_spec_float("relaxation_factor",
                                "relaxation_factor",
                                "Relaxation factor",
-                               0.0f, 1.0f, 0.5f,
+                               0.0f, 1.0f, 0.25f,
                                G_PARAM_READWRITE);
 
     for (guint i = PROP_0 + 1; i < N_PROPERTIES; i++)
@@ -89,15 +87,12 @@ ufo_ir_sart_task_class_init (UfoIrSartTaskClass *klass) {
 }
 
 static void
-ufo_ir_sart_task_init(UfoIrSartTask *self) {
+ufo_ir_sart_task_init(UfoIrSartTask *self)
+{
     self->priv = UFO_IR_SART_TASK_GET_PRIVATE(self);
     self->priv->relaxation_factor = 0.25;
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Getters and setters
-// -----------------------------------------------------------------------------
 static void
 ufo_ir_sart_task_set_property (GObject *object,
                                guint property_id,
@@ -135,24 +130,22 @@ ufo_ir_sart_task_get_property (GObject *object,
 }
 
 gfloat
-ufo_ir_sart_task_get_relaxation_factor(UfoIrSartTask *self) {
+ufo_ir_sart_task_get_relaxation_factor(UfoIrSartTask *self)
+{
     UfoIrSartTaskPrivate *priv = UFO_IR_SART_TASK_GET_PRIVATE (self);
     return priv->relaxation_factor;
 }
 
 void
-ufo_ir_sart_task_set_relaxation_factor(UfoIrSartTask *self, gfloat value) {
+ufo_ir_sart_task_set_relaxation_factor(UfoIrSartTask *self, gfloat value)
+{
     UfoIrSartTaskPrivate *priv = UFO_IR_SART_TASK_GET_PRIVATE (self);
     priv->relaxation_factor = value;
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Task interface realization
-// -----------------------------------------------------------------------------
 UfoNode *
-ufo_ir_sart_task_new (void) {
+ufo_ir_sart_task_new (void)
+{
     return UFO_NODE (g_object_new (UFO_IR_TYPE_SART_TASK, NULL));
 }
 
@@ -181,21 +174,16 @@ static gboolean
 ufo_ir_sart_task_process (UfoTask *task,
                           UfoBuffer **inputs,
                           UfoBuffer *output,
-                          UfoRequisition *requisition) {
-
+                          UfoRequisition *requisition)
+{
     UfoIrSartTaskPrivate *priv = UFO_IR_SART_TASK_GET_PRIVATE (task);
     UfoIrParallelProjectorTask *projector = UFO_IR_PARALLEL_PROJECTOR_TASK(ufo_ir_method_task_get_projector(UFO_IR_METHOD_TASK(task)));
     UfoGpuNode *node = UFO_GPU_NODE (ufo_task_node_get_proc_node (UFO_TASK_NODE(task)));
     cl_command_queue cmd_queue = (cl_command_queue)ufo_gpu_node_get_cmd_queue (node);
 
-//    GTimer *timer = g_timer_new ();
-//    g_timer_reset(timer);
-//    clFinish(cmd_queue);
-//    g_timer_start(timer);
 
     UfoBuffer *sino_tmp = ufo_buffer_dup (inputs[0]);
     UfoBuffer *volume_tmp = ufo_buffer_dup (output);
-
     UfoBuffer *ray_weights = ufo_buffer_dup (inputs[0]);
 
     guint n_subsets = 0;
@@ -236,19 +224,9 @@ ufo_ir_sart_task_process (UfoTask *task,
     g_object_unref(ray_weights);
     g_free(subsets);
 
-
-//    clFinish(cmd_queue);
-//    g_timer_stop(timer);
-//    gdouble _time = g_timer_elapsed (timer, NULL);
-//    g_timer_destroy(timer);
-//    g_print("%p %3.5f\n", cmd_queue, _time);
     return TRUE;
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Private methods
-// -----------------------------------------------------------------------------
 static UfoIrProjectionsSubset *
 generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets)
 {

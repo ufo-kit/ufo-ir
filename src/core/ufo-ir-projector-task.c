@@ -50,10 +50,6 @@ enum {
 
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-// -----------------------------------------------------------------------------
-// Init methods
-// -----------------------------------------------------------------------------
-
 static void
 ufo_task_interface_init (UfoTaskIface *iface)
 {
@@ -113,16 +109,12 @@ ufo_ir_projector_task_init(UfoIrProjectorTask *self)
     priv->correction_scale = 1;
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Getters and setters
-// -----------------------------------------------------------------------------
 static void
 ufo_ir_projector_task_set_property (GObject *object,
                                     guint property_id,
                                     const GValue *value,
-                                    GParamSpec *pspec) {
+                                    GParamSpec *pspec)
+{
     UfoIrProjectorTask *self = UFO_IR_PROJECTOR_TASK (object);
 
     switch (property_id) {
@@ -148,7 +140,8 @@ static void
 ufo_ir_projector_task_get_property (GObject *object,
                               guint property_id,
                               GValue *value,
-                              GParamSpec *pspec) {
+                              GParamSpec *pspec)
+{
     UfoIrProjectorTask *self = UFO_IR_PROJECTOR_TASK (object);
 
     switch (property_id) {
@@ -170,51 +163,61 @@ ufo_ir_projector_task_get_property (GObject *object,
     }
 }
 
-gfloat ufo_ir_projector_task_get_step(UfoIrProjectorTask *self) {
+gfloat
+ufo_ir_projector_task_get_step(UfoIrProjectorTask *self)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     return priv->step;
 }
 
-void ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat value) {
+void
+ufo_ir_projector_task_set_step(UfoIrProjectorTask *self, gfloat value)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     priv->step = value;
 }
 
-gfloat ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self) {
+gfloat
+ufo_ir_projector_task_get_axis_position(UfoIrProjectorTask *self)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     return priv->axis_position;
 }
 
-void ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat value) {
+void
+ufo_ir_projector_task_set_axis_position(UfoIrProjectorTask *self, gfloat value)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     priv->axis_position = value;
 }
 
-gfloat ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self) {
+gfloat
+ufo_ir_projector_task_get_relaxation(UfoIrProjectorTask *self)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     return priv->relaxation;
 }
 
-void ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat value) {
+void
+ufo_ir_projector_task_set_relaxation(UfoIrProjectorTask *self, gfloat value)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     priv->relaxation = value;
 }
 
-gfloat ufo_ir_projector_task_get_correction_scale(UfoIrProjectorTask *self) {
+gfloat
+ufo_ir_projector_task_get_correction_scale(UfoIrProjectorTask *self)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     return priv->correction_scale;
 }
 
-void   ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gfloat value) {
+void
+ufo_ir_projector_task_set_correction_scale(UfoIrProjectorTask *self, gfloat value)
+{
     UfoIrProjectorTaskPrivate *priv = UFO_IR_PROJECTOR_TASK_GET_PRIVATE (self);
     priv->correction_scale = value;
 }
-
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// ITaskNode implementation
-// -----------------------------------------------------------------------------
 
 static guint
 ufo_ir_projector_task_get_num_inputs (UfoTask *task)
@@ -234,6 +237,3 @@ ufo_ir_projector_task_new (void)
 {
     return UFO_NODE (g_object_new (UFO_IR_TYPE_PROJECTOR_TASK, NULL));
 }
-
-// -----------------------------------------------------------------------------
-

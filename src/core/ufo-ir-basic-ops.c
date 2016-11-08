@@ -104,7 +104,8 @@ operation2 (UfoBuffer *arg1,
 }
 
 static gpointer
-kernel_from_name(UfoResources *resources, const gchar* name) {
+kernel_from_name (UfoResources *resources, const gchar* name)
+{
     GError *error = NULL;
     gpointer kernel = ufo_resources_get_kernel (resources, OPS_FILENAME, name, &error);
     if (error) {
@@ -119,7 +120,8 @@ gpointer
 ufo_ir_op_set (UfoBuffer *arg,
                gfloat     value,
                gpointer   command_queue,
-               gpointer   kernel) {
+               gpointer   kernel)
+{
     UfoRequisition requisition;
     ufo_buffer_get_requisition (arg, &requisition);
     cl_mem d_arg = ufo_buffer_get_device_image (arg, command_queue);
@@ -136,14 +138,16 @@ ufo_ir_op_set (UfoBuffer *arg,
 }
 
 gpointer
-ufo_ir_op_set_generate_kernel(UfoResources *resources) {
+ufo_ir_op_set_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "operation_set");
 }
 
 gpointer
 ufo_ir_op_inv (UfoBuffer *arg,
                gpointer   command_queue,
-               gpointer   kernel) {
+               gpointer   kernel)
+{
     UfoRequisition requisition;
     ufo_buffer_get_requisition (arg, &requisition);
 
@@ -160,43 +164,52 @@ ufo_ir_op_inv (UfoBuffer *arg,
 }
 
 gpointer
-ufo_ir_op_inv_generate_kernel(UfoResources *resources) {
+ufo_ir_op_inv_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "operation_inv");
 }
 
-gpointer ufo_ir_op_mul (UfoBuffer *arg1,
-                        UfoBuffer *arg2,
-                        UfoBuffer *out,
-                        gpointer   command_queue,
-                        gpointer   kernel) {
-    return operation (arg1, arg2, out, command_queue, kernel);
-}
-
-gpointer ufo_ir_op_mul_generate_kernel(UfoResources *resources){
-    return kernel_from_name(resources, "operation_mul");
-}
-
-gpointer ufo_ir_op_add (UfoBuffer *arg1,
-                        UfoBuffer *arg2,
-                        UfoBuffer *out,
-                        gpointer   command_queue,
-                        gpointer   kernel)
+gpointer
+ufo_ir_op_mul (UfoBuffer *arg1,
+               UfoBuffer *arg2,
+               UfoBuffer *out,
+               gpointer   command_queue,
+               gpointer   kernel)
 {
     return operation (arg1, arg2, out, command_queue, kernel);
 }
 
 gpointer
-ufo_ir_op_add_generate_kernel(UfoResources *resources){
+ufo_ir_op_mul_generate_kernel (UfoResources *resources)
+{
+    return kernel_from_name(resources, "operation_mul");
+}
+
+gpointer
+ufo_ir_op_add (UfoBuffer *arg1,
+               UfoBuffer *arg2,
+               UfoBuffer *out,
+               gpointer   command_queue,
+               gpointer   kernel)
+{
+    return operation (arg1, arg2, out, command_queue, kernel);
+}
+
+gpointer
+ufo_ir_op_add_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "operation_add");
 }
 
-gpointer ufo_ir_op_mul_rows (UfoBuffer *arg1,
-                             UfoBuffer *arg2,
-                             UfoBuffer *out,
-                             guint offset,
-                             guint n,
-                             gpointer command_queue,
-                             gpointer kernel) {
+gpointer
+ufo_ir_op_mul_rows (UfoBuffer *arg1,
+                    UfoBuffer *arg2,
+                    UfoBuffer *out,
+                    guint offset,
+                    guint n,
+                    gpointer command_queue,
+                    gpointer kernel)
+{
     UfoRequisition arg1_requisition, arg2_requisition, out_requisition;
     ufo_buffer_get_requisition (arg1, &arg1_requisition);
     ufo_buffer_get_requisition (arg2, &arg2_requisition);
@@ -235,12 +248,16 @@ gpointer ufo_ir_op_mul_rows (UfoBuffer *arg1,
     return event;
 }
 
-gpointer ufo_ir_op_mul_rows_generate_kernel(UfoResources *resources) {
+gpointer
+ufo_ir_op_mul_rows_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "op_mulRows");
 }
 
-gfloat ufo_ir_op_l1_norm (UfoBuffer *arg,
-                          gpointer command_queue) {
+gfloat
+ufo_ir_op_l1_norm (UfoBuffer *arg,
+                   gpointer command_queue)
+{
     UfoRequisition arg_requisition;
     gfloat *values;
     gfloat norm = 0;
@@ -257,22 +274,28 @@ gfloat ufo_ir_op_l1_norm (UfoBuffer *arg,
     return norm;
 }
 
-gpointer ufo_ir_op_deduction (UfoBuffer *arg1,
-                              UfoBuffer *arg2,
-                              UfoBuffer *out,
-                              gpointer command_queue,
-                              gpointer kernel) {
+gpointer
+ufo_ir_op_deduction (UfoBuffer *arg1,
+                     UfoBuffer *arg2,
+                     UfoBuffer *out,
+                     gpointer command_queue,
+                     gpointer kernel)
+{
     return operation (arg1, arg2, out, command_queue, kernel);
 }
 
-gpointer ufo_ir_op_deduction_generate_kernel(UfoResources *resources) {
+gpointer
+ufo_ir_op_deduction_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "operation_deduction");
 }
 
-gpointer ufo_ir_op_positive_constraint (UfoBuffer *arg,
-                                        UfoBuffer *out,
-                                        gpointer command_queue,
-                                        gpointer kernel) {
+gpointer
+ufo_ir_op_positive_constraint (UfoBuffer *arg,
+                               UfoBuffer *out,
+                               gpointer command_queue,
+                               gpointer kernel)
+{
     UfoRequisition arg_requisition;
     cl_event event;
 
@@ -293,19 +316,25 @@ gpointer ufo_ir_op_positive_constraint (UfoBuffer *arg,
 }
 
 
-gpointer ufo_ir_op_positive_constraint_generate_kernel(UfoResources *resources) {
+gpointer
+ufo_ir_op_positive_constraint_generate_kernel (UfoResources *resources)
+{
     return kernel_from_name(resources, "POSC");
 }
 
-gpointer ufo_ir_op_deduction2 (UfoBuffer *arg1,
-                               UfoBuffer *arg2,
-                               gfloat modifier,
-                               UfoBuffer *out,
-                               gpointer command_queue,
-                               gpointer kernel) {
+gpointer
+ufo_ir_op_deduction2 (UfoBuffer *arg1,
+                      UfoBuffer *arg2,
+                      gfloat modifier,
+                      UfoBuffer *out,
+                      gpointer command_queue,
+                      gpointer kernel)
+{
     return operation2 (arg1, arg2, modifier, out, command_queue, kernel);
 }
 
-gpointer ufo_ir_op_deduction2_generate_kernel(UfoResources *resources) {
+gpointer
+ufo_ir_op_deduction2_generate_kernel(UfoResources *resources)
+{
     return kernel_from_name(resources, "operation_deduction2");
 }

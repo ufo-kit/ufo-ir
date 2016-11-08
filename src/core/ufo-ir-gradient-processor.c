@@ -40,11 +40,9 @@ G_DEFINE_TYPE (UfoIrGradientProcessor, ufo_ir_gradient_processor, G_TYPE_OBJECT)
 
 #define UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE((obj), UFO_IR_TYPE_GRADIENT_PROCESSOR, UfoIrGradientProcessorPrivate))
 
-// -----------------------------------------------------------------------------
-// Init methods
-// -----------------------------------------------------------------------------
 static void
-ufo_ir_gradient_processor_class_init (UfoIrGradientProcessorClass *klass) {
+ufo_ir_gradient_processor_class_init (UfoIrGradientProcessorClass *klass)
+{
 
     GObjectClass *oclass = G_OBJECT_CLASS (klass);
     oclass->finalize = ufo_ir_gradient_processor_finalize;
@@ -53,37 +51,30 @@ ufo_ir_gradient_processor_class_init (UfoIrGradientProcessorClass *klass) {
 }
 
 static void
-ufo_ir_gradient_processor_init(UfoIrGradientProcessor *self) {
+ufo_ir_gradient_processor_init(UfoIrGradientProcessor *self)
+{
     self->priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Public methods
-// -----------------------------------------------------------------------------
-UfoIrGradientProcessor *ufo_ir_gradient_processor_new (UfoResources *resources, cl_command_queue cmd_queue) {
+UfoIrGradientProcessor *
+ufo_ir_gradient_processor_new (UfoResources *resources, cl_command_queue cmd_queue)
+{
     UfoIrGradientProcessor *processor = UFO_IR_GRADIENT_PROCESSOR (g_object_new (UFO_IR_TYPE_GRADIENT_PROCESSOR, NULL));
     ufo_ir_gradient_processor_resources_init(processor, resources, cmd_queue);
     return processor;
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// GObject methods realization
-// -----------------------------------------------------------------------------
 static void
-ufo_ir_gradient_processor_finalize (GObject *object) {
+ufo_ir_gradient_processor_finalize (GObject *object)
+{
     G_OBJECT_CLASS (ufo_ir_gradient_processor_parent_class)->finalize (object);
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Private methods
-// -----------------------------------------------------------------------------
 void
 ufo_ir_gradient_processor_dx_op (UfoIrGradientProcessor *self,
                                  UfoBuffer *input,
-                                 UfoBuffer *output) {
+                                 UfoBuffer *output)
+{
     UfoIrGradientProcessorPrivate *priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition(input,&requisition);
@@ -101,7 +92,8 @@ ufo_ir_gradient_processor_dx_op (UfoIrGradientProcessor *self,
 void
 ufo_ir_gradient_processor_dxt_op (UfoIrGradientProcessor *self,
                                   UfoBuffer *input,
-                                  UfoBuffer *output) {
+                                  UfoBuffer *output)
+{
     UfoIrGradientProcessorPrivate *priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition(input,&requisition);
@@ -121,7 +113,8 @@ ufo_ir_gradient_processor_dxt_op (UfoIrGradientProcessor *self,
 void
 ufo_ir_gradient_processor_dy_op (UfoIrGradientProcessor *self,
                                  UfoBuffer *input,
-                                 UfoBuffer *output) {
+                                 UfoBuffer *output)
+{
     UfoIrGradientProcessorPrivate *priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition(input,&requisition);
@@ -141,7 +134,8 @@ ufo_ir_gradient_processor_dy_op (UfoIrGradientProcessor *self,
 void
 ufo_ir_gradient_processor_dyt_op (UfoIrGradientProcessor *self,
                                   UfoBuffer *input,
-                                  UfoBuffer *output) {
+                                  UfoBuffer *output)
+{
     UfoIrGradientProcessorPrivate *priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition(input,&requisition);
@@ -163,7 +157,8 @@ ufo_ir_gradient_processor_dyt_op (UfoIrGradientProcessor *self,
 static void
 ufo_ir_gradient_processor_resources_init(UfoIrGradientProcessor *self,
                                          UfoResources *resources,
-                                         cl_command_queue cmd_queue) {
+                                         cl_command_queue cmd_queue)
+{
     UfoIrGradientProcessorPrivate *priv = UFO_IR_GRADIENT_PROCESSOR_GET_PRIVATE(self);
 
     priv->command_queue = cmd_queue;
@@ -188,4 +183,3 @@ ufo_ir_gradient_processor_resources_init(UfoIrGradientProcessor *self,
             UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dytKernel));
     }
 }
-// -----------------------------------------------------------------------------
