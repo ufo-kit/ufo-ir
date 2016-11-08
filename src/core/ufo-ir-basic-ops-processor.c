@@ -240,30 +240,10 @@ gfloat
 ufo_ir_basic_ops_processor_l2_norm (UfoIrBasicOpsProcessor *self,
                                     UfoBuffer *buffer)
 {
-    UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
-    UfoRequisition buffer_requisition;
-    ufo_buffer_get_requisition (buffer, &buffer_requisition);
+    gfloat norm;
 
-    gfloat *values = ufo_buffer_get_host_array (buffer, priv->command_queue);
-
-    guint length = num_elements (&buffer_requisition);
-    guint partsCnt = (guint)buffer_requisition.dims[buffer_requisition.n_dims - 1];
-    guint partLen = length / partsCnt;
-
-    gfloat norm = 0;
-
-    for(guint partNum = 0; partNum < partsCnt; partNum++) {
-        gfloat partNorm = 0;
-        for(guint i = 0; i < partLen; i++) {
-            guint index = partNum * i;
-            partNorm += values[index] * values[index];
-        }
-        norm += partNorm;
-    }
-
-    norm = sqrt(norm);
-
-    return norm;
+    norm = ufo_ir_basic_ops_processor_dot_product (self, buffer, buffer);
+    return sqrt (norm);
 }
 
 void
