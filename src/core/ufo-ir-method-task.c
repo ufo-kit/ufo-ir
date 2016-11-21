@@ -40,13 +40,9 @@ static guint ufo_ir_method_task_get_num_dimensions (UfoTask *task, guint input);
 static UfoTaskMode ufo_ir_method_task_get_mode (UfoTask *task);
 static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
 
-// UfoTaskNode class related methods
-// UfoNode *ufo_ir_method_task_node_copy (UfoNode *node, GError **error);
-
 // IrMethod private Methods
 
 static const gchar *ufo_ir_method_task_get_package_name (UfoTaskNode *self);
-// -----------------------------------------------------------------------------
 
 G_DEFINE_TYPE_WITH_CODE (UfoIrMethodTask, ufo_ir_method_task, UFO_TYPE_TASK_NODE,
                          G_IMPLEMENT_INTERFACE (UFO_TYPE_TASK, ufo_task_interface_init))
@@ -79,7 +75,7 @@ ufo_ir_method_task_class_init (UfoIrMethodTaskClass *klass)
             g_param_spec_uint("num-iterations",
                               "Number of iterations of method",
                               "Number of iterations of method",
-                              1, G_MAXUINT, 1,
+                              1, G_MAXUINT, 10,
                               G_PARAM_READWRITE);
     properties[PROP_PROJECTOR] =
             g_param_spec_object("projector",
@@ -115,9 +111,6 @@ ufo_ir_method_task_init(UfoIrMethodTask *self)
     self->priv->iterations_number = 10;
 }
 
-// -----------------------------------------------------------------------------
-// Getters and setters
-// -----------------------------------------------------------------------------
 static void
 ufo_ir_method_task_set_property (GObject      *object,
                                  guint         property_id,
@@ -192,12 +185,6 @@ ufo_ir_method_task_set_iterations_number (UfoIrMethodTask *self, guint value)
     priv->iterations_number = value;
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Class related methods
-// -----------------------------------------------------------------------------
-
 static void
 ufo_ir_method_task_dispose (GObject *object)
 {
@@ -210,11 +197,6 @@ ufo_ir_method_task_dispose (GObject *object)
 
     G_OBJECT_CLASS (ufo_ir_method_task_parent_class)->dispose (object);
 }
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// UfoTask Interface related methods
-// -----------------------------------------------------------------------------
 
 UfoNode *
 ufo_ir_method_task_new (void)
@@ -268,16 +250,8 @@ ufo_ir_method_task_get_requisition (UfoTask        *task,
         ufo_task_get_requisition (UFO_TASK(priv->projector), inputs, requisition);
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// UfoTaskNode class related methods
-// -----------------------------------------------------------------------------
-
 static const gchar *
 ufo_ir_method_task_get_package_name (UfoTaskNode *self)
 {
     return "ir";
 }
-
-// -----------------------------------------------------------------------------

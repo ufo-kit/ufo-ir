@@ -85,18 +85,16 @@ enum {
 
 static GParamSpec *properties[N_PROPERTIES] = { NULL, };
 
-// -----------------------------------------------------------------------------
-// Init methods
-// -----------------------------------------------------------------------------
-
 static void
-ufo_task_interface_init (UfoTaskIface *iface) {
+ufo_task_interface_init (UfoTaskIface *iface)
+{
     iface->process = ufo_ir_asdpocs_task_process;
     iface->setup = ufo_ir_asdpocs_task_setup;
 }
 
 static void
-ufo_ir_asdpocs_task_class_init (UfoIrAsdpocsTaskClass *klass) {
+ufo_ir_asdpocs_task_class_init (UfoIrAsdpocsTaskClass *klass)
+{
     GObjectClass *oclass = G_OBJECT_CLASS (klass);
 
     oclass->set_property = ufo_ir_asdpocs_task_set_property;
@@ -166,7 +164,8 @@ ufo_ir_asdpocs_task_class_init (UfoIrAsdpocsTaskClass *klass) {
 }
 
 static void
-ufo_ir_asdpocs_task_init(UfoIrAsdpocsTask *self) {
+ufo_ir_asdpocs_task_init(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = NULL;
     self->priv = priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE(self);
 
@@ -180,11 +179,6 @@ ufo_ir_asdpocs_task_init(UfoIrAsdpocsTask *self) {
     priv->positive_constraint = TRUE;
     priv->grad_temp_buffer = NULL;
 }
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Finalization
-// -----------------------------------------------------------------------------
 
 static void
 ufo_ir_asdpocs_task_dispose (GObject *object)
@@ -195,88 +189,98 @@ ufo_ir_asdpocs_task_dispose (GObject *object)
     G_OBJECT_CLASS (ufo_ir_asdpocs_task_parent_class)->dispose (object);
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Getters and setters
-// -----------------------------------------------------------------------------
-
-gfloat ufo_ir_asdpocs_task_get_beta(UfoIrAsdpocsTask *self) {
+gfloat ufo_ir_asdpocs_task_get_beta(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->beta;
 }
 
-void ufo_ir_asdpocs_task_set_beta(UfoIrAsdpocsTask *self, gfloat value) {
+void ufo_ir_asdpocs_task_set_beta(UfoIrAsdpocsTask *self, gfloat value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->beta = value;
 }
 
-gfloat ufo_ir_asdpocs_task_get_beta_red(UfoIrAsdpocsTask *self) {
+gfloat ufo_ir_asdpocs_task_get_beta_red(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->beta_red;
 }
 
-void ufo_ir_asdpocs_task_set_beta_red(UfoIrAsdpocsTask *self, gfloat value) {
+void ufo_ir_asdpocs_task_set_beta_red(UfoIrAsdpocsTask *self, gfloat value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->beta_red = value;
 }
 
-guint ufo_ir_asdpocs_task_get_ng(UfoIrAsdpocsTask *self) {
+guint ufo_ir_asdpocs_task_get_ng(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->ng;
 }
 
-void ufo_ir_asdpocs_task_set_ng(UfoIrAsdpocsTask *self, guint value) {
+void ufo_ir_asdpocs_task_set_ng(UfoIrAsdpocsTask *self, guint value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->ng = value;
 }
 
-gfloat ufo_ir_asdpocs_task_get_alpha(UfoIrAsdpocsTask *self) {
+gfloat ufo_ir_asdpocs_task_get_alpha(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->alpha;
 }
 
-void ufo_ir_asdpocs_task_set_alpha(UfoIrAsdpocsTask *self, gfloat value) {
+void ufo_ir_asdpocs_task_set_alpha(UfoIrAsdpocsTask *self, gfloat value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->alpha = value;
 }
 
-gfloat ufo_ir_asdpocs_task_get_alpha_red(UfoIrAsdpocsTask *self) {
+gfloat ufo_ir_asdpocs_task_get_alpha_red(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->alpha_red;
 }
 
-void ufo_ir_asdpocs_task_set_alpha_red(UfoIrAsdpocsTask *self, gfloat value) {
+void ufo_ir_asdpocs_task_set_alpha_red(UfoIrAsdpocsTask *self, gfloat value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->alpha_red = value;
 }
 
-gfloat ufo_ir_asdpocs_task_get_r_max(UfoIrAsdpocsTask *self) {
+gfloat ufo_ir_asdpocs_task_get_r_max(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->r_max;
 }
 
-void ufo_ir_asdpocs_task_set_r_max(UfoIrAsdpocsTask *self, gfloat value) {
+void ufo_ir_asdpocs_task_set_r_max(UfoIrAsdpocsTask *self, gfloat value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->r_max = value;
 }
 
-gboolean ufo_ir_asdpocs_task_get_positive_constraint(UfoIrAsdpocsTask *self) {
+gboolean ufo_ir_asdpocs_task_get_positive_constraint(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->positive_constraint;
 }
 
-void ufo_ir_asdpocs_task_set_positive_constraint(UfoIrAsdpocsTask *self, gboolean value) {
+void ufo_ir_asdpocs_task_set_positive_constraint(UfoIrAsdpocsTask *self, gboolean value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     priv->positive_constraint = value;
 }
 
-UfoTask *ufo_ir_asdpocs_task_get_df_minimizer(UfoIrAsdpocsTask *self) {
+UfoTask *ufo_ir_asdpocs_task_get_df_minimizer(UfoIrAsdpocsTask *self)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     return priv->df_minimizer;
 }
 
-void ufo_ir_asdpocs_task_set_df_minimizer(UfoIrAsdpocsTask *self, UfoTask *value) {
+void ufo_ir_asdpocs_task_set_df_minimizer(UfoIrAsdpocsTask *self, UfoTask *value)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE (self);
     if(priv->df_minimizer != NULL) {
         g_object_unref(priv->df_minimizer);
@@ -362,13 +366,10 @@ ufo_ir_asdpocs_task_get_property (GObject *object,
             break;
     }
 }
-// -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// Task interface realization
-// -----------------------------------------------------------------------------
 UfoNode *
-ufo_ir_asdpocs_task_new (void) {
+ufo_ir_asdpocs_task_new (void)
+{
     return UFO_NODE (g_object_new (UFO_IR_TYPE_ASDPOCS_TASK, NULL));
 }
 
@@ -411,15 +412,15 @@ static gboolean
 ufo_ir_asdpocs_task_process (UfoTask *task,
                              UfoBuffer **inputs,
                              UfoBuffer *output,
-                             UfoRequisition *requisition) {
+                             UfoRequisition *requisition)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE(task);
 
     // Check and setup temp buffer
     if(priv->grad_temp_buffer) {
         UfoRequisition grad_req;
         ufo_buffer_get_requisition(priv->grad_temp_buffer, &grad_req);
-        if( grad_req.dims[0] == requisition->dims[0] && grad_req.dims[1] == requisition->dims[1] )
-        {
+        if( grad_req.dims[0] == requisition->dims[0] && grad_req.dims[1] == requisition->dims[1] ) {
             g_object_unref(priv->grad_temp_buffer);
             priv->grad_temp_buffer = ufo_buffer_dup(output);
         }
@@ -452,8 +453,8 @@ ufo_ir_asdpocs_task_process (UfoTask *task,
     gfloat beta = priv->beta;
     guint iteration = 0;
     guint max_iterations = ufo_ir_method_task_get_iterations_number(UFO_IR_METHOD_TASK(task));
-    while (iteration < max_iterations)
-    {
+
+    while (iteration < max_iterations) {
         // run method to minimize data fidelity term
         g_object_set (priv->df_minimizer, "relaxation_factor", beta, NULL);
         ufo_task_process(priv->df_minimizer, inputs, x, NULL);
@@ -508,9 +509,6 @@ ufo_ir_asdpocs_task_process (UfoTask *task,
 }
 
 
-// -----------------------------------------------------------------------------
-// Private methods
-// -----------------------------------------------------------------------------
 static UfoIrProjectionsSubset *
 generate_subsets (UfoIrParallelProjectorTask *projector, guint *n_subsets)
 {
@@ -554,7 +552,8 @@ ufo_math_tvstd_method_process_real (UfoIrAsdpocsTask *self,
                                     UfoBuffer *input,
                                     UfoBuffer *output,
                                     gfloat relaxation,
-                                    cl_command_queue cmd_queue) {
+                                    cl_command_queue cmd_queue)
+{
     UfoIrAsdpocsTaskPrivate *priv = UFO_IR_ASDPOCS_TASK_GET_PRIVATE(self);
 
     ufo_ir_op_set (priv->grad_temp_buffer, 0, cmd_queue, priv->op_set_kernel);
@@ -579,5 +578,3 @@ ufo_math_tvstd_method_process_real (UfoIrAsdpocsTask *self,
         iteration++;
     }
 }
-
-// -----------------------------------------------------------------------------

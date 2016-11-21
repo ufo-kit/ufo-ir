@@ -2,9 +2,9 @@ const sampler_t nb_sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | C
 
 #define EPS 0.001f
 
-__kernel
-void l1_grad (__read_only image2d_t in,
-              __write_only image2d_t out)
+kernel
+void l1_grad (read_only image2d_t in,
+              write_only image2d_t out)
 {
     const uint X = get_global_id(0);
     const uint Y = get_global_id(1);

@@ -67,6 +67,18 @@ ufo_ir_basic_ops_processor_init(UfoIrBasicOpsProcessor *self)
     self->priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
 }
 
+static guint
+num_elements (UfoRequisition *requisition)
+{
+    guint num = 1;
+
+    for (guint dimension = 0; dimension < requisition->n_dims; dimension++) {
+        num *= (guint)requisition->dims[dimension];
+    }
+
+    return num;
+}
+
 UfoIrBasicOpsProcessor *
 ufo_ir_basic_ops_processor_new(UfoResources *resources,
                                cl_command_queue cmd_queue) {
@@ -81,14 +93,12 @@ ufo_ir_basic_ops_processor_finalize (GObject *object)
     G_OBJECT_CLASS (ufo_ir_basic_ops_processor_parent_class)->finalize (object);
 }
 
-// -----------------------------------------------------------------------------
-// Public methods
-// -----------------------------------------------------------------------------
 gpointer
 ufo_ir_basic_ops_processor_add (UfoIrBasicOpsProcessor *self,
                                 UfoBuffer *buffer1,
                                 UfoBuffer *buffer2,
-                                UfoBuffer *result) {
+                                UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     return operation (buffer1, buffer2, result, priv->command_queue, priv->add_kernel);
 }
@@ -98,7 +108,8 @@ ufo_ir_basic_ops_processor_add2 (UfoIrBasicOpsProcessor *self,
                                  UfoBuffer *buffer1,
                                  UfoBuffer *buffer2,
                                  gfloat modifier,
-                                 UfoBuffer *result) {
+                                 UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     return operation2 (buffer1, buffer2, modifier, result, priv->command_queue, priv->add2_kernel);
 }
@@ -108,7 +119,8 @@ gpointer
 ufo_ir_basic_ops_processor_deduction (UfoIrBasicOpsProcessor *self,
                                       UfoBuffer *buffer1,
                                       UfoBuffer *buffer2,
-                                      UfoBuffer *result) {
+                                      UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     return operation (buffer1, buffer2, result, priv->command_queue, priv->ded_kernel);
 }
@@ -118,61 +130,50 @@ ufo_ir_basic_ops_processor_deduction2 (UfoIrBasicOpsProcessor *self,
                                        UfoBuffer *buffer1,
                                        UfoBuffer *buffer2,
                                        gfloat modifier,
-                                       UfoBuffer *result) {
+                                       UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     return operation2 (buffer1, buffer2, modifier, result, priv->command_queue, priv->ded2_kernel);
-
 }
 
 void
 ufo_ir_basic_ops_processor_div_element_wise(UfoIrBasicOpsProcessor *self,
                                             UfoBuffer *buffer1,
                                             UfoBuffer *buffer2,
-                                            UfoBuffer *result) {
+                                            UfoBuffer *result)
+{
     twoAraysIterator(self, buffer1, buffer2, result, elementsDivOperation);
 }
 
 gfloat
 ufo_ir_basic_ops_processor_dot_product(UfoIrBasicOpsProcessor *self,
                                        UfoBuffer *buffer1,
-                                       UfoBuffer *buffer2) {
+                                       UfoBuffer *buffer2)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition buffer1_requisition;
-    ufo_buffer_get_requisition (buffer1, &buffer1_requisition);
-
-    gfloat *values1 = ufo_buffer_get_host_array (buffer1, priv->command_queue);
-
-    guint length1 = 1;
-    for(guint dimension = 0; dimension < buffer1_requisition.n_dims; dimension++)
-    {
-        length1 *= (guint)buffer1_requisition.dims[dimension];
-    }
-
     UfoRequisition buffer2_requisition;
+
+    ufo_buffer_get_requisition (buffer1, &buffer1_requisition);
     ufo_buffer_get_requisition (buffer2, &buffer2_requisition);
 
+    gfloat *values1 = ufo_buffer_get_host_array (buffer1, priv->command_queue);
     gfloat *values2 = ufo_buffer_get_host_array (buffer2, priv->command_queue);
 
-    guint length2 = 1;
-    for(guint dimension = 0; dimension < buffer2_requisition.n_dims; dimension++)
-    {
-        length2 *= (guint)buffer2_requisition.dims[dimension];
-    }
+    guint length1 = num_elements (&buffer1_requisition);
+    guint length2 = num_elements (&buffer2_requisition);
 
     guint length = 1;
 
-    if(buffer1_requisition.n_dims != buffer2_requisition.n_dims)
-    {
+    if (buffer1_requisition.n_dims != buffer2_requisition.n_dims) {
         g_print("Buffers are not equal\n");
         return -1.0f;
     }
 
-    if(length1 == length2)
-    {
+    if (length1 == length2) {
         length = length1;
     }
-    else
-    {
+    else {
         g_print("Buffers are not equal\n");
         return -1.0f;
     }
@@ -181,11 +182,10 @@ ufo_ir_basic_ops_processor_dot_product(UfoIrBasicOpsProcessor *self,
     guint partLen = length / partsCnt;
 
     gfloat norm = 0;
-    for(guint partNum = 0; partNum < partsCnt; partNum++)
-    {
+
+    for(guint partNum = 0; partNum < partsCnt; partNum++) {
         gfloat partNorm = 0;
-        for(guint i = 0; i < partLen; i++)
-        {
+        for(guint i = 0; i < partLen; i++) {
             guint index = partNum * i;
             partNorm += values1[index] * values2[index];
         }
@@ -197,7 +197,8 @@ ufo_ir_basic_ops_processor_dot_product(UfoIrBasicOpsProcessor *self,
 
 gpointer
 ufo_ir_basic_ops_processor_inv (UfoIrBasicOpsProcessor *self,
-                                UfoBuffer *buffer) {
+                                UfoBuffer *buffer)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition (buffer, &requisition);
@@ -216,7 +217,8 @@ ufo_ir_basic_ops_processor_inv (UfoIrBasicOpsProcessor *self,
 
 gfloat
 ufo_ir_basic_ops_processor_l1_norm (UfoIrBasicOpsProcessor *self,
-                                    UfoBuffer *buffer) {
+                                    UfoBuffer *buffer)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition arg_requisition;
     gfloat *values;
@@ -236,44 +238,20 @@ ufo_ir_basic_ops_processor_l1_norm (UfoIrBasicOpsProcessor *self,
 
 gfloat
 ufo_ir_basic_ops_processor_l2_norm (UfoIrBasicOpsProcessor *self,
-                                    UfoBuffer *buffer) {
-    UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
-    UfoRequisition buffer_requisition;
-    ufo_buffer_get_requisition (buffer, &buffer_requisition);
+                                    UfoBuffer *buffer)
+{
+    gfloat norm;
 
-    gfloat *values = ufo_buffer_get_host_array (buffer, priv->command_queue);
-
-    guint length = 1;
-    for(guint dimension = 0; dimension < buffer_requisition.n_dims; dimension++)
-    {
-        length *= (guint)buffer_requisition.dims[dimension];
-    }
-
-    guint partsCnt = (guint)buffer_requisition.dims[buffer_requisition.n_dims -1];
-    guint partLen = length / partsCnt;
-
-    gfloat norm = 0;
-    for(guint partNum = 0; partNum < partsCnt; partNum++)
-    {
-        gfloat partNorm = 0;
-        for(guint i = 0; i < partLen; i++)
-        {
-            guint index = partNum * i;
-            partNorm += values[index] * values[index];
-        }
-        norm += partNorm;
-    }
-
-    norm = sqrt(norm);
-
-    return norm;
+    norm = ufo_ir_basic_ops_processor_dot_product (self, buffer, buffer);
+    return sqrt (norm);
 }
 
 void
 ufo_ir_basic_ops_processor_max_element_wise(UfoIrBasicOpsProcessor *self,
                                             UfoBuffer *buffer1,
                                             UfoBuffer *buffer2,
-                                            UfoBuffer *result) {
+                                            UfoBuffer *result)
+{
     twoAraysIterator(self, buffer1, buffer2, result, elementsMaxOperation);
 }
 
@@ -281,7 +259,8 @@ gpointer
 ufo_ir_basic_ops_processor_mul (UfoIrBasicOpsProcessor *self,
                                 UfoBuffer *buffer1,
                                 UfoBuffer *buffer2,
-                                UfoBuffer *result) {
+                                UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     return operation (buffer1, buffer2, result, priv->command_queue, priv->mul_kernel);
 }
@@ -290,7 +269,8 @@ void
 ufo_ir_basic_ops_processor_mul_element_wise(UfoIrBasicOpsProcessor *self,
                                             UfoBuffer *buffer1,
                                             UfoBuffer *buffer2,
-                                            UfoBuffer *result) {
+                                            UfoBuffer *result)
+{
     twoAraysIterator(self, buffer1, buffer2, result, elementsMulOperation);
 }
 
@@ -300,7 +280,8 @@ ufo_ir_basic_ops_processor_mul_rows (UfoIrBasicOpsProcessor *self,
                                      UfoBuffer *buffer2,
                                      UfoBuffer *result,
                                      guint offset,
-                                     guint n) {
+                                     guint n)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition buffer1_requisition, buffer2_requisition, result_requisition;
     ufo_buffer_get_requisition (buffer1, &buffer1_requisition);
@@ -343,54 +324,44 @@ ufo_ir_basic_ops_processor_mul_rows (UfoIrBasicOpsProcessor *self,
 void
 ufo_ir_basic_ops_processor_mul_scalar(UfoIrBasicOpsProcessor *self,
                                       UfoBuffer *buffer,
-                                      gfloat multiplier) {
+                                      gfloat multiplier)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition (buffer, &requisition);
 
     gfloat *values = ufo_buffer_get_host_array (buffer, priv->command_queue);
 
-    guint length = 1;
-    for(guint dimension = 0; dimension < requisition.n_dims; dimension++)
-    {
-        length *= (guint)requisition.dims[dimension];
-    }
+    guint length = num_elements (&requisition);
 
-    for(guint i = 0; i < length; i++)
-    {
+    for(guint i = 0; i < length; i++) {
         values[i] *= multiplier;
     }
 }
 
 void
 ufo_ir_basic_ops_processor_normalization(UfoIrBasicOpsProcessor *self,
-                                         UfoBuffer *buffer) {
+                                         UfoBuffer *buffer)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition (buffer, &requisition);
 
     gfloat *values = ufo_buffer_get_host_array (buffer, priv->command_queue);
 
-    guint length = 1;
-    for(guint dimension = 0; dimension < requisition.n_dims; dimension++)
-    {
-        length *= (guint)requisition.dims[dimension];
-    }
+    guint length = num_elements (&requisition);
 
-    gfloat max = -1000.f;
-    gfloat min =  1000.f;
+    gfloat max = -G_MAXFLOAT;
+    gfloat min =  G_MAXFLOAT;
 
-    for(guint i = 0; i < length; i++)
-    {
-        max = fmax(values[i],max);
-        min = fmin(values[i],min);
+    for (guint i = 0; i < length; i++) {
+        max = fmax(values[i], max);
+        min = fmin(values[i], min);
     }
 
     gfloat delta = 1 / (max - min);
 
-
-    for(guint i = 0; i < length; i++)
-    {
+    for (guint i = 0; i < length; i++) {
         values[i] = delta * values[i] - min * delta;
     }
 }
@@ -398,7 +369,8 @@ ufo_ir_basic_ops_processor_normalization(UfoIrBasicOpsProcessor *self,
 gpointer
 ufo_ir_basic_ops_processor_positive_constraint (UfoIrBasicOpsProcessor *self,
                                                 UfoBuffer *buffer,
-                                                UfoBuffer *result) {
+                                                UfoBuffer *result)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition buffer_requisition;
     cl_event event;
@@ -422,7 +394,8 @@ ufo_ir_basic_ops_processor_positive_constraint (UfoIrBasicOpsProcessor *self,
 gpointer
 ufo_ir_basic_ops_processor_set (UfoIrBasicOpsProcessor *self,
                                 UfoBuffer *buffer,
-                                gfloat value) {
+                                gfloat value)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition requisition;
     ufo_buffer_get_requisition (buffer, &requisition);
@@ -440,31 +413,22 @@ ufo_ir_basic_ops_processor_set (UfoIrBasicOpsProcessor *self,
 }
 
 void
-ufo_ir_basic_ops_processor_sqrt(UfoIrBasicOpsProcessor *self,
-                                UfoBuffer *buffer) {
+ufo_ir_basic_ops_processor_sqrt (UfoIrBasicOpsProcessor *self,
+                                 UfoBuffer *buffer)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition arg_requisition;
     ufo_buffer_get_requisition (buffer, &arg_requisition);
 
     gfloat *values = ufo_buffer_get_host_array (buffer, priv->command_queue);
 
-    guint length = 1;
-    for(guint dimension = 0; dimension < arg_requisition.n_dims; dimension++)
-    {
-        length *= (guint)arg_requisition.dims[dimension];
-    }
+    guint length = num_elements (&arg_requisition);
 
-    for(guint i = 0; i < length; i++)
-    {
+    for(guint i = 0; i < length; i++) {
         values[i] =  sqrt(values[i]);
     }
 }
 
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Private methods
-// -----------------------------------------------------------------------------
 static cl_event
 operation (UfoBuffer *arg1,
            UfoBuffer *arg2,
@@ -543,7 +507,8 @@ operation2 (UfoBuffer *arg1,
 
 static gpointer
 kernel_from_name(UfoResources *resources,
-                 const gchar* name) {
+                 const gchar* name)
+{
     GError *error = NULL;
     gpointer kernel = ufo_resources_get_kernel (resources, OPS_FILENAME, name, &error);
     if (error) {
@@ -556,7 +521,8 @@ kernel_from_name(UfoResources *resources,
 
 static void ufo_ir_basic_obs_processor_resources_init(UfoIrBasicOpsProcessor *self,
                                                       UfoResources *resources,
-                                                      cl_command_queue cmd_queue) {
+                                                      cl_command_queue cmd_queue)
+{
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
 
     priv->command_queue = cmd_queue;
@@ -582,45 +548,31 @@ twoAraysIterator(UfoIrBasicOpsProcessor *self,
 {
     UfoIrBasicOpsProcessorPrivate *priv = UFO_IR_BASIC_OPS_PROCESSOR_GET_PRIVATE(self);
     UfoRequisition arg1_requisition;
-    ufo_buffer_get_requisition (arg1, &arg1_requisition);
-
-    gfloat *values1 = ufo_buffer_get_host_array (arg1, priv->command_queue);
-
-    guint length1 = 1;
-    for(guint dimension = 0; dimension < arg1_requisition.n_dims; dimension++)
-    {
-        length1 *= (guint)arg1_requisition.dims[dimension];
-    }
-
     UfoRequisition arg2_requisition;
+
+    ufo_buffer_get_requisition (arg1, &arg1_requisition);
     ufo_buffer_get_requisition (arg2, &arg2_requisition);
 
+    gfloat *values1 = ufo_buffer_get_host_array (arg1, priv->command_queue);
     gfloat *values2 = ufo_buffer_get_host_array (arg2, priv->command_queue);
 
-    guint length2 = 1;
-    for(guint dimension = 0; dimension < arg2_requisition.n_dims; dimension++)
-    {
-        length2 *= (guint)arg2_requisition.dims[dimension];
-    }
-
+    guint length1 = num_elements (&arg1_requisition);
+    guint length2 = num_elements (&arg2_requisition);
     guint length = 1;
 
-    if(arg1_requisition.n_dims != arg2_requisition.n_dims)
-    {
+    if (arg1_requisition.n_dims != arg2_requisition.n_dims) {
         g_print("Buffers are not equal\n");
-        //return;
     }
 
     length = length1;
 
-    if(length1 != length2)
-    {
+    if (length1 != length2) {
         g_print("Buffers are not equal\n");
     }
 
     gfloat *outputs = ufo_buffer_get_host_array (output, priv->command_queue);
-    for(guint i = 0; i < length; i++)
-    {
+
+    for (guint i = 0; i < length; i++) {
         proc_fn(&values1[i], &values2[i], &outputs[i]);
     }
 }
@@ -648,4 +600,3 @@ elementsDivOperation(const float *in1,
 {
     *outVal = (*in1) / (*in2);
 }
-// -----------------------------------------------------------------------------
