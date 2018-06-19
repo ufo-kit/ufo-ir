@@ -163,23 +163,20 @@ ufo_ir_gradient_processor_resources_init(UfoIrGradientProcessor *self,
 
     priv->command_queue = cmd_queue;
 
-    priv->dxKernel = ufo_resources_get_kernel(resources, KERNELS_FILE_NAME,"Dx", NULL);
-    if (priv->dxKernel != NULL) {
-            UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dxKernel));
-    }
+    priv->dxKernel = ufo_resources_get_kernel (resources, KERNELS_FILE_NAME, "Dx", NULL, NULL);
+    priv->dyKernel = ufo_resources_get_kernel (resources, KERNELS_FILE_NAME, "Dy", NULL, NULL);
+    priv->dxtKernel = ufo_resources_get_kernel (resources, KERNELS_FILE_NAME, "Dxt", NULL, NULL);
+    priv->dytKernel = ufo_resources_get_kernel (resources, KERNELS_FILE_NAME, "Dyt", NULL, NULL);
 
-    priv->dyKernel = ufo_resources_get_kernel(resources, KERNELS_FILE_NAME,"Dy", NULL);
-    if (priv->dyKernel != NULL) {
-            UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dyKernel));
-    }
+    if (priv->dxKernel != NULL)
+        UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dxKernel));
 
-    priv->dxtKernel = ufo_resources_get_kernel(resources, KERNELS_FILE_NAME,"Dxt", NULL);
-    if (priv->dxtKernel != NULL) {
-            UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dxtKernel));
-    }
+    if (priv->dyKernel != NULL)
+        UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dyKernel));
 
-    priv->dytKernel = ufo_resources_get_kernel(resources, KERNELS_FILE_NAME,"Dyt", NULL);
-    if (priv->dytKernel != NULL) {
-            UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dytKernel));
-    }
+    if (priv->dxtKernel != NULL)
+        UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dxtKernel));
+
+    if (priv->dytKernel != NULL)
+        UFO_RESOURCES_CHECK_CLERR (clRetainKernel (priv->dytKernel));
 }

@@ -107,9 +107,11 @@ static gpointer
 kernel_from_name (UfoResources *resources, const gchar* name)
 {
     GError *error = NULL;
-    gpointer kernel = ufo_resources_get_kernel (resources, OPS_FILENAME, name, &error);
+    gpointer kernel = ufo_resources_get_kernel (resources, OPS_FILENAME, name, NULL, &error);
+
     if (error) {
         g_error ("%s\n", error->message);
+        g_error_free (error);
         return NULL;
     }
 

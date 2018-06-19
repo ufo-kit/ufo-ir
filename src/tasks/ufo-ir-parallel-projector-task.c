@@ -370,17 +370,17 @@ ufo_ir_parallel_projector_task_setup (UfoIrStateDependentTask *self,
                             &priv->fp_kernel[Horizontal],
                             &priv->fp_kernel[Vertical]};
 
-    *kernel[0] = ufo_resources_get_kernel (resources, filename, "BP", error);
+    *kernel[0] = ufo_resources_get_kernel (resources, filename, "BP", NULL, error);
     if (*error && error) {
         return;
     }
 
-    *kernel[1] = ufo_resources_get_kernel (resources, filename, "FP_hor", error);
+    *kernel[1] = ufo_resources_get_kernel (resources, filename, "FP_hor", NULL, error);
     if (*error && error) {
         return;
     }
 
-    *kernel[2] = ufo_resources_get_kernel (resources, filename, "FP_vert", error);
+    *kernel[2] = ufo_resources_get_kernel (resources, filename, "FP_vert", NULL, error);
     if (*error && error) {
         return;
     }

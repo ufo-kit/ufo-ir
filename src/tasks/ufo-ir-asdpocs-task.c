@@ -405,7 +405,7 @@ ufo_ir_asdpocs_task_setup (UfoTask *task,
     priv->op_pos_kernel = ufo_ir_op_positive_constraint_generate_kernel(resources);
 
     // Load tvstd kernel
-    priv->tvstd = ufo_resources_get_kernel (resources, "ufo-math-tvstd-method.cl", "l1_grad", error);
+    priv->tvstd = ufo_resources_get_kernel (resources, "ufo-math-tvstd-method.cl", "l1_grad", NULL, error);
 }
 
 static gboolean
