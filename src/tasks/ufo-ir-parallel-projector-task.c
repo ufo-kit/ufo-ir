@@ -365,25 +365,24 @@ ufo_ir_parallel_projector_task_setup (UfoIrStateDependentTask *self,
     UFO_RESOURCES_CHECK_CLERR (clRetainContext (priv->context));
 
     // Load kernels
-    gchar *filename = g_strconcat("projector-parallel-", priv->model_name, ".cl", NULL);
-    gpointer *kernel[3] = { &priv->bp_kernel,
-                            &priv->fp_kernel[Horizontal],
-                            &priv->fp_kernel[Vertical]};
+    gchar *filename = g_strdup_printf ("projector-parallel-%s.cl", priv->model_name);
 
-    *kernel[0] = ufo_resources_get_kernel (resources, filename, "BP", NULL, error);
-    if (*error && error) {
-        return;
-    }
+    priv->bp_kernel = ufo_resources_get_kernel (resources, filename, "BP", NULL, error);
 
-    *kernel[1] = ufo_resources_get_kernel (resources, filename, "FP_hor", NULL, error);
-    if (*error && error) {
+    if (priv->bp_kernel == NULL)
         return;
-    }
 
-    *kernel[2] = ufo_resources_get_kernel (resources, filename, "FP_vert", NULL, error);
-    if (*error && error) {
+    priv->fp_kernel[Horizontal] = ufo_resources_get_kernel (resources, filename, "FP_hor", NULL, error);
+
+    if (priv->fp_kernel[Horizontal] == NULL)
         return;
-    }
+
+    priv->fp_kernel[Vertical] = ufo_resources_get_kernel (resources, filename, "FP_vert", NULL, error);
+
+    if (priv->fp_kernel[Vertical] == NULL)
+        return;
+
+    g_free (filename);
 }
 
 gboolean
