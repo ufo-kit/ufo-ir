@@ -38,7 +38,7 @@ static void ufo_ir_method_task_setup (UfoTask *task, UfoResources *resources, GE
 static guint ufo_ir_method_task_get_num_inputs (UfoTask *task);
 static guint ufo_ir_method_task_get_num_dimensions (UfoTask *task, guint input);
 static UfoTaskMode ufo_ir_method_task_get_mode (UfoTask *task);
-static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition);
+static void ufo_ir_method_task_get_requisition (UfoTask *task, UfoBuffer **inputs, UfoRequisition *requisition, GError **error);
 
 // IrMethod private Methods
 
@@ -240,14 +240,15 @@ ufo_ir_method_task_get_mode (UfoTask *task)
 static void
 ufo_ir_method_task_get_requisition (UfoTask        *task,
                                     UfoBuffer      **inputs,
-                                    UfoRequisition *requisition)
+                                    UfoRequisition *requisition,
+                                    GError        **error)
 {
     UfoIrMethodTaskPrivate *priv = UFO_IR_METHOD_TASK_GET_PRIVATE (task);
 
     if (priv->projector == NULL)
         g_error ("Projector not specified");
     else
-        ufo_task_get_requisition (UFO_TASK(priv->projector), inputs, requisition);
+        ufo_task_get_requisition (UFO_TASK(priv->projector), inputs, requisition, error);
 }
 
 static const gchar *

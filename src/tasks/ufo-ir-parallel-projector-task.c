@@ -49,7 +49,7 @@ struct _UfoIrParallelProjectorTaskPrivate {
 static void ufo_task_interface_init (UfoTaskIface *iface);
 static void ufo_ir_parallel_projector_task_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void ufo_ir_parallel_projector_task_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void ufo_ir_parallel_projector_task_get_requisition (UfoTask *self, UfoBuffer **inputs, UfoRequisition *requisition);
+static void ufo_ir_parallel_projector_task_get_requisition (UfoTask *self, UfoBuffer **inputs, UfoRequisition *requisition, GError **error);
 static UfoTaskMode ufo_ir_parallel_projector_task_get_mode (UfoTask *task);
 // Private methods
 static cl_mem create_lut_buffer (guint angles_num, gfloat angles_step, const cl_context *context, gfloat **host_mem, double (*func)(double));
@@ -305,7 +305,9 @@ void ufo_ir_parallel_projector_set_angles_num(UfoIrParallelProjectorTask *self, 
 static void
 ufo_ir_parallel_projector_task_get_requisition (UfoTask *self,
                                                 UfoBuffer **inputs,
-                                                UfoRequisition *requisition) {
+                                                UfoRequisition *requisition,
+                                                GError **error)
+{
     UfoIrParallelProjectorTaskPrivate *priv = UFO_IR_PARALLEL_PROJECTOR_TASK_GET_PRIVATE(self);
     UfoRequisition buffer_req;
     ufo_buffer_get_requisition(inputs[0], &buffer_req);
